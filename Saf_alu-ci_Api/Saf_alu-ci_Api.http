@@ -1,0 +1,6 @@
+@Saf_alu_ci_Api_HostAddress = http://localhost:5264
+
+GET {{Saf_alu_ci_Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
