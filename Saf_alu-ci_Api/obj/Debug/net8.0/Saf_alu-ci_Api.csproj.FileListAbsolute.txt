@@ -80,3 +80,4 @@ C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\runti
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\obj\Debug\net8.0\Saf_alu-ci_Api.sourcelink.json

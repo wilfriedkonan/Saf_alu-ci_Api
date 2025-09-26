@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿// Controllers/Devis/DevisController.cs
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Saf_alu_ci_Api.Controllers.Devis
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+   // [Authorize]
     public class DevisController : ControllerBase
     {
         private readonly DevisService _devisService;
@@ -42,7 +43,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
 
@@ -52,13 +53,14 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             try
             {
                 var devis = await _devisService.GetByIdAsync(id);
-                if (devis == null) return NotFound("Devis non trouvé");
+                if (devis == null)
+                    return NotFound(new { message = "Devis non trouvé" });
 
                 return Ok(devis);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
 
@@ -67,6 +69,15 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Données invalides",
+                        errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage))
+                    });
+                }
+
                 var devis = new Devis
                 {
                     ClientId = model.ClientId,
@@ -78,15 +89,16 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     DateModification = DateTime.UtcNow,
                     Conditions = model.Conditions,
                     Notes = model.Notes,
-                    TauxTVA = 20.00m,
+                    TauxTVA = 18.00m, // 18% par défaut
                     UtilisateurCreation = 1 // TODO: Récupérer depuis JWT
                 };
 
                 // Mapper les lignes
                 if (model.Lignes != null && model.Lignes.Any())
                 {
-                    devis.Lignes = model.Lignes.Select(l => new LigneDevis
+                    devis.Lignes = model.Lignes.Select((l, index) => new LigneDevis
                     {
+                        Ordre = index + 1,
                         Designation = l.Designation,
                         Description = l.Description,
                         Quantite = l.Quantite,
@@ -100,17 +112,16 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 }
 
                 var devisId = await _devisService.CreateAsync(devis);
-                devis.Id = devisId;
 
                 return CreatedAtAction(nameof(Get), new { id = devisId }, new
                 {
                     message = "Devis créé avec succès",
-                    devis
+                    data = new { id = devisId }
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
 
@@ -119,8 +130,24 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new
+                    {
+                        message = "Données invalides",
+                        errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage))
+                    });
+                }
+
                 var existing = await _devisService.GetByIdAsync(id);
-                if (existing == null) return NotFound("Devis non trouvé");
+                if (existing == null)
+                    return NotFound(new { message = "Devis non trouvé" });
+
+                // Vérifier si le devis peut être modifié
+                if (existing.Statut == "Valide" || existing.Statut == "Envoye")
+                {
+                    return BadRequest(new { message = "Ce devis ne peut plus être modifié" });
+                }
 
                 existing.ClientId = model.ClientId;
                 existing.Titre = model.Titre;
@@ -133,8 +160,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 // Mapper les lignes
                 if (model.Lignes != null && model.Lignes.Any())
                 {
-                    existing.Lignes = model.Lignes.Select(l => new LigneDevis
+                    existing.Lignes = model.Lignes.Select((l, index) => new LigneDevis
                     {
+                        Ordre = index + 1,
                         Designation = l.Designation,
                         Description = l.Description,
                         Quantite = l.Quantite,
@@ -152,7 +180,31 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var existing = await _devisService.GetByIdAsync(id);
+                if (existing == null)
+                    return NotFound(new { message = "Devis non trouvé" });
+
+                // Vérifier si le devis peut être supprimé
+                if (existing.Statut == "Valide")
+                {
+                    return BadRequest(new { message = "Un devis validé ne peut pas être supprimé" });
+                }
+
+                await _devisService.DeleteAsync(id);
+                return Ok(new { message = "Devis supprimé avec succès" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
 
@@ -162,11 +214,12 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             try
             {
                 var existing = await _devisService.GetByIdAsync(id);
-                if (existing == null) return NotFound("Devis non trouvé");
+                if (existing == null)
+                    return NotFound(new { message = "Devis non trouvé" });
 
                 if (existing.Statut != "Brouillon")
                 {
-                    return BadRequest("Seuls les devis en brouillon peuvent être envoyés");
+                    return BadRequest(new { message = "Seuls les devis en brouillon peuvent être envoyés" });
                 }
 
                 await _devisService.UpdateStatutAsync(id, "Envoye");
@@ -177,7 +230,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
 
@@ -187,14 +240,20 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             try
             {
                 var existing = await _devisService.GetByIdAsync(id);
-                if (existing == null) return NotFound("Devis non trouvé");
+                if (existing == null)
+                    return NotFound(new { message = "Devis non trouvé" });
+
+                if (existing.Statut != "Envoye" && existing.Statut != "EnNegociation")
+                {
+                    return BadRequest(new { message = "Seuls les devis envoyés ou en négociation peuvent être validés" });
+                }
 
                 await _devisService.UpdateStatutAsync(id, "Valide");
                 return Ok(new { message = "Devis validé avec succès" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
 
@@ -204,14 +263,20 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             try
             {
                 var existing = await _devisService.GetByIdAsync(id);
-                if (existing == null) return NotFound("Devis non trouvé");
+                if (existing == null)
+                    return NotFound(new { message = "Devis non trouvé" });
+
+                if (existing.Statut == "Valide")
+                {
+                    return BadRequest(new { message = "Un devis validé ne peut pas être refusé" });
+                }
 
                 await _devisService.UpdateStatutAsync(id, "Refuse");
                 return Ok(new { message = "Devis refusé" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
 
@@ -221,7 +286,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             try
             {
                 var original = await _devisService.GetByIdAsync(id);
-                if (original == null) return NotFound("Devis non trouvé");
+                if (original == null)
+                    return NotFound(new { message = "Devis non trouvé" });
 
                 var nouveauDevis = new Devis
                 {
@@ -237,8 +303,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     Conditions = original.Conditions,
                     Notes = original.Notes,
                     UtilisateurCreation = 1, // TODO: Récupérer depuis JWT
-                    Lignes = original.Lignes?.Select(l => new LigneDevis
+                    Lignes = original.Lignes?.Select((l, index) => new LigneDevis
                     {
+                        Ordre = index + 1,
                         Designation = l.Designation,
                         Description = l.Description,
                         Quantite = l.Quantite,
@@ -252,12 +319,78 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 return CreatedAtAction(nameof(Get), new { id = nouveauId }, new
                 {
                     message = "Devis dupliqué avec succès",
-                    id = nouveauId
+                    data = new { id = nouveauId }
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
+            }
+        }
+
+        [HttpGet("{id}/pdf")]
+        public async Task<IActionResult> ExporterPDF(int id)
+        {
+            try
+            {
+                var devis = await _devisService.GetByIdAsync(id);
+                if (devis == null)
+                    return NotFound(new { message = "Devis non trouvé" });
+
+                // TODO: Implémenter la génération PDF
+                // Pour l'instant, retourner un placeholder
+                var pdfBytes = await _devisService.GeneratePDFAsync(devis);
+
+                return File(pdfBytes, "application/pdf", $"devis-{devis.Numero}.pdf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
+            }
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Rechercher(
+            [FromQuery] string? search,
+            [FromQuery] string? statut,
+            [FromQuery] int? clientId,
+            [FromQuery] DateTime? dateDebut,
+            [FromQuery] DateTime? dateFin,
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 10)
+        {
+            try
+            {
+                var result = await _devisService.RechercherAsync(new RechercheDevisRequest
+                {
+                    Search = search,
+                    Statut = statut,
+                    ClientId = clientId,
+                    DateDebut = dateDebut,
+                    DateFin = dateFin,
+                    Page = page,
+                    Limit = limit
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
+            }
+        }
+
+        [HttpGet("statistiques")]
+        public async Task<IActionResult> GetStatistiques()
+        {
+            try
+            {
+                var stats = await _devisService.GetStatistiquesAsync();
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
     }

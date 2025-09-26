@@ -143,6 +143,22 @@
   },
   {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Devis.DevisController",
+    "Method": "Delete",
+    "RelativePath": "api/Devis/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Devis.DevisController",
     "Method": "Dupliquer",
     "RelativePath": "api/Devis/{id}/dupliquer",
     "HttpMethod": "POST",
@@ -162,6 +178,22 @@
     "Method": "Envoyer",
     "RelativePath": "api/Devis/{id}/envoyer",
     "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Devis.DevisController",
+    "Method": "ExporterPDF",
+    "RelativePath": "api/Devis/{id}/pdf",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -203,6 +235,62 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Devis.DevisController",
+    "Method": "Rechercher",
+    "RelativePath": "api/Devis/search",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "statut",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "clientId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "dateDebut",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "dateFin",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "limit",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Devis.DevisController",
+    "Method": "GetStatistiques",
+    "RelativePath": "api/Devis/statistiques",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
