@@ -6,7 +6,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 {
     [ApiController]
     [Route("api/[controller]")]
-   // [Authorize]
+    //[Authorize]
     public class DevisController : ControllerBase
     {
         private readonly DevisService _devisService;
@@ -90,7 +90,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     Conditions = model.Conditions,
                     Notes = model.Notes,
                     TauxTVA = 18.00m, // 18% par défaut
-                    UtilisateurCreation = 1 // TODO: Récupérer depuis JWT
+                    UtilisateurCreation = 3 // TODO: Récupérer depuis JWT
                 };
 
                 // Mapper les lignes
@@ -302,7 +302,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     DateModification = DateTime.UtcNow,
                     Conditions = original.Conditions,
                     Notes = original.Notes,
-                    UtilisateurCreation = 1, // TODO: Récupérer depuis JWT
+                    UtilisateurCreation = 3,
                     Lignes = original.Lignes?.Select((l, index) => new LigneDevis
                     {
                         Ordre = index + 1,

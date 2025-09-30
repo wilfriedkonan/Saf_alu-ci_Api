@@ -20,7 +20,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                SELECT d.*, c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale
+                SELECT d.*, c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale, c.Email, c.Telephone, c.TelephoneMobile, c.Adresse
                 FROM Devis d
                 LEFT JOIN Clients c ON d.ClientId = c.Id
                 ORDER BY d.DateCreation DESC", conn);
@@ -40,7 +40,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                SELECT d.*, c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale
+                SELECT d.*, c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale ,c.Email, c.Telephone, c.TelephoneMobile, c.Adresse
                 FROM Devis d
                 LEFT JOIN Clients c ON d.ClientId = c.Id
                 WHERE d.Id = @Id", conn);
@@ -331,13 +331,18 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
         public async Task<byte[]> GeneratePDFAsync(Devis devis)
         {
-            // TODO: Implémenter la génération PDF avec une librairie comme iTextSharp ou DinkToPdf
-            // Pour l'instant, retourner un PDF placeholder
-            await Task.Delay(100); // Simuler le temps de génération
-
-            // Placeholder - retourner un PDF vide
-            var pdfContent = "PDF placeholder pour le devis " + devis.Numero;
-            return System.Text.Encoding.UTF8.GetBytes(pdfContent);
+            try
+            {
+                // Utiliser le service PDF
+                var pdfService = new DevisPDFService();
+                return await Task.Run(() => pdfService.GeneratePDF(devis));
+            }
+            catch (Exception ex)
+            {
+                // Logger l'erreur
+                Console.WriteLine($"Erreur génération PDF: {ex.Message}");
+                throw new Exception($"Erreur lors de la génération du PDF: {ex.Message}", ex);
+            }
         }
 
         // Méthodes privées helpers
@@ -446,7 +451,12 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     Id = reader.GetInt32("ClientId"),
                     Nom = reader.IsDBNull("ClientNom") ? "" : reader.GetString("ClientNom"),
                     Prenom = reader.IsDBNull("ClientPrenom") ? null : reader.GetString("ClientPrenom"),
-                    RaisonSociale = reader.IsDBNull("RaisonSociale") ? null : reader.GetString("RaisonSociale")
+                    RaisonSociale = reader.IsDBNull("RaisonSociale") ? null : reader.GetString("RaisonSociale"),
+                    Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
+                    Telephone = reader.IsDBNull("Telephone") ? null : reader.GetString("Telephone"),
+                    TelephoneMobile = reader.IsDBNull("TelephoneMobile") ? null : reader.GetString("TelephoneMobile"),
+                    Adresse = reader.IsDBNull("Adresse") ? null : reader.GetString("Adresse"),
+
                 }
             };
         }

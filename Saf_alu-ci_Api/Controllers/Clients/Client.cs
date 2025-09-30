@@ -13,7 +13,7 @@
         public string? Adresse { get; set; }
         public string? CodePostal { get; set; }
         public string? Ville { get; set; }
-        public string Pays { get; set; } = "France";
+        public string Pays { get; set; }
         public string? Siret { get; set; }
         public string? NumeroTVA { get; set; }
         public DateTime DateCreation { get; set; } = DateTime.UtcNow;
