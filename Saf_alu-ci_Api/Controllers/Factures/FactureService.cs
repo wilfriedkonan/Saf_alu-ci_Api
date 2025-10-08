@@ -19,7 +19,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
                 SELECT f.*, 
-                       c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale as ClientRaisonSociale,
+                       c.Nom as ClientNom, c.Ncc as Ncc, c.RaisonSociale as ClientRaisonSociale,
                        st.Nom as SousTraitantNom, st.RaisonSociale as SousTraitantRaisonSociale
                 FROM Factures f
                 LEFT JOIN Clients c ON f.ClientId = c.Id
@@ -42,7 +42,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
                 SELECT f.*, 
-                       c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale as ClientRaisonSociale,
+                       c.Nom as ClientNom, c.Ncc as Ncc, c.RaisonSociale as ClientRaisonSociale,
                        st.Nom as SousTraitantNom, st.RaisonSociale as SousTraitantRaisonSociale
                 FROM Factures f
                 LEFT JOIN Clients c ON f.ClientId = c.Id
@@ -264,7 +264,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             {
                 // Récupérer le devis
                 using var devisCmd = new SqlCommand(@"
-                    SELECT d.*, c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale
+                    SELECT d.*, c.Nom as ClientNom, c.Ncc as ClientPrenom, c.RaisonSociale
                     FROM Devis d
                     LEFT JOIN Clients c ON d.ClientId = c.Id
                     WHERE d.Id = @DevisId", conn, transaction);

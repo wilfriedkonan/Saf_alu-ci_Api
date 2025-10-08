@@ -35,7 +35,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     {
                         d.Client.Id,
                         Nom = !string.IsNullOrEmpty(d.Client.RaisonSociale) ? d.Client.RaisonSociale :
-                              $"{d.Client.Prenom} {d.Client.Nom}".Trim()
+                              $"{d.Client.Nom}".Trim()
                     } : null
                 });
 

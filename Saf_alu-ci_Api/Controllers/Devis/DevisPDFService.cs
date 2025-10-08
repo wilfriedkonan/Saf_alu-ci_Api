@@ -108,7 +108,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     }
                     else
                     {
-                        text.Span($"{devis.Client?.Prenom} {devis.Client?.Nom}".Trim());
+                        text.Span($"{devis.Client?.Nom} ".Trim());
                     }
                 });
 

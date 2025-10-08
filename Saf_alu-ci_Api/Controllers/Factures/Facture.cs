@@ -7,7 +7,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
     {
         public int Id { get; set; }
         public string Numero { get; set; }
-        public string TypeFacture { get; set; } = "Devis"; // Devis, SousTraitant, Avoir, Acompte
+        public string TypeFacture { get; set; } = "Devis"; // Devis, SousTraitant, Avoir, Acompte,Client
         public int? ClientId { get; set; }
         public int? SousTraitantId { get; set; }
         public int? DevisId { get; set; }

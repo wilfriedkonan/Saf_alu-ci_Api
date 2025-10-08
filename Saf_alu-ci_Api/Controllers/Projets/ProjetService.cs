@@ -455,7 +455,6 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 {
                     Id = reader.GetInt32("ClientId"),
                     Nom = reader.IsDBNull("ClientNom") ? "" : reader.GetString("ClientNom"),
-                    Prenom = reader.IsDBNull("ClientPrenom") ? null : reader.GetString("ClientPrenom"),
                     RaisonSociale = reader.IsDBNull("ClientRaisonSociale") ? null : reader.GetString("ClientRaisonSociale")
                 },
                 TypeProjet = new TypeProjet

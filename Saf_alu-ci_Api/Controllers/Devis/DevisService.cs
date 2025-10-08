@@ -20,7 +20,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                SELECT d.*, c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale, c.Email, c.Telephone, c.TelephoneMobile, c.Adresse
+                SELECT d.*, c.Nom as ClientNom, c.RaisonSociale, c.Email, c.Telephone,c.Adresse
                 FROM Devis d
                 LEFT JOIN Clients c ON d.ClientId = c.Id
                 ORDER BY d.DateCreation DESC", conn);
@@ -40,7 +40,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                SELECT d.*, c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale ,c.Email, c.Telephone, c.TelephoneMobile, c.Adresse
+                SELECT d.*, c.Nom as ClientNom, c.RaisonSociale ,c.Email, c.Telephone, c.Adresse
                 FROM Devis d
                 LEFT JOIN Clients c ON d.ClientId = c.Id
                 WHERE d.Id = @Id", conn);
@@ -450,11 +450,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 {
                     Id = reader.GetInt32("ClientId"),
                     Nom = reader.IsDBNull("ClientNom") ? "" : reader.GetString("ClientNom"),
-                    Prenom = reader.IsDBNull("ClientPrenom") ? null : reader.GetString("ClientPrenom"),
                     RaisonSociale = reader.IsDBNull("RaisonSociale") ? null : reader.GetString("RaisonSociale"),
                     Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
                     Telephone = reader.IsDBNull("Telephone") ? null : reader.GetString("Telephone"),
-                    TelephoneMobile = reader.IsDBNull("TelephoneMobile") ? null : reader.GetString("TelephoneMobile"),
                     Adresse = reader.IsDBNull("Adresse") ? null : reader.GetString("Adresse"),
 
                 }

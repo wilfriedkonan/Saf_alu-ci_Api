@@ -130,6 +130,118 @@
         }
       }
     },
+    "/api/Clients/{id}/statistiques": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Clients/statistiqueGlobal": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Clients/{id}/status": {
+      "patch": {
+        "tags": [
+          "Clients"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Clients/search": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "parameters": [
+          {
+            "name": "nom",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "typeClient",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Devis": {
       "get": {
         "tags": [
@@ -2296,10 +2408,6 @@
             "type": "string",
             "nullable": true
           },
-          "prenom": {
-            "type": "string",
-            "nullable": true
-          },
           "raisonSociale": {
             "type": "string",
             "nullable": true
@@ -2312,15 +2420,7 @@
             "type": "string",
             "nullable": true
           },
-          "telephoneMobile": {
-            "type": "string",
-            "nullable": true
-          },
           "adresse": {
-            "type": "string",
-            "nullable": true
-          },
-          "codePostal": {
             "type": "string",
             "nullable": true
           },
@@ -2328,15 +2428,7 @@
             "type": "string",
             "nullable": true
           },
-          "pays": {
-            "type": "string",
-            "nullable": true
-          },
-          "siret": {
-            "type": "string",
-            "nullable": true
-          },
-          "numeroTVA": {
+          "ncc": {
             "type": "string",
             "nullable": true
           },
@@ -2350,6 +2442,10 @@
           },
           "actif": {
             "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
           },
           "utilisateurCreation": {
             "type": "integer",
@@ -2395,10 +2491,6 @@
             "type": "string",
             "nullable": true
           },
-          "prenom": {
-            "type": "string",
-            "nullable": true
-          },
           "raisonSociale": {
             "type": "string",
             "nullable": true
@@ -2411,15 +2503,7 @@
             "type": "string",
             "nullable": true
           },
-          "telephoneMobile": {
-            "type": "string",
-            "nullable": true
-          },
           "adresse": {
-            "type": "string",
-            "nullable": true
-          },
-          "codePostal": {
             "type": "string",
             "nullable": true
           },
@@ -2427,11 +2511,7 @@
             "type": "string",
             "nullable": true
           },
-          "siret": {
-            "type": "string",
-            "nullable": true
-          },
-          "numeroTVA": {
+          "ncc": {
             "type": "string",
             "nullable": true
           }
@@ -3219,6 +3299,16 @@
             "items": {
               "$ref": "#/components/schemas/SpecialiteAvecNiveau"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateStatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
             "nullable": true
           }
         },

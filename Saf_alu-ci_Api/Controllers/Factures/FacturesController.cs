@@ -6,7 +6,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class FacturesController : ControllerBase
     {
         private readonly FactureService _factureService;
@@ -54,10 +54,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                     f.DateCreation,
                     f.ConditionsPaiement,
                     // Débiteur (Client ou Sous-traitant)
-                    Debiteur = f.ClientId.HasValue ?
-                        (!string.IsNullOrEmpty(f.Client?.RaisonSociale) ? f.Client.RaisonSociale :
-                         $"{f.Client?.Prenom} {f.Client?.Nom}".Trim()) :
-                        f.SousTraitant?.Nom,
+                    Debiteur = f.ClientId.HasValue ? f.Client?.Nom : null,
                     DebiteurType = f.ClientId.HasValue ? "Client" : "Sous-traitant",
                     // Relations
                     f.DevisId,
@@ -114,7 +111,6 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                     {
                         facture.Client.Id,
                         facture.Client.Nom,
-                        facture.Client.Prenom,
                         facture.Client.RaisonSociale,
                         facture.Client.Email,
                         facture.Client.Telephone
@@ -191,7 +187,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                     DateModification = DateTime.UtcNow,
                     ConditionsPaiement = model.ConditionsPaiement ?? "30 jours",
                     ReferenceClient = model.ReferenceClient,
-                    TauxTVA = 20.00m,
+                    TauxTVA = 18,
                     UtilisateurCreation = utilisateurId
                 };
 
@@ -460,7 +456,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                                          JoursRetard = f.DateEcheance < DateTime.Now ? (DateTime.Now - f.DateEcheance).Days : 0,
                                          Debiteur = f.ClientId.HasValue ?
                                              (!string.IsNullOrEmpty(f.Client?.RaisonSociale) ? f.Client.RaisonSociale :
-                                              $"{f.Client?.Prenom} {f.Client?.Nom}".Trim()) :
+                                              $"{f.Client?.Nom}".Trim()) :
                                              f.SousTraitant?.Nom,
                                          Email = f.ClientId.HasValue ? f.Client?.Email : f.SousTraitant?.Email,
                                          Telephone = f.ClientId.HasValue ? f.Client?.Telephone : f.SousTraitant?.Telephone
@@ -550,7 +546,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
         private int GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out var userId) ? userId : 1; // Fallback pour développement
+            return int.TryParse(userIdClaim, out var userId) ? userId : 3; // Fallback pour développement
         }
     }
     public class AnnulerFactureRequest

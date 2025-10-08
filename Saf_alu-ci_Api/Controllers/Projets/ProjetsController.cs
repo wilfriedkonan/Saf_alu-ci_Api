@@ -37,7 +37,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     {
                         p.Client.Id,
                         Nom = !string.IsNullOrEmpty(p.Client.RaisonSociale) ? p.Client.RaisonSociale :
-                              $"{p.Client.Prenom} {p.Client.Nom}".Trim()
+                              $"{p.Client.Nom}".Trim()
                     } : null,
                     TypeProjet = p.TypeProjet?.Nom,
                     ChefProjet = p.ChefProjet != null ? $"{p.ChefProjet.Prenom} {p.ChefProjet.Nom}" : null,
@@ -101,7 +101,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     {
                         p.Client.Id,
                         Nom = !string.IsNullOrEmpty(p.Client.RaisonSociale) ? p.Client.RaisonSociale :
-                              $"{p.Client.Prenom} {p.Client.Nom}".Trim()
+                              $" {p.Client.Nom}".Trim()
                     } : null,
                     TypeProjet = p.TypeProjet?.Nom
                 });
