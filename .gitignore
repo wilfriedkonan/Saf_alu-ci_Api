@@ -1,0 +1,26 @@
+# Build
+bin/
+obj/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+
+# User-specific
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Cache
+*.cache/
+*.temp/
+
+# .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Environment
+.env
