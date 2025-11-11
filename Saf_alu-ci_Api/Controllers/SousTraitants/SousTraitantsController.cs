@@ -6,7 +6,7 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    // [Authorize]
     public class SousTraitantsController : ControllerBase
     {
         private readonly SousTraitantService _sousTraitantService;
@@ -35,10 +35,10 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 }
 
                 // Filtrage par assurance
-                if (assuranceValide.HasValue)
-                {
-                    sousTraitants = sousTraitants.Where(st => st.AssuranceValide == assuranceValide.Value).ToList();
-                }
+                //if (assuranceValide.HasValue)
+                //{
+                //    sousTraitants = sousTraitants.Where(st => st.AssuranceValide == assuranceValide.Value).ToList();
+                //}
 
                 // Filtrage par note minimum
                 if (noteMin.HasValue)
@@ -53,44 +53,45 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                     st.RaisonSociale,
                     st.Email,
                     st.Telephone,
-                    st.TelephoneMobile,
                     st.Ville,
+                    st.Adresse,
                     st.NoteMoyenne,
                     st.NombreEvaluations,
-
+                    st.Actif,
                     // Contact principal
                     Contact = new
                     {
-                        Nom = !string.IsNullOrEmpty(st.PrenomContact) || !string.IsNullOrEmpty(st.NomContact)
-                            ? $"{st.PrenomContact} {st.NomContact}".Trim()
+                        Nom = !string.IsNullOrEmpty(st.NomContact) ? $"{st.NomContact}"
                             : null,
                         st.EmailContact,
                         st.TelephoneContact
                     },
 
                     // Assurance
-                    Assurance = new
-                    {
-                        st.AssuranceValide,
-                        st.DateExpirationAssurance,
-                        st.NumeroAssurance,
-                        ExpirationProche = st.DateExpirationAssurance.HasValue &&
-                                          st.DateExpirationAssurance.Value <= DateTime.Now.AddDays(30)
-                    },
+                    //Assurance = new
+                    //{
+                    //    st.AssuranceValide,
+                    //    st.DateExpirationAssurance,
+                    //    st.NumeroAssurance,
+                    //    ExpirationProche = st.DateExpirationAssurance.HasValue &&
+                    //                      st.DateExpirationAssurance.Value <= DateTime.Now.AddDays(30)
+                    //},
 
                     // Spécialités
                     Specialites = st.Specialites?.Select(s => new
                     {
                         s.SpecialiteId,
                         Nom = s.Specialite?.Nom,
+                        Description = s.Specialite?.Description,
                         s.NiveauExpertise,
+                        NiveauLabel = GetNiveauExpertiseLabel(s.NiveauExpertise),
                         Couleur = s.Specialite?.Couleur
                     }).ToList(),
 
                     st.DateCreation,
 
                     // Indicateurs
-                    StatutAssurance = GetStatutAssurance(st),
+                    //StatutAssurance = GetStatutAssurance(st),
                     StatutNote = GetStatutNote(st.NoteMoyenne, st.NombreEvaluations)
                 }).OrderByDescending(st => st.NoteMoyenne)
                   .ThenBy(st => st.Nom);
@@ -122,18 +123,14 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                     sousTraitant.RaisonSociale,
                     sousTraitant.Email,
                     sousTraitant.Telephone,
-                    sousTraitant.TelephoneMobile,
                     sousTraitant.Adresse,
-                    sousTraitant.CodePostal,
                     sousTraitant.Ville,
-                    sousTraitant.Siret,
-                    sousTraitant.NumeroTVA,
+                    sousTraitant.Ncc,
 
                     // Contact principal
                     Contact = new
                     {
                         sousTraitant.NomContact,
-                        sousTraitant.PrenomContact,
                         sousTraitant.EmailContact,
                         sousTraitant.TelephoneContact
                     },
@@ -147,14 +144,14 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                     },
 
                     // Assurance et certifications
-                    Assurance = new
-                    {
-                        sousTraitant.AssuranceValide,
-                        sousTraitant.DateExpirationAssurance,
-                        sousTraitant.NumeroAssurance,
-                        sousTraitant.Certifications,
-                        StatutAssurance = GetStatutAssurance(sousTraitant)
-                    },
+                    //Assurance = new
+                    //{
+                    //    sousTraitant.AssuranceValide,
+                    //    sousTraitant.DateExpirationAssurance,
+                    //    sousTraitant.NumeroAssurance,
+                    //    sousTraitant.Certifications,
+                    //    //StatutAssurance = GetStatutAssurance(sousTraitant)
+                    //},
 
                     // Spécialités avec niveau d'expertise
                     Specialites = sousTraitant.Specialites?.Select(s => new
@@ -235,21 +232,17 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                     RaisonSociale = model.RaisonSociale,
                     Email = model.Email,
                     Telephone = model.Telephone,
-                    TelephoneMobile = model.TelephoneMobile,
                     Adresse = model.Adresse,
-                    CodePostal = model.CodePostal,
                     Ville = model.Ville,
-                    Siret = model.Siret,
-                    NumeroTVA = model.NumeroTVA,
+                    Ncc = model.Ncc,
                     NomContact = model.NomContact,
-                    PrenomContact = model.PrenomContact,
                     EmailContact = model.EmailContact,
                     TelephoneContact = model.TelephoneContact,
                     NoteMoyenne = 0,
                     NombreEvaluations = 0,
-                    AssuranceValide = model.AssuranceValide,
-                    DateExpirationAssurance = model.DateExpirationAssurance,
-                    NumeroAssurance = model.NumeroAssurance,
+                    //AssuranceValide = model.AssuranceValide,
+                    //DateExpirationAssurance = model.DateExpirationAssurance,
+                    //NumeroAssurance = model.NumeroAssurance,
                     DateCreation = DateTime.UtcNow,
                     DateModification = DateTime.UtcNow,
                     Actif = true,
@@ -301,19 +294,15 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 existing.RaisonSociale = model.RaisonSociale;
                 existing.Email = model.Email;
                 existing.Telephone = model.Telephone;
-                existing.TelephoneMobile = model.TelephoneMobile;
                 existing.Adresse = model.Adresse;
-                existing.CodePostal = model.CodePostal;
                 existing.Ville = model.Ville;
-                existing.Siret = model.Siret;
-                existing.NumeroTVA = model.NumeroTVA;
+                existing.Ncc = model.Ncc;
                 existing.NomContact = model.NomContact;
-                existing.PrenomContact = model.PrenomContact;
                 existing.EmailContact = model.EmailContact;
                 existing.TelephoneContact = model.TelephoneContact;
-                existing.AssuranceValide = model.AssuranceValide ?? existing.AssuranceValide;
-                existing.DateExpirationAssurance = model.DateExpirationAssurance;
-                existing.NumeroAssurance = model.NumeroAssurance;
+                //existing.AssuranceValide = model.AssuranceValide ?? existing.AssuranceValide;
+                //existing.DateExpirationAssurance = model.DateExpirationAssurance;
+                //existing.NumeroAssurance = model.NumeroAssurance;
                 existing.Certifications = model.Certifications;
                 existing.DateModification = DateTime.UtcNow;
 
@@ -463,7 +452,7 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
 
                 var recommandations = sousTraitants.Where(st =>
                     st.NoteMoyenne >= noteMin &&
-                    st.AssuranceValide &&
+                    //st.AssuranceValide &&
                     (!specialiteId.HasValue || st.Specialites?.Any(s => s.SpecialiteId == specialiteId.Value) == true))
                     .OrderByDescending(st => st.NoteMoyenne)
                     .ThenByDescending(st => st.NombreEvaluations)
@@ -493,31 +482,31 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
         /// <summary>
         /// Met à jour le statut d'assurance d'un sous-traitant
         /// </summary>
-        [HttpPost("{id}/assurance")]
-        public async Task<IActionResult> UpdateAssurance(int id, [FromBody] UpdateAssuranceRequest model)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+        //[HttpPost("{id}/assurance")]
+        //public async Task<IActionResult> UpdateAssurance(int id, [FromBody] UpdateAssuranceRequest model)
+        //{
+        //    try
+        //    {
+        //        if (!ModelState.IsValid)
+        //            return BadRequest(ModelState);
 
-                var existing = await _sousTraitantService.GetByIdAsync(id);
-                if (existing == null) return NotFound(new { message = "Sous-traitant non trouvé" });
+        //        var existing = await _sousTraitantService.GetByIdAsync(id);
+        //        if (existing == null) return NotFound(new { message = "Sous-traitant non trouvé" });
 
-                existing.AssuranceValide = model.AssuranceValide;
-                existing.DateExpirationAssurance = model.DateExpirationAssurance;
-                existing.NumeroAssurance = model.NumeroAssurance;
-                existing.DateModification = DateTime.UtcNow;
+        //        existing.AssuranceValide = model.AssuranceValide;
+        //        existing.DateExpirationAssurance = model.DateExpirationAssurance;
+        //        existing.NumeroAssurance = model.NumeroAssurance;
+        //        existing.DateModification = DateTime.UtcNow;
 
-                await _sousTraitantService.UpdateAsync(existing);
+        //        await _sousTraitantService.UpdateAsync(existing);
 
-                return Ok(new { message = "Informations d'assurance mises à jour avec succès" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Erreur serveur", error = ex.Message });
-            }
-        }
+        //        return Ok(new { message = "Informations d'assurance mises à jour avec succès" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { message = "Erreur serveur", error = ex.Message });
+        //    }
+        //}
 
         /// <summary>
         /// Récupère les statistiques des sous-traitants
@@ -532,10 +521,10 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 var stats = new
                 {
                     TotalSousTraitants = sousTraitants.Count,
-                    AvecAssuranceValide = sousTraitants.Count(st => st.AssuranceValide),
-                    AssuranceExpirantSous30Jours = sousTraitants.Count(st =>
-                        st.DateExpirationAssurance.HasValue &&
-                        st.DateExpirationAssurance.Value <= DateTime.Now.AddDays(30)),
+                    //AvecAssuranceValide = sousTraitants.Count(st => st.AssuranceValide),
+                    //AssuranceExpirantSous30Jours = sousTraitants.Count(st =>
+                    //    st.DateExpirationAssurance.HasValue &&
+                    //    st.DateExpirationAssurance.Value <= DateTime.Now.AddDays(30)),
 
                     NoteMoyenneGlobale = sousTraitants.Where(st => st.NombreEvaluations > 0).Average(st => (double)st.NoteMoyenne),
                     TotalEvaluations = sousTraitants.Sum(st => st.NombreEvaluations),
@@ -574,22 +563,22 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
         private int GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out var userId) ? userId : 1;
+            return int.TryParse(userIdClaim, out var userId) ? userId : 3;
         }
 
-        private static string GetStatutAssurance(SousTraitant sousTraitant)
-        {
-            if (!sousTraitant.AssuranceValide) return "Non valide";
-            if (!sousTraitant.DateExpirationAssurance.HasValue) return "Valide";
+        //private static string GetStatutAssurance(SousTraitant sousTraitant)
+        //{
+        //    if (!sousTraitant.AssuranceValide) return "Non valide";
+        //    if (!sousTraitant.DateExpirationAssurance.HasValue) return "Valide";
 
-            var joursRestants = (sousTraitant.DateExpirationAssurance.Value - DateTime.Now).Days;
-            return joursRestants switch
-            {
-                < 0 => "Expirée",
-                <= 30 => "Expire bientôt",
-                _ => "Valide"
-            };
-        }
+        //    var joursRestants = (sousTraitant.DateExpirationAssurance.Value - DateTime.Now).Days;
+        //    return joursRestants switch
+        //    {
+        //        < 0 => "Expirée",
+        //        <= 30 => "Expire bientôt",
+        //        _ => "Valide"
+        //    };
+        //}
 
         private static string GetStatutNote(decimal noteMoyenne, int nombreEvaluations)
         {
@@ -621,7 +610,7 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
         {
             decimal score = sousTraitant.NoteMoyenne * 2; // Note sur 10
             score += sousTraitant.NombreEvaluations * 0.1m; // Bonus pour expérience
-            if (sousTraitant.AssuranceValide) score += 1; // Bonus assurance
+            /*if (sousTraitant.AssuranceValide) score += 1;*/ // Bonus assurance
             return Math.Round(score, 2);
         }
 

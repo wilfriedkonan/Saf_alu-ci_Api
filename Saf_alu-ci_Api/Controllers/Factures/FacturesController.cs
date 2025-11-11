@@ -62,7 +62,29 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                     // Indicateurs
                     EstEnRetard = f.Statut == "Envoyee" && f.DateEcheance < DateTime.Now,
                     JoursRetard = f.Statut == "Envoyee" && f.DateEcheance < DateTime.Now ?
-                        (DateTime.Now - f.DateEcheance).Days : 0
+                        (DateTime.Now - f.DateEcheance).Days : 0,
+                    DetailDebiteur = f.Client != null
+                    ? new
+                    {
+                        f.Client.Id,
+                        nom = !string.IsNullOrEmpty(f.Client.Nom) ? $"{f.Client.Nom}".Trim() : "",
+                        ncc = !string.IsNullOrEmpty(f.Client.Ncc) ? $"{f.Client.Ncc}".Trim() : "",
+                        raisonSociale = !string.IsNullOrEmpty(f.Client.RaisonSociale) ? $"{f.Client.RaisonSociale}".Trim() : "",
+                        email = !string.IsNullOrEmpty(f.Client.Email) ? $"{f.Client.Email}".Trim() : "",
+                        telephone = !string.IsNullOrEmpty(f.Client.Telephone) ? $"{f.Client.Telephone}".Trim() : "",
+                        adresse = !string.IsNullOrEmpty(f.Client.Adresse) ? $"{f.Client.Adresse}".Trim() : "",
+
+                    } : f.SousTraitant != null
+                   ? new
+                   {
+                       f.SousTraitant.Id,
+                       nom = !string.IsNullOrEmpty(f.SousTraitant.Nom) ? $"{f.SousTraitant.Nom}".Trim() : "",
+                       ncc = !string.IsNullOrEmpty(f.SousTraitant.Ncc) ? $"{f.SousTraitant.Ncc}".Trim() : "",
+                       raisonSociale = !string.IsNullOrEmpty(f.SousTraitant.RaisonSociale) ? $"{f.SousTraitant.RaisonSociale}".Trim() : "",
+                       email = !string.IsNullOrEmpty(f.SousTraitant.Email) ? $"{f.SousTraitant.Email}".Trim() : "",
+                       telephone = !string.IsNullOrEmpty(f.SousTraitant.Telephone) ? $"{f.SousTraitant.Telephone}".Trim() : "",
+                       adresse = !string.IsNullOrEmpty(f.SousTraitant.Adresse) ? $"{f.SousTraitant.Adresse}".Trim() : "",
+                   } : null
                 }).OrderByDescending(f => f.DateCreation);
 
                 return Ok(result);
@@ -72,6 +94,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                 return StatusCode(500, new { message = "Erreur serveur", error = ex.Message });
             }
         }
+
 
         /// <summary>
         /// Récupère une facture par son ID avec détails complets
@@ -123,6 +146,33 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                         facture.SousTraitant.Email,
                         facture.SousTraitant.Telephone
                     } : null,
+
+                    // Débiteur (Client ou Sous-traitant)
+                    Debiteur = facture.ClientId.HasValue ? facture.Client?.Nom : null,
+                    DebiteurType = facture.ClientId.HasValue ? "Client" : "Sous-traitant",
+                    DetailDebiteur = facture.Client != null
+                    ? new
+                    {
+                        facture.Client.Id,
+                        nom = !string.IsNullOrEmpty(facture.Client.Nom) ? $"{facture.Client.Nom}".Trim() : "",
+                        ncc = !string.IsNullOrEmpty(facture.Client.Ncc) ? $"{facture.Client.Ncc}".Trim() : "",
+                        raisonSociale = !string.IsNullOrEmpty(facture.Client.RaisonSociale) ? $"{facture.Client.RaisonSociale}".Trim() : "",
+                        email = !string.IsNullOrEmpty(facture.Client.Email) ? $"{facture.Client.Email}".Trim() : "",
+                        telephone = !string.IsNullOrEmpty(facture.Client.Telephone) ? $"{facture.Client.Telephone}".Trim() : "",
+                        adresse = !string.IsNullOrEmpty(facture.Client.Adresse) ? $"{facture.Client.Adresse}".Trim() : "",
+
+                    } : facture.SousTraitant != null
+                   ? new
+                   {
+                       facture.SousTraitant.Id,
+                       nom = !string.IsNullOrEmpty(facture.SousTraitant.Nom) ? $"{facture.SousTraitant.Nom}".Trim() : "",
+                       ncc = !string.IsNullOrEmpty(facture.SousTraitant.Ncc) ? $"{facture.SousTraitant.Ncc}".Trim() : "",
+                       raisonSociale = !string.IsNullOrEmpty(facture.SousTraitant.RaisonSociale) ? $"{facture.SousTraitant.RaisonSociale}".Trim() : "",
+                       email = !string.IsNullOrEmpty(facture.SousTraitant.Email) ? $"{facture.SousTraitant.Email}".Trim() : "",
+                       telephone = !string.IsNullOrEmpty(facture.SousTraitant.Telephone) ? $"{facture.SousTraitant.Telephone}".Trim() : "",
+                       adresse = !string.IsNullOrEmpty(facture.SousTraitant.Adresse) ? $"{facture.SousTraitant.Adresse}".Trim() : "",
+                   } : null,
+
                     facture.DevisId,
                     facture.ProjetId,
                     // Lignes et échéanciers
@@ -510,22 +560,31 @@ namespace Saf_alu_ci_Api.Controllers.Factures
 
                 var stats = new
                 {
+                    // Golbal 
+                    totalFacturesGolbal = factures.Count(),
+                    retardPayementGolbal = factures.Where(x => x.DateEcheance > DateTime.Now).Count(),
+                    montantTotalPayeGolbal = factures.Sum(f => f.MontantPaye),
+                    montantRestantARecouvrerGolbal = factures.Sum(f => f.MontantTTC - f.MontantPaye),
+
+                    //Annee
+
                     Annee = anneeFiltre,
-                    TotalFactures = facturesAnnee.Count(),
-                    MontantTotalFacture = facturesAnnee.Sum(f => f.MontantTTC),
-                    MontantTotalPaye = facturesAnnee.Sum(f => f.MontantPaye),
-                    MontantRestantARecouvrer = facturesAnnee.Sum(f => f.MontantTTC - f.MontantPaye),
+                    totalFactures = facturesAnnee.Count(),
+                    montantTotalFacture = facturesAnnee.Sum(f => f.MontantTTC),
+                    montantTotalPaye = facturesAnnee.Sum(f => f.MontantPaye),
+                    montantRestantARecouvrer = facturesAnnee.Sum(f => f.MontantTTC - f.MontantPaye),
+
 
                     // Répartition par statut
-                    RepartitionStatuts = facturesAnnee.GroupBy(f => f.Statut)
+                    repartitionStatuts = facturesAnnee.GroupBy(f => f.Statut)
                                                      .Select(g => new { Statut = g.Key, Nombre = g.Count(), Montant = g.Sum(f => f.MontantTTC) }),
 
                     // Répartition par type
-                    RepartitionTypes = facturesAnnee.GroupBy(f => f.TypeFacture)
+                    repartitionTypes = facturesAnnee.GroupBy(f => f.TypeFacture)
                                                    .Select(g => new { Type = g.Key, Nombre = g.Count(), Montant = g.Sum(f => f.MontantTTC) }),
 
                     // Évolution mensuelle
-                    EvolutionMensuelle = facturesAnnee.GroupBy(f => f.DateFacture.Month)
+                    evolutionMensuelle = facturesAnnee.GroupBy(f => f.DateFacture.Month)
                                                      .Select(g => new
                                                      {
                                                          Mois = g.Key,

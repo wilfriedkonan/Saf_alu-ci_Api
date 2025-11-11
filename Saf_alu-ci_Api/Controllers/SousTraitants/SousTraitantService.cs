@@ -12,32 +12,115 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
             _connectionString = connectionString;
         }
 
+        /// <summary>
+        /// Récupère tous les sous-traitants avec leurs spécialités
+        /// </summary>
         public async Task<List<SousTraitant>> GetAllAsync()
         {
             var sousTraitants = new List<SousTraitant>();
+            var sousTraitantsDict = new Dictionary<int, SousTraitant>();
 
             using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand(@"
-                SELECT st.*, 
-                       STRING_AGG(s.Nom, ', ') as Specialites
-                FROM SousTraitants st
-                LEFT JOIN SousTraitantsSpecialites sts ON st.Id = sts.SousTraitantId
-                LEFT JOIN Specialites s ON sts.SpecialiteId = s.Id
-                WHERE st.Actif = 1
-                GROUP BY st.Id, st.Nom, st.RaisonSociale, st.Email, st.Telephone, st.TelephoneMobile,
-                         st.Adresse, st.CodePostal, st.Ville, st.Siret, st.NumeroTVA, st.NomContact,
-                         st.PrenomContact, st.EmailContact, st.TelephoneContact, st.NoteMoyenne,
-                         st.NombreEvaluations, st.AssuranceValide, st.DateExpirationAssurance,
-                         st.NumeroAssurance, st.Certifications, st.DateCreation, st.DateModification,
-                         st.Actif, st.UtilisateurCreation
-                ORDER BY st.DateCreation DESC", conn);
-
             await conn.OpenAsync();
-            using var reader = await cmd.ExecuteReaderAsync();
 
-            while (await reader.ReadAsync())
+            // Étape 1: Récupérer tous les sous-traitants
+            using (var cmd = new SqlCommand(@"
+                SELECT * FROM SousTraitants 
+                WHERE Actif = 1
+                ORDER BY DateCreation DESC", conn))
             {
-                sousTraitants.Add(MapToSousTraitant(reader));
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var sousTraitant = MapToSousTraitant(reader);
+                    sousTraitant.Specialites = new List<SousTraitantSpecialite>();
+                    sousTraitantsDict[sousTraitant.Id] = sousTraitant;
+                    sousTraitants.Add(sousTraitant);
+                }
+            }
+
+            // Étape 2: Charger toutes les spécialités pour tous les sous-traitants en une seule requête
+            if (sousTraitants.Any())
+            {
+                var ids = string.Join(",", sousTraitants.Select(st => st.Id));
+
+                using var specialitesCmd = new SqlCommand($@"
+                    SELECT sts.SousTraitantId, sts.SpecialiteId, sts.NiveauExpertise,
+                           s.Id, s.Nom, s.Description, s.Couleur, s.Actif
+                    FROM SousTraitantsSpecialites sts
+                    INNER JOIN Specialites s ON sts.SpecialiteId = s.Id
+                    WHERE sts.SousTraitantId IN ({ids}) AND s.Actif = 1
+                    ORDER BY s.Nom", conn);
+
+                using var specialitesReader = await specialitesCmd.ExecuteReaderAsync();
+                while (await specialitesReader.ReadAsync())
+                {
+                    var sousTraitantId = specialitesReader.GetInt32(0);
+
+                    if (sousTraitantsDict.TryGetValue(sousTraitantId, out var sousTraitant))
+                    {
+                        var specialite = new SousTraitantSpecialite
+                        {
+                            SousTraitantId = sousTraitantId,
+                            SpecialiteId = specialitesReader.GetInt32(1),
+                            NiveauExpertise = specialitesReader.GetInt32(2),
+                            Specialite = new Specialite
+                            {
+                                Id = specialitesReader.GetInt32(3),
+                                Nom = specialitesReader.GetString(4),
+                                Description = specialitesReader.IsDBNull(5) ? null : specialitesReader.GetString(5),
+                                Couleur = specialitesReader.GetString(6),
+                                Actif = specialitesReader.GetBoolean(7)
+                            }
+                        };
+
+                        sousTraitant.Specialites.Add(specialite);
+                    }
+                }
+            }
+
+            // Étape 3: Charger les évaluations pour tous les sous-traitants
+            if (sousTraitants.Any())
+            {
+                var ids = string.Join(",", sousTraitants.Select(st => st.Id));
+
+                using var evaluationsCmd = new SqlCommand($@"
+                    SELECT * FROM EvaluationsSousTraitants
+                    WHERE SousTraitantId IN ({ids})
+                    ORDER BY DateEvaluation DESC", conn);
+
+                using var evaluationsReader = await evaluationsCmd.ExecuteReaderAsync();
+                while (await evaluationsReader.ReadAsync())
+                {
+                    var sousTraitantId = evaluationsReader.GetInt32(evaluationsReader.GetOrdinal("SousTraitantId"));
+
+                    if (sousTraitantsDict.TryGetValue(sousTraitantId, out var sousTraitant))
+                    {
+                        if (sousTraitant.Evaluations == null)
+                            sousTraitant.Evaluations = new List<EvaluationSousTraitant>();
+
+                        var evaluation = new EvaluationSousTraitant
+                        {
+                            Id = evaluationsReader.GetInt32(evaluationsReader.GetOrdinal("Id")),
+                            SousTraitantId = sousTraitantId,
+                            ProjetId = evaluationsReader.GetInt32(evaluationsReader.GetOrdinal("ProjetId")),
+                            EtapeProjetId = evaluationsReader.IsDBNull(evaluationsReader.GetOrdinal("EtapeProjetId"))
+                                ? null
+                                : evaluationsReader.GetInt32(evaluationsReader.GetOrdinal("EtapeProjetId")),
+                            Note = evaluationsReader.GetInt32(evaluationsReader.GetOrdinal("Note")),
+                            Commentaire = evaluationsReader.IsDBNull(evaluationsReader.GetOrdinal("Commentaire"))
+                                ? null
+                                : evaluationsReader.GetString(evaluationsReader.GetOrdinal("Commentaire")),
+                            Criteres = evaluationsReader.IsDBNull(evaluationsReader.GetOrdinal("Criteres"))
+                                ? null
+                                : evaluationsReader.GetString(evaluationsReader.GetOrdinal("Criteres")),
+                            DateEvaluation = evaluationsReader.GetDateTime(evaluationsReader.GetOrdinal("DateEvaluation")),
+                            EvaluateurId = evaluationsReader.GetInt32(evaluationsReader.GetOrdinal("EvaluateurId"))
+                        };
+
+                        sousTraitant.Evaluations.Add(evaluation);
+                    }
+                }
             }
 
             return sousTraitants;
@@ -60,6 +143,9 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 // Charger les spécialités
                 sousTraitant.Specialites = await GetSpecialitesBySousTraitantAsync(conn, id);
 
+                // Charger les évaluations
+                sousTraitant.Evaluations = await GetEvaluationsBySousTraitantAsync(conn, id);
+
                 return sousTraitant;
             }
 
@@ -76,14 +162,12 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
             {
                 // Créer le sous-traitant
                 using var cmd = new SqlCommand(@"
-                    INSERT INTO SousTraitants (Nom, RaisonSociale, Email, Telephone, TelephoneMobile, Adresse,
-                                             CodePostal, Ville, Siret, NumeroTVA, NomContact, PrenomContact,
-                                             EmailContact, TelephoneContact, AssuranceValide, DateExpirationAssurance,
-                                             NumeroAssurance, Certifications, DateCreation, DateModification, Actif, UtilisateurCreation)
-                    VALUES (@Nom, @RaisonSociale, @Email, @Telephone, @TelephoneMobile, @Adresse,
-                           @CodePostal, @Ville, @Siret, @NumeroTVA, @NomContact, @PrenomContact,
-                           @EmailContact, @TelephoneContact, @AssuranceValide, @DateExpirationAssurance,
-                           @NumeroAssurance, @Certifications, @DateCreation, @DateModification, @Actif, @UtilisateurCreation);
+                    INSERT INTO SousTraitants (Nom, RaisonSociale, Email, Telephone, Adresse,
+                                             Ville, Ncc, NomContact,
+                                             EmailContact, TelephoneContact, Certifications, DateCreation, DateModification, Actif, UtilisateurCreation)
+                    VALUES (@Nom, @RaisonSociale, @Email, @Telephone, @Adresse,
+                           @Ville, @Ncc, @NomContact,
+                           @EmailContact, @TelephoneContact, @Certifications, @DateCreation, @DateModification, @Actif, @UtilisateurCreation);
                     SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
 
                 AddSousTraitantParameters(cmd, sousTraitant);
@@ -117,11 +201,9 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 using var cmd = new SqlCommand(@"
                     UPDATE SousTraitants SET 
                         Nom = @Nom, RaisonSociale = @RaisonSociale, Email = @Email, Telephone = @Telephone,
-                        TelephoneMobile = @TelephoneMobile, Adresse = @Adresse, CodePostal = @CodePostal,
-                        Ville = @Ville, Siret = @Siret, NumeroTVA = @NumeroTVA, NomContact = @NomContact,
-                        PrenomContact = @PrenomContact, EmailContact = @EmailContact, TelephoneContact = @TelephoneContact,
-                        AssuranceValide = @AssuranceValide, DateExpirationAssurance = @DateExpirationAssurance,
-                        NumeroAssurance = @NumeroAssurance, Certifications = @Certifications, DateModification = @DateModification
+                        Adresse = @Adresse, Ville = @Ville, Ncc = @Ncc, NomContact = @NomContact,
+                        EmailContact = @EmailContact, TelephoneContact = @TelephoneContact,
+                        Certifications = @Certifications, DateModification = @DateModification
                     WHERE Id = @Id", conn, transaction);
 
                 cmd.Parameters.AddWithValue("@Id", sousTraitant.Id);
@@ -230,10 +312,10 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
             var specialites = new List<SousTraitantSpecialite>();
 
             using var cmd = new SqlCommand(@"
-                SELECT sts.*, s.Nom, s.Description, s.Couleur
+                SELECT sts.*, s.Nom, s.Description, s.Couleur, s.Actif
                 FROM SousTraitantsSpecialites sts
                 INNER JOIN Specialites s ON sts.SpecialiteId = s.Id
-                WHERE sts.SousTraitantId = @SousTraitantId", conn);
+                WHERE sts.SousTraitantId = @SousTraitantId AND s.Actif = 1", conn);
 
             cmd.Parameters.AddWithValue("@SousTraitantId", sousTraitantId);
 
@@ -250,12 +332,44 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                         Id = reader.GetInt32("SpecialiteId"),
                         Nom = reader.GetString("Nom"),
                         Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                        Couleur = reader.GetString("Couleur")
+                        Couleur = reader.GetString("Couleur"),
+                        Actif = reader.GetBoolean("Actif")
                     }
                 });
             }
 
             return specialites;
+        }
+
+        private async Task<List<EvaluationSousTraitant>> GetEvaluationsBySousTraitantAsync(SqlConnection conn, int sousTraitantId)
+        {
+            var evaluations = new List<EvaluationSousTraitant>();
+
+            using var cmd = new SqlCommand(@"
+                SELECT * FROM EvaluationsSousTraitants
+                WHERE SousTraitantId = @SousTraitantId
+                ORDER BY DateEvaluation DESC", conn);
+
+            cmd.Parameters.AddWithValue("@SousTraitantId", sousTraitantId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                evaluations.Add(new EvaluationSousTraitant
+                {
+                    Id = reader.GetInt32("Id"),
+                    SousTraitantId = reader.GetInt32("SousTraitantId"),
+                    ProjetId = reader.GetInt32("ProjetId"),
+                    EtapeProjetId = reader.IsDBNull("EtapeProjetId") ? null : reader.GetInt32("EtapeProjetId"),
+                    Note = reader.GetInt32("Note"),
+                    Commentaire = reader.IsDBNull("Commentaire") ? null : reader.GetString("Commentaire"),
+                    Criteres = reader.IsDBNull("Criteres") ? null : reader.GetString("Criteres"),
+                    DateEvaluation = reader.GetDateTime("DateEvaluation"),
+                    EvaluateurId = reader.GetInt32("EvaluateurId")
+                });
+            }
+
+            return evaluations;
         }
 
         private async Task AddSpecialitesAsync(SqlConnection conn, SqlTransaction transaction, int sousTraitantId, List<SousTraitantSpecialite> specialites)
@@ -280,19 +394,12 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
             cmd.Parameters.AddWithValue("@RaisonSociale", sousTraitant.RaisonSociale ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Email", sousTraitant.Email ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Telephone", sousTraitant.Telephone ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@TelephoneMobile", sousTraitant.TelephoneMobile ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Adresse", sousTraitant.Adresse ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@CodePostal", sousTraitant.CodePostal ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Ville", sousTraitant.Ville ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@Siret", sousTraitant.Siret ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@NumeroTVA", sousTraitant.NumeroTVA ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Ncc", sousTraitant.Ncc ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@NomContact", sousTraitant.NomContact ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@PrenomContact", sousTraitant.PrenomContact ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@EmailContact", sousTraitant.EmailContact ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@TelephoneContact", sousTraitant.TelephoneContact ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@AssuranceValide", sousTraitant.AssuranceValide);
-            cmd.Parameters.AddWithValue("@DateExpirationAssurance", sousTraitant.DateExpirationAssurance ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@NumeroAssurance", sousTraitant.NumeroAssurance ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Certifications", sousTraitant.Certifications ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@DateCreation", sousTraitant.DateCreation);
             cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
@@ -309,21 +416,14 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 RaisonSociale = reader.IsDBNull("RaisonSociale") ? null : reader.GetString("RaisonSociale"),
                 Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
                 Telephone = reader.IsDBNull("Telephone") ? null : reader.GetString("Telephone"),
-                TelephoneMobile = reader.IsDBNull("TelephoneMobile") ? null : reader.GetString("TelephoneMobile"),
                 Adresse = reader.IsDBNull("Adresse") ? null : reader.GetString("Adresse"),
-                CodePostal = reader.IsDBNull("CodePostal") ? null : reader.GetString("CodePostal"),
                 Ville = reader.IsDBNull("Ville") ? null : reader.GetString("Ville"),
-                Siret = reader.IsDBNull("Siret") ? null : reader.GetString("Siret"),
-                NumeroTVA = reader.IsDBNull("NumeroTVA") ? null : reader.GetString("NumeroTVA"),
+                Ncc = reader.IsDBNull("Ncc") ? null : reader.GetString("Ncc"),
                 NomContact = reader.IsDBNull("NomContact") ? null : reader.GetString("NomContact"),
-                PrenomContact = reader.IsDBNull("PrenomContact") ? null : reader.GetString("PrenomContact"),
                 EmailContact = reader.IsDBNull("EmailContact") ? null : reader.GetString("EmailContact"),
                 TelephoneContact = reader.IsDBNull("TelephoneContact") ? null : reader.GetString("TelephoneContact"),
                 NoteMoyenne = reader.GetDecimal("NoteMoyenne"),
                 NombreEvaluations = reader.GetInt32("NombreEvaluations"),
-                AssuranceValide = reader.GetBoolean("AssuranceValide"),
-                DateExpirationAssurance = reader.IsDBNull("DateExpirationAssurance") ? null : reader.GetDateTime("DateExpirationAssurance"),
-                NumeroAssurance = reader.IsDBNull("NumeroAssurance") ? null : reader.GetString("NumeroAssurance"),
                 Certifications = reader.IsDBNull("Certifications") ? null : reader.GetString("Certifications"),
                 DateCreation = reader.GetDateTime("DateCreation"),
                 DateModification = reader.GetDateTime("DateModification"),

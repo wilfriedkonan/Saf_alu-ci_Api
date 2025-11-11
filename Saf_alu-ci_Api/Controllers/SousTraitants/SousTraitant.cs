@@ -7,21 +7,14 @@
         public string? RaisonSociale { get; set; }
         public string? Email { get; set; }
         public string? Telephone { get; set; }
-        public string? TelephoneMobile { get; set; }
         public string? Adresse { get; set; }
-        public string? CodePostal { get; set; }
         public string? Ville { get; set; }
-        public string? Siret { get; set; }
-        public string? NumeroTVA { get; set; }
+        public string? Ncc { get; set; }
         public string? NomContact { get; set; }
-        public string? PrenomContact { get; set; }
         public string? EmailContact { get; set; }
         public string? TelephoneContact { get; set; }
         public decimal NoteMoyenne { get; set; } = 0;
         public int NombreEvaluations { get; set; } = 0;
-        public bool AssuranceValide { get; set; } = false;
-        public DateTime? DateExpirationAssurance { get; set; }
-        public string? NumeroAssurance { get; set; }
         public string? Certifications { get; set; } // JSON
         public DateTime DateCreation { get; set; } = DateTime.UtcNow;
         public DateTime DateModification { get; set; } = DateTime.UtcNow;
@@ -69,20 +62,14 @@
         public string? RaisonSociale { get; set; }
         public string? Email { get; set; }
         public string? Telephone { get; set; }
-        public string? TelephoneMobile { get; set; }
         public string? Adresse { get; set; }
-        public string? CodePostal { get; set; }
         public string? Ville { get; set; }
-        public string? Siret { get; set; }
-        public string? NumeroTVA { get; set; }
+        public string? Ncc { get; set; }
         public string? NomContact { get; set; }
         public string? PrenomContact { get; set; }
         public string? EmailContact { get; set; }
         public string? TelephoneContact { get; set; }
         public List<int>? SpecialiteIds { get; set; }
-        public bool AssuranceValide { get; set; }
-        public DateTime? DateExpirationAssurance { get; set; }
-        public string? NumeroAssurance { get; set; }
     }
 
     public class CreateEvaluationRequest
@@ -98,9 +85,6 @@
     // DTOs supplémentaires pour Sous-traitants
     public class UpdateSousTraitantRequest : CreateSousTraitantRequest
     {
-        public bool? AssuranceValide { get; set; }
-        public DateTime? DateExpirationAssurance { get; set; }
-        public string? NumeroAssurance { get; set; }
         public string? Certifications { get; set; }
         public List<SpecialiteAvecNiveau>? Specialites { get; set; }
     }
@@ -111,10 +95,4 @@
         public int NiveauExpertise { get; set; } = 3;
     }
 
-    public class UpdateAssuranceRequest
-    {
-        public bool AssuranceValide { get; set; }
-        public DateTime? DateExpirationAssurance { get; set; }
-        public string? NumeroAssurance { get; set; }
-    }
 }

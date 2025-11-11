@@ -367,6 +367,225 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "GetAll",
+    "RelativePath": "api/DQE",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "statut",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "isConverted",
+        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "Create",
+    "RelativePath": "api/DQE",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.CreateDQERequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "GetById",
+    "RelativePath": "api/DQE/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "Update",
+    "RelativePath": "api/DQE/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.UpdateDQERequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "Delete",
+    "RelativePath": "api/DQE/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "CanConvert",
+    "RelativePath": "api/DQE/{id}/can-convert",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "GetConversionPreview",
+    "RelativePath": "api/DQE/{id}/conversion-preview",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.ConvertDQEToProjectRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "ConvertToProject",
+    "RelativePath": "api/DQE/{id}/convert-to-project",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.ConvertDQEToProjectRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "Validate",
+    "RelativePath": "api/DQE/{id}/validate",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.ValidateDQERequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "GetBrouillon",
+    "RelativePath": "api/DQE/brouillon",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "GetConverted",
+    "RelativePath": "api/DQE/converted",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "GetConvertible",
+    "RelativePath": "api/DQE/convertible",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "GetStats",
+    "RelativePath": "api/DQE/stats",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "GetValide",
+    "RelativePath": "api/DQE/valide",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Factures.FacturesController",
     "Method": "GetAll",
     "RelativePath": "api/Factures",
@@ -613,7 +832,7 @@
       },
       {
         "Name": "model",
-        "Type": "Saf_alu_ci_Api.Controllers.Projets.CreateProjetRequest",
+        "Type": "Saf_alu_ci_Api.Controllers.Projets.UpdateProjetRequest",
         "IsRequired": true
       }
     ],
@@ -630,6 +849,32 @@
       {
         "Name": "id",
         "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "UpdateField",
+    "RelativePath": "api/Projets/{id}/{field}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "field",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController\u002BUpdateFieldRequest",
         "IsRequired": true
       }
     ],
@@ -674,6 +919,22 @@
   },
   {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "GetProjetDepenseTotale",
+    "RelativePath": "api/Projets/{id}/depense-totale",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
     "Method": "Dupliquer",
     "RelativePath": "api/Projets/{id}/dupliquer",
     "HttpMethod": "POST",
@@ -693,6 +954,22 @@
     "Method": "GetEtapes",
     "RelativePath": "api/Projets/{id}/etapes",
     "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "RecalculateCoutReel",
+    "RelativePath": "api/Projets/{id}/recalculer-cout-reel",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -781,6 +1058,53 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "UpdateEtapeDepense",
+    "RelativePath": "api/Projets/etapes/{etapeId}/depense",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "etapeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Projets.UpdateDepenseRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "GetEtapeDepense",
+    "RelativePath": "api/Projets/etapes/{etapeId}/depense",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "etapeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "GetStatistiques",
+    "RelativePath": "api/Projets/statistiques",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -883,27 +1207,6 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Saf_alu_ci_Api.Controllers.SousTraitants.SousTraitantsController",
-    "Method": "UpdateAssurance",
-    "RelativePath": "api/SousTraitants/{id}/assurance",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "model",
-        "Type": "Saf_alu_ci_Api.Controllers.SousTraitants.UpdateAssuranceRequest",
         "IsRequired": true
       }
     ],

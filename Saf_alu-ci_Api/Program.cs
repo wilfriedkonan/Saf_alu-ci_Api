@@ -4,7 +4,9 @@ using Microsoft.OpenApi.Models;
 using Saf_alu_ci_Api.Controllers.Clients;
 using Saf_alu_ci_Api.Controllers.Dashboard;
 using Saf_alu_ci_Api.Controllers.Devis;
+using Saf_alu_ci_Api.Controllers.Dqe;
 using Saf_alu_ci_Api.Controllers.Factures;
+using Saf_alu_ci_Api.Controllers.Projets;
 using Saf_alu_ci_Api.Controllers.SousTraitants;
 using Saf_alu_ci_Api.Controllers.Tresorerie;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
@@ -24,6 +26,16 @@ builder.Services.AddScoped(provider => new SousTraitantService(connectionString)
 builder.Services.AddScoped(provider => new DashboardService(connectionString));
 builder.Services.AddScoped(provider => new FactureService(connectionString));
 builder.Services.AddScoped(provider => new TresorerieService(connectionString));
+builder.Services.AddScoped(provider => new ProjetService(connectionString));
+builder.Services.AddScoped(provider => new DQEService(connectionString));
+builder.Services.AddScoped(provider => new DQEService(connectionString));
+builder.Services.AddScoped<ConversionService>(sp =>
+{
+    var dqeService = sp.GetRequiredService<DQEService>();
+    var projetService = sp.GetRequiredService<ProjetService>();
+    return new ConversionService(connectionString, dqeService, projetService);
+});
+
 
 // Services utilitaires
 builder.Services.AddScoped<JwtService>();

@@ -564,6 +564,356 @@
         }
       }
     },
+    "/api/DQE": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isConverted",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "DQE"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDQERequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDQERequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDQERequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/{id}": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDQERequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDQERequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDQERequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/{id}/validate": {
+      "post": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateDQERequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateDQERequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateDQERequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/{id}/can-convert": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/{id}/conversion-preview": {
+      "post": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertDQEToProjectRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertDQEToProjectRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertDQEToProjectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/{id}/convert-to-project": {
+      "post": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertDQEToProjectRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertDQEToProjectRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertDQEToProjectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/converted": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/convertible": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/brouillon": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/valide": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/stats": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Factures": {
       "get": {
         "tags": [
@@ -953,17 +1303,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateProjetRequest"
+                "$ref": "#/components/schemas/UpdateProjetRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateProjetRequest"
+                "$ref": "#/components/schemas/UpdateProjetRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateProjetRequest"
+                "$ref": "#/components/schemas/UpdateProjetRequest"
               }
             }
           }
@@ -1036,6 +1386,56 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Projets/{id}/{field}": {
+      "patch": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "field",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFieldRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFieldRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFieldRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -1219,6 +1619,115 @@
         }
       }
     },
+    "/api/Projets/{id}/recalculer-cout-reel": {
+      "post": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Projets/etapes/{etapeId}/depense": {
+      "post": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "etapeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepenseRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepenseRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepenseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "etapeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Projets/{id}/depense-totale": {
+      "get": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Projets/{id}/dupliquer": {
       "post": {
         "tags": [
@@ -1234,6 +1743,18 @@
               "format": "int32"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Projets/statistiques": {
+      "get": {
+        "tags": [
+          "Projets"
         ],
         "responses": {
           "200": {
@@ -1508,48 +2029,6 @@
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/SousTraitants/{id}/assurance": {
-      "post": {
-        "tags": [
-          "SousTraitants"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAssuranceRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAssuranceRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAssuranceRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "OK"
@@ -2455,6 +2934,65 @@
         },
         "additionalProperties": false
       },
+      "ConvertDQEToProjectRequest": {
+        "type": "object",
+        "properties": {
+          "nomProjet": {
+            "type": "string",
+            "nullable": true
+          },
+          "descriptionProjet": {
+            "type": "string",
+            "nullable": true
+          },
+          "typeProjetId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dateDebut": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dureeTotaleJours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chefProjetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "priorite": {
+            "type": "string",
+            "nullable": true
+          },
+          "statutInitial": {
+            "type": "string",
+            "nullable": true
+          },
+          "modeCreationEtapes": {
+            "type": "string",
+            "nullable": true
+          },
+          "methodeCalculDurees": {
+            "type": "string",
+            "nullable": true
+          },
+          "attacherDQE": {
+            "type": "boolean"
+          },
+          "assignerOuvriers": {
+            "type": "boolean"
+          },
+          "notifierChefProjet": {
+            "type": "boolean"
+          },
+          "activerSuiviBudgetaire": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "CorrectionSoldeRequest": {
         "required": [
           "motifCorrection",
@@ -2555,6 +3093,132 @@
         },
         "additionalProperties": false
       },
+      "CreateDQEChapterRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDQEItemRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDQEItemRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "designation": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unite": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantite": {
+            "type": "number",
+            "format": "double"
+          },
+          "prixUnitaireHT": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDQELotRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDQEChapterRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDQERequest": {
+        "type": "object",
+        "properties": {
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "devisId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "tauxTVA": {
+            "type": "number",
+            "format": "double"
+          },
+          "lots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDQELotRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateDevisRequest": {
         "type": "object",
         "properties": {
@@ -2614,6 +3278,11 @@
       "CreateEtapeProjetRequest": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "nom": {
             "type": "string",
             "nullable": true
@@ -2635,6 +3304,39 @@
           "budgetPrevu": {
             "type": "number",
             "format": "double"
+          },
+          "coutReel": {
+            "type": "number",
+            "format": "double"
+          },
+          "statut": {
+            "type": "string",
+            "nullable": true
+          },
+          "estActif": {
+            "type": "boolean"
+          },
+          "idSousTraitant": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "linkedDqeLotId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "linkedDqeLotCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedDqeLotName": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedDqeReference": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2934,6 +3636,27 @@
               "$ref": "#/components/schemas/CreateEtapeProjetRequest"
             },
             "nullable": true
+          },
+          "linkedDqeId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "linkedDqeReference": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedDqeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedDqeBudgetHT": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "isFromDqeConversion": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -2957,15 +3680,7 @@
             "type": "string",
             "nullable": true
           },
-          "telephoneMobile": {
-            "type": "string",
-            "nullable": true
-          },
           "adresse": {
-            "type": "string",
-            "nullable": true
-          },
-          "codePostal": {
             "type": "string",
             "nullable": true
           },
@@ -2973,11 +3688,7 @@
             "type": "string",
             "nullable": true
           },
-          "siret": {
-            "type": "string",
-            "nullable": true
-          },
-          "numeroTVA": {
+          "ncc": {
             "type": "string",
             "nullable": true
           },
@@ -3003,18 +3714,6 @@
               "type": "integer",
               "format": "int32"
             },
-            "nullable": true
-          },
-          "assuranceValide": {
-            "type": "boolean"
-          },
-          "dateExpirationAssurance": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "numeroAssurance": {
-            "type": "string",
             "nullable": true
           }
         },
@@ -3147,24 +3846,6 @@
         },
         "additionalProperties": false
       },
-      "UpdateAssuranceRequest": {
-        "type": "object",
-        "properties": {
-          "assuranceValide": {
-            "type": "boolean"
-          },
-          "dateExpirationAssurance": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "numeroAssurance": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "UpdateAvancementRequest": {
         "type": "object",
         "properties": {
@@ -3178,6 +3859,10 @@
             "nullable": true
           },
           "commentaire": {
+            "type": "string",
+            "nullable": true
+          },
+          "statut": {
             "type": "string",
             "nullable": true
           }
@@ -3210,6 +3895,210 @@
         },
         "additionalProperties": false
       },
+      "UpdateDQERequest": {
+        "type": "object",
+        "properties": {
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "devisId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "tauxTVA": {
+            "type": "number",
+            "format": "double"
+          },
+          "statut": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateDepenseRequest": {
+        "type": "object",
+        "properties": {
+          "montant": {
+            "type": "number",
+            "format": "double"
+          },
+          "typeOperation": {
+            "type": "string",
+            "nullable": true
+          },
+          "referenceTransaction": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateEtapeProjetRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "dateDebut": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "dateFinPrevue": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "budgetPrevu": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "coutReel": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "statut": {
+            "type": "string",
+            "nullable": true
+          },
+          "responsableId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "typeResponsable": {
+            "type": "string",
+            "nullable": true
+          },
+          "estActif": {
+            "type": "boolean"
+          },
+          "idSousTraitant": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateFieldRequest": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateProjetRequest": {
+        "type": "object",
+        "properties": {
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "typeProjetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "devisId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "dateDebut": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "dateFinPrevue": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "budgetInitial": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "budgetRevise": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "statut": {
+            "type": "string",
+            "nullable": true
+          },
+          "adresseChantier": {
+            "type": "string",
+            "nullable": true
+          },
+          "codePostalChantier": {
+            "type": "string",
+            "nullable": true
+          },
+          "villeChantier": {
+            "type": "string",
+            "nullable": true
+          },
+          "chefProjetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "pourcentageAvancement": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "etapes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateEtapeProjetRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateSousTraitantRequest": {
         "type": "object",
         "properties": {
@@ -3229,15 +4118,7 @@
             "type": "string",
             "nullable": true
           },
-          "telephoneMobile": {
-            "type": "string",
-            "nullable": true
-          },
           "adresse": {
-            "type": "string",
-            "nullable": true
-          },
-          "codePostal": {
             "type": "string",
             "nullable": true
           },
@@ -3245,11 +4126,7 @@
             "type": "string",
             "nullable": true
           },
-          "siret": {
-            "type": "string",
-            "nullable": true
-          },
-          "numeroTVA": {
+          "ncc": {
             "type": "string",
             "nullable": true
           },
@@ -3275,19 +4152,6 @@
               "type": "integer",
               "format": "int32"
             },
-            "nullable": true
-          },
-          "assuranceValide": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "dateExpirationAssurance": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "numeroAssurance": {
-            "type": "string",
             "nullable": true
           },
           "certifications": {
@@ -3371,6 +4235,16 @@
           },
           "role": {
             "$ref": "#/components/schemas/Role"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ValidateDQERequest": {
+        "type": "object",
+        "properties": {
+          "commentaire": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

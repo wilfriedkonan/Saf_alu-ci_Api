@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Saf_alu_ci_Api.Controllers.Clients;
 using System.Data;
 
 namespace Saf_alu_ci_Api.Controllers.Factures
@@ -19,8 +20,11 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
                 SELECT f.*, 
-                       c.Nom as ClientNom, c.Ncc as Ncc, c.RaisonSociale as ClientRaisonSociale,
-                       st.Nom as SousTraitantNom, st.RaisonSociale as SousTraitantRaisonSociale
+                       c.Nom as ClientNom, c.Ncc as Ncc, c.RaisonSociale as RaisonSociale, 
+                       c.Email as Email,
+                       c.Telephone as Telephone,
+                       c.Adresse as Adresse,
+                         st.Nom as SousTraitantNom, st.RaisonSociale as SousTraitantRaisonSociale
                 FROM Factures f
                 LEFT JOIN Clients c ON f.ClientId = c.Id
                 LEFT JOIN SousTraitants st ON f.SousTraitantId = st.Id
@@ -42,8 +46,10 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
                 SELECT f.*, 
-                       c.Nom as ClientNom, c.Ncc as Ncc, c.RaisonSociale as ClientRaisonSociale,
-                       st.Nom as SousTraitantNom, st.RaisonSociale as SousTraitantRaisonSociale
+                    c.Nom as ClientNom, c.Ncc as Ncc, c.RaisonSociale as RaisonSociale, c.Email as Email,
+                    c.Telephone as Telephone,
+                    c.Adresse as Adresse,
+                      st.Nom as SousTraitantNom, st.RaisonSociale as SousTraitantRaisonSociale
                 FROM Factures f
                 LEFT JOIN Clients c ON f.ClientId = c.Id
                 LEFT JOIN SousTraitants st ON f.SousTraitantId = st.Id
@@ -496,7 +502,18 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                 ModePaiement = reader.IsDBNull("ModePaiement") ? null : reader.GetString("ModePaiement"),
                 ReferenceClient = reader.IsDBNull("ReferenceClient") ? null : reader.GetString("ReferenceClient"),
                 CheminPDF = reader.IsDBNull("CheminPDF") ? null : reader.GetString("CheminPDF"),
-                UtilisateurCreation = reader.GetInt32("UtilisateurCreation")
+                UtilisateurCreation = reader.GetInt32("UtilisateurCreation"),
+                Client = new Client
+                {
+                    Id = reader.GetInt32("ClientId"),
+                    Nom = reader.IsDBNull("ClientNom") ? "" : reader.GetString("ClientNom"),
+                    RaisonSociale = reader.IsDBNull("RaisonSociale") ? null : reader.GetString("RaisonSociale"),
+                    Ncc = reader.IsDBNull("Ncc") ? null : reader.GetString("Ncc"),
+                    Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
+                    Telephone = reader.IsDBNull("Telephone") ? null : reader.GetString("Telephone"),
+                    Adresse = reader.IsDBNull("Adresse") ? null : reader.GetString("Adresse")
+
+                }
             };
         }
     }

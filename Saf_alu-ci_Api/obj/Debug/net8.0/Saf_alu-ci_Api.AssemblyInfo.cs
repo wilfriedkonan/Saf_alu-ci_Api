@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Saf_alu-ci_Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+89ea2350b127fcb52a233217fb5b8ebd0fd58a76")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+29174d24395c64329c7e18e9b13851c6616608df")]
 [assembly: System.Reflection.AssemblyProductAttribute("Saf_alu-ci_Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Saf_alu-ci_Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
