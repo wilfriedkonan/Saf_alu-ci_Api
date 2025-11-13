@@ -28,7 +28,6 @@ builder.Services.AddScoped(provider => new FactureService(connectionString));
 builder.Services.AddScoped(provider => new TresorerieService(connectionString));
 builder.Services.AddScoped(provider => new ProjetService(connectionString));
 builder.Services.AddScoped(provider => new DQEService(connectionString));
-builder.Services.AddScoped(provider => new DQEService(connectionString));
 builder.Services.AddScoped<ConversionService>(sp =>
 {
     var dqeService = sp.GetRequiredService<DQEService>();

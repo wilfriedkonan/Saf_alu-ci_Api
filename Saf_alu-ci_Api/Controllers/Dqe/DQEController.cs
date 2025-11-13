@@ -78,7 +78,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             try
             {
                 // TODO: Récupérer l'utilisateur depuis JWT
-                var utilisateurId = 1;
+                var utilisateurId = 3;
 
                 var dqeId = await _dqeService.CreateAsync(request, utilisateurId);
 
@@ -186,7 +186,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 }
 
                 // TODO: Récupérer le nom de l'utilisateur depuis JWT
-                var validePar = "Utilisateur"; // Placeholder
+                int validePar = 3; // Placeholder
 
                 var success = await _dqeService.ValidateAsync(id, validePar);
 
@@ -270,7 +270,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             try
             {
                 // TODO: Récupérer l'utilisateur depuis JWT
-                var utilisateurId = 1;
+                var utilisateurId = 3;
 
                 var projetId = await _conversionService.ConvertDQEToProjectAsync(id, request, utilisateurId);
 

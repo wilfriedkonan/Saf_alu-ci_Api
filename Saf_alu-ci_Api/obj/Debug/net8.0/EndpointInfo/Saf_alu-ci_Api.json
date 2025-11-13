@@ -3922,6 +3922,13 @@
           "statut": {
             "type": "string",
             "nullable": true
+          },
+          "lots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDQELotRequest"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false

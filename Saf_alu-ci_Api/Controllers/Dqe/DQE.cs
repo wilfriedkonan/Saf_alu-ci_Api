@@ -63,7 +63,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         /// <summary>
         /// Nom de la personne qui a validé le DQE
         /// </summary>
-        public string? ValidePar { get; set; }
+        public int? ValidePar { get; set; }
 
         /// <summary>
         /// Indique si le DQE a été converti en projet
@@ -304,6 +304,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public int? DevisId { get; set; }
         public decimal TauxTVA { get; set; }
         public string Statut { get; set; }
+
+        public List<CreateDQELotRequest>? Lots { get; set; }
     }
 
     /// <summary>
@@ -397,7 +399,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public decimal MontantTVA { get; set; }
         public decimal TotalTTC { get; set; }
         public DateTime? DateValidation { get; set; }
-        public string? ValidePar { get; set; }
+        public int? ValidePar { get; set; }
         public DateTime DateCreation { get; set; }
 
         // Client

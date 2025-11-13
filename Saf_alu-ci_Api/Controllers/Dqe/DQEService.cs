@@ -128,17 +128,16 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
 
             try
             {
-                // Générer la référence DQE
                 var reference = await GenerateReferenceAsync(conn, transaction);
-
-                // Créer le DQE principal
                 var dqeId = await CreateDQEMainAsync(conn, transaction, request, reference, utilisateurId);
 
-                // Créer les lots, chapitres et postes
                 if (request.Lots != null && request.Lots.Any())
                 {
                     await CreateDQEStructureAsync(conn, transaction, dqeId, request.Lots);
                 }
+
+                // ✅ NOUVEAU: Recalculer automatiquement les totaux
+                await RecalculateDQETotalsAsync(conn, transaction, dqeId);
 
                 transaction.Commit();
                 return dqeId;
@@ -149,40 +148,62 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 throw;
             }
         }
-
         /// <summary>
         /// Met à jour les informations générales d'un DQE
         /// </summary>
         public async Task UpdateAsync(int id, UpdateDQERequest request)
         {
             using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand(@"
-                UPDATE DQE SET
-                    Nom = @Nom,
-                    Description = @Description,
-                    ClientId = @ClientId,
-                    DevisId = @DevisId,
-                    TauxTVA = @TauxTVA,
-                    Statut = @Statut,
-                    DateModification = @DateModification
-                WHERE Id = @Id AND Actif = 1", conn);
-
-            cmd.Parameters.AddWithValue("@Id", id);
-            cmd.Parameters.AddWithValue("@Nom", request.Nom);
-            cmd.Parameters.AddWithValue("@Description", request.Description ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ClientId", request.ClientId);
-            cmd.Parameters.AddWithValue("@DevisId", request.DevisId ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@TauxTVA", request.TauxTVA);
-            cmd.Parameters.AddWithValue("@Statut", request.Statut);
-            cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
-
             await conn.OpenAsync();
-            await cmd.ExecuteNonQueryAsync();
-        }
+            using var transaction = conn.BeginTransaction();
 
-        /// <summary>
-        /// Suppression logique d'un DQE
-        /// </summary>
+            try
+            {
+                // 1. Mettre à jour les informations générales du DQE
+                using var cmd = new SqlCommand(@"
+            UPDATE DQE SET
+                Nom = @Nom,
+                Description = @Description,
+                ClientId = @ClientId,
+                DevisId = @DevisId,
+                TauxTVA = @TauxTVA,
+                Statut = @Statut,
+                DateModification = @DateModification
+            WHERE Id = @Id AND Actif = 1", conn, transaction);
+
+                cmd.Parameters.AddWithValue("@Id", id);
+                cmd.Parameters.AddWithValue("@Nom", request.Nom);
+                cmd.Parameters.AddWithValue("@Description", request.Description ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ClientId", request.ClientId);
+                cmd.Parameters.AddWithValue("@DevisId", request.DevisId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@TauxTVA", request.TauxTVA);
+                cmd.Parameters.AddWithValue("@Statut", request.Statut);
+                cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
+
+                await cmd.ExecuteNonQueryAsync();
+
+                // 2. ✅ NOUVEAU: Si des lots sont fournis, recréer toute la structure
+                if (request.Lots != null && request.Lots.Any())
+                {
+                    // Supprimer l'ancienne structure (cascade via FK)
+                    await DeleteDQEStructureAsync(conn, transaction, id);
+
+                    // Recréer la nouvelle structure
+                    await CreateDQEStructureAsync(conn, transaction, id, request.Lots);
+                }
+
+                // 3. Recalculer les totaux
+                await RecalculateDQETotalsAsync(conn, transaction, id);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }                 /// Suppression logique d'un DQE
+                          /// </summary>
         public async Task DeleteAsync(int id)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -204,7 +225,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         /// <summary>
         /// Valide un DQE (changement de statut à "validé")
         /// </summary>
-        public async Task<bool> ValidateAsync(int id, string validePar)
+        public async Task<bool> ValidateAsync(int id, int validePar)
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
@@ -304,16 +325,16 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             int utilisateurId)
         {
             using var cmd = new SqlCommand(@"
-                INSERT INTO DQE (
-                    Reference, Nom, Description, ClientId, DevisId, Statut,
-                    TotalRevenueHT, TauxTVA, MontantTVA, TotalTTC,
-                    DateCreation, DateModification, UtilisateurCreation, Actif
-                ) VALUES (
-                    @Reference, @Nom, @Description, @ClientId, @DevisId, @Statut,
-                    0, @TauxTVA, 0, 0,
-                    @DateCreation, @DateModification, @UtilisateurCreation, 1
-                );
-                SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
+    INSERT INTO DQE (
+        Reference, Nom, Description, ClientId, DevisId, Statut,
+        TotalRevenueHT, TauxTVA, MontantTVA, TotalTTC,
+        DateCreation, DateModification, UtilisateurCreation, UtilisateurModification, Actif
+    ) VALUES (
+        @Reference, @Nom, @Description, @ClientId, @DevisId, @Statut,
+        0, @TauxTVA, 0, 0,
+        @DateCreation, @DateModification, @UtilisateurCreation, @UtilisateurModification, 1
+    );
+    SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
 
             cmd.Parameters.AddWithValue("@Reference", reference);
             cmd.Parameters.AddWithValue("@Nom", request.Nom);
@@ -325,6 +346,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             cmd.Parameters.AddWithValue("@DateCreation", DateTime.UtcNow);
             cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
             cmd.Parameters.AddWithValue("@UtilisateurCreation", utilisateurId);
+            cmd.Parameters.AddWithValue("@UtilisateurModification", utilisateurId);
 
             return (int)await cmd.ExecuteScalarAsync();
         }
@@ -468,7 +490,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 MontantTVA = reader.GetDecimal("MontantTVA"),
                 TotalTTC = reader.GetDecimal("TotalTTC"),
                 DateValidation = reader.IsDBNull("DateValidation") ? null : reader.GetDateTime("DateValidation"),
-                ValidePar = reader.IsDBNull("ValidePar") ? null : reader.GetString("ValidePar"),
+                ValidePar = reader.IsDBNull("ValidePar") ? null : reader.GetInt32("ValidePar"),
                 DateCreation = reader.GetDateTime("DateCreation"),
                 IsConverted = reader.GetBoolean("IsConverted"),
                 Client = new ClientDTO
@@ -514,24 +536,28 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
 
             cmd.Parameters.AddWithValue("@DqeId", dqeId);
 
-            using var reader = await cmd.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
+            // ✅ FIX: Utiliser un bloc using explicite pour fermer le reader avant les requêtes imbriquées
+            using (var reader = await cmd.ExecuteReaderAsync())
             {
-                lots.Add(new DQELotDTO
+                while (await reader.ReadAsync())
                 {
-                    Id = reader.GetInt32("Id"),
-                    Code = reader.GetString("Code"),
-                    Nom = reader.GetString("Nom"),
-                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                    Ordre = reader.GetInt32("Ordre"),
-                    TotalRevenueHT = reader.GetDecimal("TotalRevenueHT"),
-                    PourcentageTotal = reader.GetDecimal("PourcentageTotal"),
-                    ChaptersCount = reader.GetInt32("ChaptersCount"),
-                    ItemsCount = reader.GetInt32("ItemsCount")
-                });
-            }
+                    lots.Add(new DQELotDTO
+                    {
+                        Id = reader.GetInt32("Id"),
+                        Code = reader.GetString("Code"),
+                        Nom = reader.GetString("Nom"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        Ordre = reader.GetInt32("Ordre"),
+                        TotalRevenueHT = reader.GetDecimal("TotalRevenueHT"),
+                        PourcentageTotal = reader.GetDecimal("PourcentageTotal"),
+                        ChaptersCount = reader.GetInt32("ChaptersCount"),
+                        ItemsCount = reader.GetInt32("ItemsCount")
+                    });
+                }
 
+            } // ✅ Le reader est maintenant fermé ici
+
+            // ✅ Maintenant on peut faire les requêtes imbriquées sans conflit
             // Charger les chapitres pour chaque lot
             foreach (var lot in lots)
             {
@@ -555,22 +581,26 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
 
             cmd.Parameters.AddWithValue("@LotId", lotId);
 
-            using var reader = await cmd.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
+            // ✅ FIX: Même correction - fermer le reader avant les requêtes imbriquées
+            using (var reader = await cmd.ExecuteReaderAsync())
             {
-                chapters.Add(new DQEChapterDTO
+                while (await reader.ReadAsync())
                 {
-                    Id = reader.GetInt32("Id"),
-                    Code = reader.GetString("Code"),
-                    Nom = reader.GetString("Nom"),
-                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                    Ordre = reader.GetInt32("Ordre"),
-                    TotalRevenueHT = reader.GetDecimal("TotalRevenueHT"),
-                    ItemsCount = reader.GetInt32("ItemsCount")
-                });
-            }
+                    chapters.Add(new DQEChapterDTO
+                    {
+                        Id = reader.GetInt32("Id"),
+                        Code = reader.GetString("Code"),
+                        Nom = reader.GetString("Nom"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        Ordre = reader.GetInt32("Ordre"),
+                        TotalRevenueHT = reader.GetDecimal("TotalRevenueHT"),
+                        ItemsCount = reader.GetInt32("ItemsCount")
+                    });
+                }
 
+            } // ✅ Le reader est fermé avant les requêtes imbriquées
+
+            // ✅ Maintenant on peut charger les items sans conflit
             // Charger les items pour chaque chapitre
             foreach (var chapter in chapters)
             {
@@ -622,6 +652,129 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             if (isConverted) return "converti";
             if (statut == "validé") return "convertible";
             return "non_convertible";
+        }
+        private async Task DeleteDQEStructureAsync(SqlConnection conn, SqlTransaction transaction, int dqeId)
+        {
+            // Supprimer les items
+            using (var cmd1 = new SqlCommand(@"
+        DELETE i
+        FROM DQE_Items i
+        INNER JOIN DQE_Chapters c ON i.ChapterId = c.Id
+        INNER JOIN DQE_Lots l ON c.LotId = l.Id
+        WHERE l.DqeId = @DqeId", conn, transaction))
+            {
+                cmd1.Parameters.AddWithValue("@DqeId", dqeId);
+                await cmd1.ExecuteNonQueryAsync();
+            }
+
+            // Supprimer les chapitres
+            using (var cmd2 = new SqlCommand(@"
+        DELETE c
+        FROM DQE_Chapters c
+        INNER JOIN DQE_Lots l ON c.LotId = l.Id
+        WHERE l.DqeId = @DqeId", conn, transaction))
+            {
+                cmd2.Parameters.AddWithValue("@DqeId", dqeId);
+                await cmd2.ExecuteNonQueryAsync();
+            }
+
+            // Supprimer les lots
+            using (var cmd3 = new SqlCommand(@"
+        DELETE FROM DQE_Lots WHERE DqeId = @DqeId", conn, transaction))
+            {
+                cmd3.Parameters.AddWithValue("@DqeId", dqeId);
+                await cmd3.ExecuteNonQueryAsync();
+            }
+        }
+        private async Task RecalculateDQETotalsAsync(SqlConnection conn, SqlTransaction transaction, int dqeId)
+        {
+            // Étape 1: Recalculer les totaux des Chapitres (somme des items)
+            using (var cmd1 = new SqlCommand(@"
+        UPDATE c
+        SET c.TotalRevenueHT = ISNULL(totals.Total, 0)
+        FROM DQE_Chapters c
+        LEFT JOIN (
+            SELECT ChapterId, SUM(TotalRevenueHT) as Total
+            FROM DQE_Items
+            GROUP BY ChapterId
+        ) totals ON c.Id = totals.ChapterId
+        WHERE c.LotId IN (
+            SELECT Id FROM DQE_Lots WHERE DqeId = @DqeId
+        )", conn, transaction))
+            {
+                cmd1.Parameters.AddWithValue("@DqeId", dqeId);
+                await cmd1.ExecuteNonQueryAsync();
+            }
+
+            // Étape 2: Recalculer les totaux et pourcentages des Lots (somme des chapitres)
+            using (var cmd2 = new SqlCommand(@"
+        -- Calculer le total global du DQE
+        DECLARE @TotalDQE DECIMAL(18,2);
+        
+        SELECT @TotalDQE = ISNULL(SUM(c.TotalRevenueHT), 0)
+        FROM DQE_Lots l
+        INNER JOIN DQE_Chapters c ON c.LotId = l.Id
+        WHERE l.DqeId = @DqeId;
+
+        -- Mettre à jour chaque lot avec son total et pourcentage
+        UPDATE l
+        SET 
+            l.TotalRevenueHT = ISNULL(totals.Total, 0),
+            l.PourcentageTotal = CASE 
+                WHEN @TotalDQE > 0 THEN (ISNULL(totals.Total, 0) / @TotalDQE) * 100
+                ELSE 0
+            END
+        FROM DQE_Lots l
+        LEFT JOIN (
+            SELECT LotId, SUM(TotalRevenueHT) as Total
+            FROM DQE_Chapters
+            GROUP BY LotId
+        ) totals ON l.Id = totals.LotId
+        WHERE l.DqeId = @DqeId;", conn, transaction))
+            {
+                cmd2.Parameters.AddWithValue("@DqeId", dqeId);
+                await cmd2.ExecuteNonQueryAsync();
+            }
+
+            // Étape 3: Récupérer le taux de TVA
+            decimal tauxTVA;
+            using (var cmd3 = new SqlCommand(@"
+        SELECT TauxTVA FROM DQE WHERE Id = @DqeId", conn, transaction))
+            {
+                cmd3.Parameters.AddWithValue("@DqeId", dqeId);
+                tauxTVA = (decimal)await cmd3.ExecuteScalarAsync();
+            }
+
+            // Étape 4: Mettre à jour les totaux du DQE principal (TotalHT, MontantTVA, TotalTTC)
+            using (var cmd4 = new SqlCommand(@"
+        DECLARE @TotalHT DECIMAL(18,2);
+        DECLARE @MontantTVA DECIMAL(18,2);
+        DECLARE @TotalTTC DECIMAL(18,2);
+
+        -- Calculer le total HT (somme des lots)
+        SELECT @TotalHT = ISNULL(SUM(TotalRevenueHT), 0)
+        FROM DQE_Lots
+        WHERE DqeId = @DqeId;
+
+        -- Calculer la TVA
+        SET @MontantTVA = @TotalHT * (@TauxTVA / 100.0);
+
+        -- Calculer le total TTC
+        SET @TotalTTC = @TotalHT + @MontantTVA;
+
+        -- Mettre à jour le DQE
+        UPDATE DQE
+        SET 
+            TotalRevenueHT = @TotalHT,
+            MontantTVA = @MontantTVA,
+            TotalTTC = @TotalTTC,
+            DateModification = GETUTCDATE()
+        WHERE Id = @DqeId;", conn, transaction))
+            {
+                cmd4.Parameters.AddWithValue("@DqeId", dqeId);
+                cmd4.Parameters.AddWithValue("@TauxTVA", tauxTVA);
+                await cmd4.ExecuteNonQueryAsync();
+            }
         }
     }
 }
