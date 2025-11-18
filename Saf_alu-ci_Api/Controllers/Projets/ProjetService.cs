@@ -434,7 +434,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
 
                     // ✅ CORRECTION: Mettre à jour les autres champs SEULEMENT si l'étape est active
 
-                    if (etape.EstActif)
+                    if (etape.EstActif != false)
                     {
                         if (!string.IsNullOrEmpty(etape.Nom))
                         {
@@ -492,7 +492,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     }
 
                     // ✅ CORRECTION: Gestion correcte du soft delete via estActif
-                    if (!etape.EstActif)
+                    if (etape.EstActif == false)
                     {
                         setClause.Add("estActif = @estActif");
                         cmd.Parameters.AddWithValue("@estActif", etape.EstActif);

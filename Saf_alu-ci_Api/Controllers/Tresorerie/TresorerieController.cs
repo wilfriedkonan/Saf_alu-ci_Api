@@ -9,7 +9,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class TresorerieController : ControllerBase
     {
         private readonly TresorerieService _tresorerieService;

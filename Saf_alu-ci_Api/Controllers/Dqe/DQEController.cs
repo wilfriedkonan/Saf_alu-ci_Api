@@ -271,6 +271,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             {
                 // TODO: Récupérer l'utilisateur depuis JWT
                 var utilisateurId = 3;
+                request.ChefProjetId = 3;
 
                 var projetId = await _conversionService.ConvertDQEToProjectAsync(id, request, utilisateurId);
 

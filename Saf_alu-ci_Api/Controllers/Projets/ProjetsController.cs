@@ -186,7 +186,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                         DateDebut = e.DateDebut,
                         DateFinPrevue = e.DateFinPrevue,
                         BudgetPrevu = e.BudgetPrevu,
-                        CoutReel = e.coutReel,
+                        CoutReel = Convert.ToDecimal(e.CoutReel),
                         Statut = "NonCommence",
                         PourcentageAvancement = 0,
                         TypeResponsable = "Interne"

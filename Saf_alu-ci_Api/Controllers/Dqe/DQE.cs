@@ -214,6 +214,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         /// </summary>
         public decimal TotalRevenueHT { get; set; }
 
+        private decimal DeboursseSec { get; set; }
+
         // Navigation properties
         public virtual DQEChapter? Chapter { get; set; }
     }
@@ -291,6 +293,10 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public string Unite { get; set; }
         public decimal Quantite { get; set; }
         public decimal PrixUnitaireHT { get; set; }
+
+        public decimal DeboursseSec { get; set; }
+
+
     }
 
     /// <summary>
@@ -332,8 +338,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
     /// </summary>
     public class ConvertDQEToProjectRequest
     {
-        // Informations projet
-        public string? NomProjet { get; set; } // Si null, utilise le nom du DQE
+        public int DqeId { get; set; }
+        public string? NomProjet { get; set; }
         public string? DescriptionProjet { get; set; }
         public int TypeProjetId { get; set; }
         public DateTime DateDebut { get; set; }
@@ -341,18 +347,19 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public int? ChefProjetId { get; set; }
         public string? Priorite { get; set; }
         public string StatutInitial { get; set; } = "Planification";
-
-        // Configuration des étapes
-        public string ModeCreationEtapes { get; set; } = "automatique"; // automatique, manuel
-        public string MethodeCalculDurees { get; set; } = "proportionnelle"; // proportionnelle, egales, personnalisee
-
-        // Options avancées
-        public bool AttacherDQE { get; set; } = true;
-        public bool AssignerOuvriers { get; set; } = false;
-        public bool NotifierChefProjet { get; set; } = false;
-        public bool ActiverSuiviBudgetaire { get; set; } = true;
+        public string ModeCreationEtapes { get; set; } = "automatique";
+        public string MethodeCalculDurees { get; set; } = "proportionnelle";
+        public List<DureePersonnalisee>? DureesPersonnalisees { get; set; }
+        public string? AdresseChantier { get; set; }
+        public string? CodePostalChantier { get; set; }
+        public string? VilleChantier { get; set; }
     }
 
+    public class DureePersonnalisee
+    {
+        public int LotId { get; set; }
+        public int DureeJours { get; set; }
+    }
     // ========================================
     // DTOs - RÉPONSES
     // ========================================
@@ -467,6 +474,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public decimal Quantite { get; set; }
         public decimal PrixUnitaireHT { get; set; }
         public decimal TotalRevenueHT { get; set; }
+        public decimal DeboursseSec { get; set; }
     }
 
     /// <summary>
@@ -497,10 +505,12 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public DateTime DateDebut { get; set; }
         public DateTime DateFinPrevue { get; set; }
         public int DureeTotaleJours { get; set; }
+        public int NombreEtapes { get; set; }
     }
 
     public class StagePreviewDTO
     {
+        public int Ordre { get; set; }
         public string Nom { get; set; }
         public string Code { get; set; }
         public decimal BudgetPrevu { get; set; }
@@ -508,5 +518,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public DateTime DateDebut { get; set; }
         public DateTime DateFinPrevue { get; set; }
         public decimal PourcentageBudget { get; set; }
+        public int Niveau { get; set; }
+        public string TypeEtape { get; set; } = "Lot";
+        public int NombreSousEtapes { get; set; }
     }
 }

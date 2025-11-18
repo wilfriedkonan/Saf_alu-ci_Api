@@ -35,7 +35,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     d.IsConverted, d.LinkedProjectId, d.LinkedProjectNumber, d.ConvertedAt,
                     c.Id as ClientId,
                     CASE 
-                        WHEN c.RaisonSociale IS NOT NULL AND c.RaisonSociale != '' THEN c.RaisonSociale
+                        WHEN c.Nom IS NOT NULL AND c.Nom != '' THEN c.Nom
                         ELSE LTRIM(RTRIM(ISNULL(c.Nom, '') + ' ' + ISNULL(c.Nom, '')))
                     END as ClientNom,
                     (SELECT COUNT(*) FROM DQE_Lots WHERE DqeId = d.Id) as LotsCount
@@ -420,34 +420,36 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         }
 
         private async Task CreateItemsAsync(
-            SqlConnection conn,
-            SqlTransaction transaction,
-            int chapterId,
-            List<CreateDQEItemRequest> items)
+             SqlConnection conn,
+             SqlTransaction transaction,
+             int chapterId,
+             List<CreateDQEItemRequest> items)
         {
             foreach (var item in items)
             {
                 using var cmd = new SqlCommand(@"
-                    INSERT INTO DQE_Items (
-                        ChapterId, Code, Designation, Description, Ordre,
-                        Unite, Quantite, PrixUnitaireHT, TotalRevenueHT
-                    ) VALUES (
-                        @ChapterId, @Code, @Designation, @Description, @Ordre,
-                        @Unite, @Quantite, @PrixUnitaireHT, @Quantite * @PrixUnitaireHT
-                    )", conn, transaction);
+            INSERT INTO DQE_Items (
+                ChapterId, Code, Designation, Description, Ordre,
+                Unite, Quantite, PrixUnitaireHT, TotalRevenueHT, DeboursseSec
+            ) VALUES (
+                @ChapterId, @Code, @Designation, @Description, @Ordre,
+                @Unite, @Quantite, @PrixUnitaireHT, @Quantite * @PrixUnitaireHT, @DeboursseSec
+            )", conn, transaction);
 
                 cmd.Parameters.AddWithValue("@ChapterId", chapterId);
-                cmd.Parameters.AddWithValue("@Code", item.Code);
-                cmd.Parameters.AddWithValue("@Designation", item.Designation);
+                cmd.Parameters.AddWithValue("@Code", item.Code ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Designation", item.Designation ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@Description", item.Description ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@Ordre", item.Ordre);
-                cmd.Parameters.AddWithValue("@Unite", item.Unite);
+                cmd.Parameters.AddWithValue("@Unite", item.Unite ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@Quantite", item.Quantite);
                 cmd.Parameters.AddWithValue("@PrixUnitaireHT", item.PrixUnitaireHT);
+                cmd.Parameters.AddWithValue("@DeboursseSec", item.DeboursseSec);
 
                 await cmd.ExecuteNonQueryAsync();
             }
         }
+
 
         // ========================================
         // MÉTHODES PRIVÉES - LECTURE
@@ -460,8 +462,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     d.*,
                     c.Id as ClientId,
                     CASE 
-                        WHEN c.RaisonSociale IS NOT NULL AND c.RaisonSociale != '' THEN c.RaisonSociale
-                        ELSE LTRIM(RTRIM(ISNULL(c.Nom, '') + ' ' + ISNULL(c.Nom, '')))
+                        WHEN c.Nom IS NOT NULL AND c.Nom != '' THEN c.Nom
+                        ELSE LTRIM(RTRIM(ISNULL(c.RaisonSociale, '') + ' ' + ISNULL(c.Nom, '')))
                     END as ClientNom,
                     p.Id as ProjectId, p.Numero as ProjectNumero, p.Nom as ProjectNom, 
                     p.Statut as ProjectStatut, p.PourcentageAvancement as ProjectAvancement,
@@ -636,7 +638,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     Unite = reader.GetString("Unite"),
                     Quantite = reader.GetDecimal("Quantite"),
                     PrixUnitaireHT = reader.GetDecimal("PrixUnitaireHT"),
-                    TotalRevenueHT = reader.GetDecimal("TotalRevenueHT")
+                    TotalRevenueHT = reader.GetDecimal("TotalRevenueHT"),
+                    DeboursseSec = reader.GetDecimal("DeboursseSec")
                 });
             }
 

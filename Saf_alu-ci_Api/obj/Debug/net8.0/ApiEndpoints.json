@@ -776,6 +776,85 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.ObjectifFinancier.ObjectifFinancierController",
+    "Method": "GetAll",
+    "RelativePath": "api/ObjectifFinancier",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.ObjectifFinancier.ObjectifFinancierController",
+    "Method": "Create",
+    "RelativePath": "api/ObjectifFinancier",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.ObjectifFinancier.CreateObjectifRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.ObjectifFinancier.ObjectifFinancierController",
+    "Method": "GetById",
+    "RelativePath": "api/ObjectifFinancier/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.ObjectifFinancier.ObjectifFinancierController",
+    "Method": "Update",
+    "RelativePath": "api/ObjectifFinancier/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.ObjectifFinancier.UpdateObjectifRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.ObjectifFinancier.ObjectifFinancierController",
+    "Method": "Delete",
+    "RelativePath": "api/ObjectifFinancier/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
     "Method": "GetAll",
     "RelativePath": "api/Projets",

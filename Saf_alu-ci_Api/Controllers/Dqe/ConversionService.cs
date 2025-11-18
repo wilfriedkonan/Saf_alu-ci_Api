@@ -6,7 +6,9 @@ using System.Data;
 namespace Saf_alu_ci_Api.Controllers.Dqe
 {
     /// <summary>
-    /// Service responsable de la conversion DQE → Projet
+    /// 🆕 Service de conversion DQE → Projet avec hiérarchie Étapes → Sous-étapes
+    /// Lots DQE → Étapes principales (Niveau 1)
+    /// Items DQE → Sous-étapes (Niveau 2)
     /// </summary>
     public class ConversionService
     {
@@ -29,7 +31,9 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         // ========================================
 
         /// <summary>
-        /// Convertit un DQE en projet avec toutes ses étapes
+        /// Convertit un DQE en projet avec hiérarchie complète :
+        /// - Lots → Étapes principales
+        /// - Items → Sous-étapes
         /// </summary>
         public async Task<int> ConvertDQEToProjectAsync(
             int dqeId,
@@ -61,19 +65,19 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 var projet = BuildProjectFromDQE(dqe, request, utilisateurId);
                 var projetId = await CreateProjectWithTransactionAsync(conn, transaction, projet);
 
-                // 3b. Créer les étapes depuis les lots
+                // 3b. Créer les étapes principales (Lots) et sous-étapes (Items)
                 if (request.ModeCreationEtapes == "automatique")
                 {
-                    var etapes = BuildStagesFromLots(
-                        dqe.Lots,
+                    await CreateHierarchicalStagesAsync(
+                        conn,
+                        transaction,
                         projetId,
+                        dqe.Lots,
                         request.DateDebut,
                         request.DureeTotaleJours,
                         request.MethodeCalculDurees,
                         dqe.Reference
                     );
-
-                    await CreateStagesWithTransactionAsync(conn, transaction, projetId, etapes);
                 }
 
                 // 3c. Marquer le DQE comme converti
@@ -96,69 +100,220 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             }
         }
 
+        // ========================================
+        // 🆕 CRÉATION HIÉRARCHIQUE DES ÉTAPES
+        // ========================================
+
         /// <summary>
-        /// Génère une prévisualisation de la conversion sans créer le projet
+        /// Crée les étapes principales (Lots) et leurs sous-étapes (Items)
         /// </summary>
-        public async Task<ConversionPreviewDTO> PreviewConversionAsync(
-            int dqeId,
-            ConvertDQEToProjectRequest request)
+        private async Task CreateHierarchicalStagesAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId,
+            List<DQELotDTO> lots,
+            DateTime dateDebut,
+            int dureeTotaleJours,
+            string methodeCalculDurees,
+            string dqeReference)
         {
-            // Récupérer le DQE
-            var dqe = await _dqeService.GetByIdAsync(dqeId);
-            if (dqe == null)
+            if (lots == null || lots.Count == 0)
+                return;
+
+            int ordreEtapePrincipale = 1;
+
+            foreach (var lot in lots.OrderBy(l => l.Ordre))
             {
-                throw new InvalidOperationException("DQE introuvable");
-            }
+                // ================================================
+                // ÉTAPE 1 : Créer l'étape principale (Lot)
+                // ================================================
 
-            // Générer le numéro de projet
-            var numeroProjet = await _projetService.GenerateNumeroAsync();
+                var dureeEtape = CalculerDureeEtape(
+                    lot,
+                    lots,
+                    dureeTotaleJours,
+                    methodeCalculDurees
+                );
 
-            // Calculer la date de fin
-            var dateFinPrevue = request.DateDebut.AddDays(request.DureeTotaleJours);
+                var dateDebutEtape = ordreEtapePrincipale == 1
+                    ? dateDebut
+                    : dateDebut.AddDays(CalculerOffsetDate(ordreEtapePrincipale - 1, lots, dureeTotaleJours, methodeCalculDurees));
 
-            // Construire la prévisualisation du projet
-            var projectPreview = new ProjectPreviewDTO
-            {
-                Nom = string.IsNullOrEmpty(request.NomProjet) ? dqe.Nom : request.NomProjet,
-                NumeroProjet = numeroProjet,
-                BudgetInitial = dqe.TotalRevenueHT,
-                DateDebut = request.DateDebut,
-                DateFinPrevue = dateFinPrevue,
-                DureeTotaleJours = request.DureeTotaleJours
-            };
+                var dateFinEtape = dateDebutEtape.AddDays(dureeEtape);
 
-            // Calculer les étapes prévues
-            var stagesPreview = CalculateStagesPreview(
-                dqe.Lots,
-                request.DateDebut,
-                request.DureeTotaleJours,
-                request.MethodeCalculDurees,
-                dqe.TotalRevenueHT
-            );
+                // Budget de l'étape = somme des items
+                var budgetEtape = lot.Chapters
+                    .SelectMany(c => c.Items)
+                    .Sum(i => i.TotalRevenueHT);
 
-            return new ConversionPreviewDTO
-            {
-                DQE = new DQESummaryDTO
+                // Insérer l'étape principale
+                var etapeId = await InsertEtapePrincipaleAsync(
+                    conn,
+                    transaction,
+                    projetId,
+                    lot,
+                    ordreEtapePrincipale,
+                    dateDebutEtape,
+                    dateFinEtape,
+                    budgetEtape,
+                    dqeReference
+                );
+
+                // ================================================
+                // ÉTAPE 2 : Créer les sous-étapes (Items)
+                // ================================================
+
+                int ordreSousEtape = 1;
+
+                foreach (var chapter in lot.Chapters.OrderBy(c => c.Ordre))
                 {
-                    Id = dqe.Id,
-                    Reference = dqe.Reference,
-                    Nom = dqe.Nom,
-                    TotalRevenueHT = dqe.TotalRevenueHT,
-                    LotsCount = dqe.Lots.Count,
-                    ClientNom = dqe.Client.Nom
-                },
-                ProjetPrevu = projectPreview,
-                EtapesPrevues = stagesPreview
-            };
+                    foreach (var item in chapter.Items.OrderBy(i => i.Ordre))
+                    {
+                        await InsertSousEtapeAsync(
+                            conn,
+                            transaction,
+                            projetId,
+                            etapeId, // Parent = étape principale
+                            item,
+                            chapter,
+                            lot,
+                            ordreSousEtape,
+                            dateDebutEtape,
+                            dateFinEtape,
+                            dqeReference
+                        );
+
+                        ordreSousEtape++;
+                    }
+                }
+
+                ordreEtapePrincipale++;
+            }
+        }
+
+        /// <summary>
+        /// 🆕 Insère une étape principale (Lot DQE)
+        /// </summary>
+        private async Task<int> InsertEtapePrincipaleAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId,
+            DQELotDTO lot,
+            int ordre,
+            DateTime dateDebut,
+            DateTime dateFinPrevue,
+            decimal budgetPrevu,
+            string dqeReference)
+        {
+            using var cmd = new SqlCommand(@"
+                INSERT INTO EtapesProjets (
+                    ProjetId, Nom, Description, Ordre,
+                    EtapeParentId, Niveau, TypeEtape,
+                    DateDebut, DateFinPrevue,
+                    Statut, PourcentageAvancement,
+                    BudgetPrevu, CoutReel, Depense,
+                    TypeResponsable,
+                    LinkedDqeLotId, LinkedDqeLotCode, LinkedDqeLotName, LinkedDqeReference,
+                    EstActif, DateCreation, DateModification
+                ) VALUES (
+                    @ProjetId, @Nom, @Description, @Ordre,
+                    NULL, 1, 'Lot',
+                    @DateDebut, @DateFinPrevue,
+                    'NonCommence', 0,
+                    @BudgetPrevu, 0, 0,
+                    'Interne',
+                    @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName, @LinkedDqeReference,
+                    1, GETUTCDATE(), GETUTCDATE()
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS INT);", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+            cmd.Parameters.AddWithValue("@Nom", lot.Nom);
+            cmd.Parameters.AddWithValue("@Description", lot.Description ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Ordre", ordre);
+            cmd.Parameters.AddWithValue("@DateDebut", dateDebut);
+            cmd.Parameters.AddWithValue("@DateFinPrevue", dateFinPrevue);
+            cmd.Parameters.AddWithValue("@BudgetPrevu", budgetPrevu);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotId", lot.Id);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotCode", lot.Code);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotName", lot.Nom);
+            cmd.Parameters.AddWithValue("@LinkedDqeReference", dqeReference);
+
+            var etapeId = (int)await cmd.ExecuteScalarAsync();
+            return etapeId;
+        }
+
+        /// <summary>
+        /// 🆕 Insère une sous-étape (Item DQE)
+        /// </summary>
+        private async Task InsertSousEtapeAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId,
+            int etapeParentId,
+            DQEItemDTO item,
+            DQEChapterDTO chapter,
+            DQELotDTO lot,
+            int ordre,
+            DateTime dateDebut,
+            DateTime dateFinPrevue,
+            string dqeReference)
+        {
+            using var cmd = new SqlCommand(@"
+                INSERT INTO EtapesProjets (
+                    ProjetId, Nom, Description, Ordre,
+                    EtapeParentId, Niveau, TypeEtape,
+                    DateDebut, DateFinPrevue,
+                    Statut, PourcentageAvancement,
+                    BudgetPrevu, CoutReel, Depense,
+                    Unite, QuantitePrevue, QuantiteRealisee, PrixUnitairePrevu,
+                    TypeResponsable,
+                    LinkedDqeLotId, LinkedDqeLotCode,
+                    LinkedDqeChapterId, LinkedDqeChapterCode,
+                    LinkedDqeItemId, LinkedDqeItemCode,
+                    LinkedDqeReference,
+                    EstActif, DateCreation, DateModification
+                ) VALUES (
+                    @ProjetId, @Nom, @Description, @Ordre,
+                    @EtapeParentId, 2, 'Item',
+                    @DateDebut, @DateFinPrevue,
+                    'NonCommence', 0,
+                    @BudgetPrevu, 0, 0,
+                    @Unite, @QuantitePrevue, 0, @PrixUnitairePrevu,
+                    'Interne',
+                    @LinkedDqeLotId, @LinkedDqeLotCode,
+                    @LinkedDqeChapterId, @LinkedDqeChapterCode,
+                    @LinkedDqeItemId, @LinkedDqeItemCode,
+                    @LinkedDqeReference,
+                    1, GETUTCDATE(), GETUTCDATE()
+                );", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+            cmd.Parameters.AddWithValue("@Nom", item.Designation);
+            cmd.Parameters.AddWithValue("@Description", item.Description ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Ordre", ordre);
+            cmd.Parameters.AddWithValue("@EtapeParentId", etapeParentId);
+            cmd.Parameters.AddWithValue("@DateDebut", dateDebut);
+            cmd.Parameters.AddWithValue("@DateFinPrevue", dateFinPrevue);
+            cmd.Parameters.AddWithValue("@BudgetPrevu", item.TotalRevenueHT);
+            cmd.Parameters.AddWithValue("@Unite", item.Unite);
+            cmd.Parameters.AddWithValue("@QuantitePrevue", item.Quantite);
+            cmd.Parameters.AddWithValue("@PrixUnitairePrevu", item.PrixUnitaireHT);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotId", lot.Id);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotCode", lot.Code);
+            cmd.Parameters.AddWithValue("@LinkedDqeChapterId", chapter.Id);
+            cmd.Parameters.AddWithValue("@LinkedDqeChapterCode", chapter.Code);
+            cmd.Parameters.AddWithValue("@LinkedDqeItemId", item.Id);
+            cmd.Parameters.AddWithValue("@LinkedDqeItemCode", item.Code);
+            cmd.Parameters.AddWithValue("@LinkedDqeReference", dqeReference);
+
+            await cmd.ExecuteNonQueryAsync();
         }
 
         // ========================================
-        // MÉTHODES DE CONSTRUCTION
+        // MÉTHODES UTILITAIRES (inchangées)
         // ========================================
 
-        /// <summary>
-        /// Construit un objet Projet depuis un DQE
-        /// </summary>
         private Projet BuildProjectFromDQE(
             DQEDetailDTO dqe,
             ConvertDQEToProjectRequest request,
@@ -188,7 +343,6 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 DateModification = DateTime.UtcNow,
                 UtilisateurCreation = utilisateurId,
                 Actif = true,
-                // Informations de lien DQE
                 IsFromDqeConversion = true,
                 LinkedDqeId = dqe.Id,
                 LinkedDqeReference = dqe.Reference,
@@ -199,259 +353,64 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             };
         }
 
-        /// <summary>
-        /// Construit les étapes depuis les lots DQE
-        /// </summary>
-        private List<EtapeProjet> BuildStagesFromLots(
-            List<DQELotDTO> lots,
-            int projetId,
-            DateTime dateDebut,
-            int dureeTotaleJours,
-            string methodeCalculDurees,
-            string dqeReference)
-        {
-            var etapes = new List<EtapeProjet>();
-            var currentDate = dateDebut;
-
-            // Calculer la durée de chaque étape
-            var durees = CalculateStageDurations(
-                lots.Select(l => l.TotalRevenueHT).ToList(),
-                dureeTotaleJours,
-                methodeCalculDurees
-            );
-
-            for (int i = 0; i < lots.Count; i++)
-            {
-                var lot = lots[i];
-                var dureeJours = durees[i];
-                var dateFin = currentDate.AddDays(dureeJours);
-
-                etapes.Add(new EtapeProjet
-                {
-                    ProjetId = projetId,
-                    Nom = lot.Nom,
-                    Description = lot.Description,
-                    Ordre = lot.Ordre,
-                    DateDebut = currentDate,
-                    DateFinPrevue = dateFin,
-                    Statut = "NonCommence",
-                    PourcentageAvancement = 0,
-                    BudgetPrevu = lot.TotalRevenueHT,
-                    CoutReel = 0,
-                    TypeResponsable = "Interne",
-                    // Lien vers le lot DQE source
-                    LinkedDqeLotId = lot.Id,
-                    LinkedDqeLotCode = lot.Code,
-                    LinkedDqeLotName = lot.Nom,
-                    LinkedDqeReference = dqeReference
-                });
-
-                // Date de début de la prochaine étape = fin de l'étape actuelle + 1 jour
-                currentDate = dateFin.AddDays(1);
-            }
-
-            return etapes;
-        }
-
-        /// <summary>
-        /// Calcule la durée de chaque étape selon la méthode choisie
-        /// </summary>
-        private List<int> CalculateStageDurations(
-            List<decimal> budgets,
-            int dureeTotale,
-            string methode)
-        {
-            var durees = new List<int>();
-            var totalBudget = budgets.Sum();
-
-            switch (methode)
-            {
-                case "proportionnelle":
-                    // Durée proportionnelle au budget (minimum 5 jours)
-                    foreach (var budget in budgets)
-                    {
-                        var pourcentage = budget / totalBudget;
-                        var dureeCalculee = (int)Math.Round(dureeTotale * (double)pourcentage);
-                        durees.Add(Math.Max(dureeCalculee, 5)); // Minimum 5 jours
-                    }
-                    break;
-
-                case "egales":
-                    // Durées égales pour toutes les étapes
-                    var dureeEgale = dureeTotale / budgets.Count;
-                    durees.AddRange(Enumerable.Repeat(Math.Max(dureeEgale, 5), budgets.Count));
-                    break;
-
-                case "personnalisee":
-                    // Durées personnalisées (à implémenter selon besoin)
-                    // Pour l'instant, utilise proportionnelle par défaut
-                    goto case "proportionnelle";
-
-                default:
-                    goto case "proportionnelle";
-            }
-
-            // Ajuster la dernière étape pour atteindre exactement la durée totale
-            var sommeDurees = durees.Sum();
-            if (sommeDurees != dureeTotale && durees.Count > 0)
-            {
-                durees[durees.Count - 1] += (dureeTotale - sommeDurees);
-            }
-
-            return durees;
-        }
-
-        /// <summary>
-        /// Calcule la prévisualisation des étapes
-        /// </summary>
-        private List<StagePreviewDTO> CalculateStagesPreview(
-            List<DQELotDTO> lots,
-            DateTime dateDebut,
-            int dureeTotaleJours,
-            string methodeCalculDurees,
-            decimal totalBudget)
-        {
-            var stagesPreview = new List<StagePreviewDTO>();
-            var currentDate = dateDebut;
-
-            var durees = CalculateStageDurations(
-                lots.Select(l => l.TotalRevenueHT).ToList(),
-                dureeTotaleJours,
-                methodeCalculDurees
-            );
-
-            for (int i = 0; i < lots.Count; i++)
-            {
-                var lot = lots[i];
-                var dureeJours = durees[i];
-                var dateFin = currentDate.AddDays(dureeJours);
-
-                stagesPreview.Add(new StagePreviewDTO
-                {
-                    Nom = lot.Nom,
-                    Code = lot.Code,
-                    BudgetPrevu = lot.TotalRevenueHT,
-                    DureeJours = dureeJours,
-                    DateDebut = currentDate,
-                    DateFinPrevue = dateFin,
-                    PourcentageBudget = (lot.TotalRevenueHT / totalBudget) * 100
-                });
-
-                currentDate = dateFin.AddDays(1);
-            }
-
-            return stagesPreview;
-        }
-
-        // ========================================
-        // MÉTHODES DE BASE DE DONNÉES
-        // ========================================
-
-        /// <summary>
-        /// Crée le projet avec transaction
-        /// </summary>
         private async Task<int> CreateProjectWithTransactionAsync(
             SqlConnection conn,
             SqlTransaction transaction,
             Projet projet)
         {
-            // Générer le numéro de projet
             projet.Numero = await GenerateProjectNumberWithTransactionAsync(conn, transaction);
 
             using var cmd = new SqlCommand(@"
                 INSERT INTO Projets (
-                    Numero, Nom, Description, ClientId, TypeProjetId, Statut,
-                    DateDebut, DateFinPrevue, BudgetInitial, BudgetRevise, CoutReel,
-                    ChefProjetId, PourcentageAvancement,
+                    Numero, Nom, Description, ClientId, TypeProjetId,
+                    Statut, DateDebut, DateFinPrevue,
+                    BudgetInitial, BudgetRevise, CoutReel,
+                    PourcentageAvancement, ChefProjetId,
                     DateCreation, DateModification, UtilisateurCreation, Actif,
-                    LinkedDqeId, LinkedDqeReference, LinkedDqeName, LinkedDqeBudgetHT,
-                    IsFromDqeConversion, DqeConvertedAt, DqeConvertedById
+                    IsFromDqeConversion, LinkedDqeId, LinkedDqeReference,
+                    LinkedDqeName, LinkedDqeBudgetHT,
+                    DqeConvertedAt, DqeConvertedById
                 ) VALUES (
-                    @Numero, @Nom, @Description, @ClientId, @TypeProjetId, @Statut,
-                    @DateDebut, @DateFinPrevue, @BudgetInitial, @BudgetRevise, @CoutReel,
-                    @ChefProjetId, @PourcentageAvancement,
+                    @Numero, @Nom, @Description, @ClientId, @TypeProjetId,
+                    @Statut, @DateDebut, @DateFinPrevue,
+                    @BudgetInitial, @BudgetRevise, @CoutReel,
+                    @PourcentageAvancement, @ChefProjetId,
                     @DateCreation, @DateModification, @UtilisateurCreation, @Actif,
-                    @LinkedDqeId, @LinkedDqeReference, @LinkedDqeName, @LinkedDqeBudgetHT,
-                    @IsFromDqeConversion, @DqeConvertedAt, @DqeConvertedById
+                    @IsFromDqeConversion, @LinkedDqeId, @LinkedDqeReference,
+                    @LinkedDqeName, @LinkedDqeBudgetHT,
+                    @DqeConvertedAt, @DqeConvertedById
                 );
-                SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);", conn, transaction);
 
             cmd.Parameters.AddWithValue("@Numero", projet.Numero);
             cmd.Parameters.AddWithValue("@Nom", projet.Nom);
             cmd.Parameters.AddWithValue("@Description", projet.Description ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@ClientId", projet.ClientId);
-            cmd.Parameters.AddWithValue("@TypeProjetId", projet.TypeProjetId);
+            cmd.Parameters.AddWithValue("@TypeProjetId", projet.TypeProjetId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Statut", projet.Statut);
             cmd.Parameters.AddWithValue("@DateDebut", projet.DateDebut ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@DateFinPrevue", projet.DateFinPrevue ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@BudgetInitial", projet.BudgetInitial);
             cmd.Parameters.AddWithValue("@BudgetRevise", projet.BudgetRevise);
             cmd.Parameters.AddWithValue("@CoutReel", projet.CoutReel);
-            cmd.Parameters.AddWithValue("@ChefProjetId", projet.ChefProjetId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@PourcentageAvancement", projet.PourcentageAvancement);
+            cmd.Parameters.AddWithValue("@ChefProjetId", projet.ChefProjetId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@DateCreation", projet.DateCreation);
             cmd.Parameters.AddWithValue("@DateModification", projet.DateModification);
             cmd.Parameters.AddWithValue("@UtilisateurCreation", projet.UtilisateurCreation);
             cmd.Parameters.AddWithValue("@Actif", projet.Actif);
+            cmd.Parameters.AddWithValue("@IsFromDqeConversion", projet.IsFromDqeConversion);
             cmd.Parameters.AddWithValue("@LinkedDqeId", projet.LinkedDqeId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@LinkedDqeReference", projet.LinkedDqeReference ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@LinkedDqeName", projet.LinkedDqeName ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@LinkedDqeBudgetHT", projet.LinkedDqeBudgetHT ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@IsFromDqeConversion", projet.IsFromDqeConversion);
             cmd.Parameters.AddWithValue("@DqeConvertedAt", projet.DqeConvertedAt ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@DqeConvertedById", projet.DqeConvertedById ?? (object)DBNull.Value);
 
-            return (int)await cmd.ExecuteScalarAsync();
+            var projetId = (int)await cmd.ExecuteScalarAsync();
+            return projetId;
         }
 
-        /// <summary>
-        /// Crée les étapes du projet avec transaction
-        /// </summary>
-        private async Task CreateStagesWithTransactionAsync(
-            SqlConnection conn,
-            SqlTransaction transaction,
-            int projetId,
-            List<EtapeProjet> etapes)
-        {
-            foreach (var etape in etapes)
-            {
-                using var cmd = new SqlCommand(@"
-                    INSERT INTO EtapesProjets (
-                        ProjetId, Nom, Description, Ordre, DateDebut, DateFinPrevue,
-                        Statut, PourcentageAvancement, BudgetPrevu, CoutReel,
-                        ResponsableId, TypeResponsable,
-                        LinkedDqeLotId, LinkedDqeLotCode, LinkedDqeLotName, LinkedDqeReference
-                    ) VALUES (
-                        @ProjetId, @Nom, @Description, @Ordre, @DateDebut, @DateFinPrevue,
-                        @Statut, @PourcentageAvancement, @BudgetPrevu, @CoutReel,
-                        @ResponsableId, @TypeResponsable,
-                        @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName, @LinkedDqeReference
-                    )", conn, transaction);
-
-                cmd.Parameters.AddWithValue("@ProjetId", projetId);
-                cmd.Parameters.AddWithValue("@Nom", etape.Nom);
-                cmd.Parameters.AddWithValue("@Description", etape.Description ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@Ordre", etape.Ordre);
-                cmd.Parameters.AddWithValue("@DateDebut", etape.DateDebut ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@DateFinPrevue", etape.DateFinPrevue ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@Statut", etape.Statut);
-                cmd.Parameters.AddWithValue("@PourcentageAvancement", etape.PourcentageAvancement);
-                cmd.Parameters.AddWithValue("@BudgetPrevu", etape.BudgetPrevu);
-                cmd.Parameters.AddWithValue("@CoutReel", etape.CoutReel);
-                cmd.Parameters.AddWithValue("@ResponsableId", etape.ResponsableId ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@TypeResponsable", etape.TypeResponsable);
-                cmd.Parameters.AddWithValue("@LinkedDqeLotId", etape.LinkedDqeLotId ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@LinkedDqeLotCode", etape.LinkedDqeLotCode ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@LinkedDqeLotName", etape.LinkedDqeLotName ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@LinkedDqeReference", etape.LinkedDqeReference ?? (object)DBNull.Value);
-
-                await cmd.ExecuteNonQueryAsync();
-            }
-        }
-
-        /// <summary>
-        /// Marque le DQE comme converti
-        /// </summary>
         private async Task MarkDQEAsConvertedAsync(
             SqlConnection conn,
             SqlTransaction transaction,
@@ -480,9 +439,6 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             await cmd.ExecuteNonQueryAsync();
         }
 
-        /// <summary>
-        /// Génère un numéro de projet unique avec transaction
-        /// </summary>
         private async Task<string> GenerateProjectNumberWithTransactionAsync(
             SqlConnection conn,
             SqlTransaction transaction)
@@ -497,5 +453,98 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             var prochainNumero = (int)await cmd.ExecuteScalarAsync();
             return $"PRJ{annee}{prochainNumero:0000}";
         }
+
+        private int CalculerDureeEtape(
+            DQELotDTO lot,
+            List<DQELotDTO> tousLesLots,
+            int dureeTotale,
+            string methode)
+        {
+            if (methode == "proportionnel")
+            {
+                var totalBudget = tousLesLots.Sum(l => l.TotalRevenueHT);
+                if (totalBudget == 0) return dureeTotale / tousLesLots.Count;
+
+                var proportion = lot.TotalRevenueHT / totalBudget;
+                return Math.Max(1, (int)(dureeTotale * proportion));
+            }
+            else // équitable
+            {
+                return dureeTotale / tousLesLots.Count;
+            }
+        }
+
+        private int CalculerOffsetDate(
+            int index,
+            List<DQELotDTO> lots,
+            int dureeTotale,
+            string methode)
+        {
+            int offset = 0;
+            for (int i = 0; i < index; i++)
+            {
+                offset += CalculerDureeEtape(lots[i], lots, dureeTotale, methode);
+            }
+            return offset;
+        }
+
+        // Prévisualisation (simplifiée pour l'exemple)
+        public async Task<ConversionPreviewDTO> PreviewConversionAsync(
+            int dqeId,
+            ConvertDQEToProjectRequest request)
+        {
+            var dqe = await _dqeService.GetByIdAsync(dqeId);
+            if (dqe == null)
+            {
+                throw new InvalidOperationException("DQE introuvable");
+            }
+
+            var numeroProjet = await _projetService.GenerateNumeroAsync();
+            var dateFinPrevue = request.DateDebut.AddDays(request.DureeTotaleJours);
+
+            var projectPreview = new ProjectPreviewDTO
+            {
+                Nom = string.IsNullOrEmpty(request.NomProjet) ? dqe.Nom : request.NomProjet,
+                NumeroProjet = numeroProjet,
+                BudgetInitial = dqe.TotalRevenueHT,
+                DateDebut = request.DateDebut,
+                DateFinPrevue = dateFinPrevue,
+                DureeTotaleJours = request.DureeTotaleJours
+            };
+
+            var stagesPreview = new List<StagePreviewDTO>();
+
+            // Ajouter les étapes principales avec leurs sous-étapes
+            foreach (var lot in dqe.Lots.OrderBy(l => l.Ordre))
+            {
+                var nombreSousEtapes = lot.Chapters.SelectMany(c => c.Items).Count();
+
+                stagesPreview.Add(new StagePreviewDTO
+                {
+                    Nom = lot.Nom,
+                    BudgetPrevu = lot.TotalRevenueHT,
+                    Niveau = 1,
+                    TypeEtape = "Lot",
+                    NombreSousEtapes = nombreSousEtapes
+                });
+            }
+
+            return new ConversionPreviewDTO
+            {
+                DQE = new DQESummaryDTO
+                {
+                    Id = dqe.Id,
+                    Reference = dqe.Reference,
+                    Nom = dqe.Nom,
+                    TotalRevenueHT = dqe.TotalRevenueHT,
+                    LotsCount = dqe.Lots.Count,
+                    ClientNom = dqe.Client.Nom
+                },
+                ProjetPrevu = projectPreview,
+                EtapesPrevues = stagesPreview
+            };
+        }
     }
+
+    // DTOs pour preview
 }

@@ -1221,6 +1221,131 @@
         }
       }
     },
+    "/api/ObjectifFinancier": {
+      "get": {
+        "tags": [
+          "ObjectifFinancier"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ObjectifFinancier"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateObjectifRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateObjectifRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateObjectifRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ObjectifFinancier/{id}": {
+      "get": {
+        "tags": [
+          "ObjectifFinancier"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ObjectifFinancier"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateObjectifRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateObjectifRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateObjectifRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ObjectifFinancier"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Projets": {
       "get": {
         "tags": [
@@ -2937,6 +3062,10 @@
       "ConvertDQEToProjectRequest": {
         "type": "object",
         "properties": {
+          "dqeId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "nomProjet": {
             "type": "string",
             "nullable": true
@@ -2978,17 +3107,24 @@
             "type": "string",
             "nullable": true
           },
-          "attacherDQE": {
-            "type": "boolean"
+          "dureesPersonnalisees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DureePersonnalisee"
+            },
+            "nullable": true
           },
-          "assignerOuvriers": {
-            "type": "boolean"
+          "adresseChantier": {
+            "type": "string",
+            "nullable": true
           },
-          "notifierChefProjet": {
-            "type": "boolean"
+          "codePostalChantier": {
+            "type": "string",
+            "nullable": true
           },
-          "activerSuiviBudgetaire": {
-            "type": "boolean"
+          "villeChantier": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3152,6 +3288,10 @@
           "prixUnitaireHT": {
             "type": "number",
             "format": "double"
+          },
+          "deboursseSec": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -3276,6 +3416,10 @@
         "additionalProperties": false
       },
       "CreateEtapeProjetRequest": {
+        "required": [
+          "budgetPrevu",
+          "nom"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -3284,10 +3428,24 @@
             "nullable": true
           },
           "nom": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "description": {
             "type": "string",
             "nullable": true
           },
-          "description": {
+          "etapeParentId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "niveau": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "typeEtape": {
             "type": "string",
             "nullable": true
           },
@@ -3302,19 +3460,37 @@
             "nullable": true
           },
           "budgetPrevu": {
+            "minimum": 0,
             "type": "number",
             "format": "double"
           },
           "coutReel": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "nullable": true
           },
-          "statut": {
+          "unite": {
             "type": "string",
             "nullable": true
           },
-          "estActif": {
-            "type": "boolean"
+          "quantitePrevue": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "prixUnitairePrevu": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "responsableId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "typeResponsable": {
+            "type": "string",
+            "nullable": true
           },
           "idSousTraitant": {
             "type": "integer",
@@ -3334,9 +3510,34 @@
             "type": "string",
             "nullable": true
           },
+          "linkedDqeItemId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "linkedDqeItemCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedDqeChapterId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "linkedDqeChapterCode": {
+            "type": "string",
+            "nullable": true
+          },
           "linkedDqeReference": {
             "type": "string",
             "nullable": true
+          },
+          "statut": {
+            "type": "string",
+            "nullable": true
+          },
+          "estActif": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -3575,6 +3776,24 @@
         },
         "additionalProperties": false
       },
+      "CreateObjectifRequest": {
+        "type": "object",
+        "properties": {
+          "montant": {
+            "type": "number",
+            "format": "double"
+          },
+          "dateFinPrevue": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utilisateurCreation": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateProjetRequest": {
         "type": "object",
         "properties": {
@@ -3715,6 +3934,20 @@
               "format": "int32"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DureePersonnalisee": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dureeJours": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -3971,14 +4204,13 @@
             "type": "string",
             "nullable": true
           },
-          "dateDebut": {
+          "statut": {
             "type": "string",
-            "format": "date-time",
             "nullable": true
           },
-          "dateFinPrevue": {
-            "type": "string",
-            "format": "date-time",
+          "pourcentageAvancement": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
           "budgetPrevu": {
@@ -3991,8 +4223,29 @@
             "format": "double",
             "nullable": true
           },
-          "statut": {
+          "depense": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "quantiteRealisee": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "dateDebut": {
             "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "dateFinPrevue": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "dateFinReelle": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           },
           "responsableId": {
@@ -4000,16 +4253,17 @@
             "format": "int32",
             "nullable": true
           },
-          "typeResponsable": {
-            "type": "string",
-            "nullable": true
-          },
-          "estActif": {
-            "type": "boolean"
-          },
           "idSousTraitant": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "estActif": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "typeResponsable": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -4020,6 +4274,31 @@
         "properties": {
           "value": {
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateObjectifRequest": {
+        "type": "object",
+        "properties": {
+          "montant": {
+            "type": "number",
+            "format": "double"
+          },
+          "actif": {
+            "type": "boolean"
+          },
+          "statut": {
+            "type": "string",
+            "nullable": true
+          },
+          "dateFinPrevue": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utilisateurModification": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
