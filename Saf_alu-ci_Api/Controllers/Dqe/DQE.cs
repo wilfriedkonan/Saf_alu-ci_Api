@@ -263,6 +263,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public int ClientId { get; set; }
         public int? DevisId { get; set; }
         public decimal TauxTVA { get; set; } = 18;
+        public bool IsConverted { get; set; } = false;
         public List<CreateDQELotRequest>? Lots { get; set; }
     }
 

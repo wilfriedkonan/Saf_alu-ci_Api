@@ -342,6 +342,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                 existing.DateEcheance = model.DateEcheance;
                 existing.ConditionsPaiement = model.ConditionsPaiement ?? "30 jours";
                 existing.ReferenceClient = model.ReferenceClient;
+                existing.Statut = model.Statut;
                 existing.DateModification = DateTime.UtcNow;
 
                 // Recalculer les montants si lignes modifiées

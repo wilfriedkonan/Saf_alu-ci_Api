@@ -83,7 +83,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     DateCreation = reader.GetDateTime("DateCreation"),
                     ClientId = reader.GetInt32("ClientId"),
                     ClientNom = reader.GetString("ClientNom"),
-                    IsConverted = reader.GetBoolean("IsConverted"),
+                    IsConverted = reader.GetBoolean("IsConverted") ? reader.GetBoolean("IsConverted") : false,
                     LinkedProjectId = reader.IsDBNull("LinkedProjectId") ? null : reader.GetInt32("LinkedProjectId"),
                     LinkedProjectNumber = reader.IsDBNull("LinkedProjectNumber") ? null : reader.GetString("LinkedProjectNumber"),
                     ConvertedAt = reader.IsDBNull("ConvertedAt") ? null : reader.GetDateTime("ConvertedAt"),
@@ -327,7 +327,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             using var cmd = new SqlCommand(@"
     INSERT INTO DQE (
         Reference, Nom, Description, ClientId, DevisId, Statut,
-        TotalRevenueHT, TauxTVA, MontantTVA, TotalTTC,
+        TotalRevenueHT, TauxTVA, MontantTVA, TotalTTC,,
         DateCreation, DateModification, UtilisateurCreation, UtilisateurModification, Actif
     ) VALUES (
         @Reference, @Nom, @Description, @ClientId, @DevisId, @Statut,

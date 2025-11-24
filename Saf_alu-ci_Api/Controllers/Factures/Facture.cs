@@ -14,7 +14,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
         public int? ProjetId { get; set; }
         public string Titre { get; set; }
         public string? Description { get; set; }
-        public string Statut { get; set; } = "Brouillon"; // Brouillon, Envoyee, Payee, EnRetard, Annulee
+        public string Statut { get; set; } = "Brouillon"; // "Brouillon, Envoyee, Payee, EnRetard, Annulee
         public decimal MontantHT { get; set; }
         public decimal TauxTVA { get; set; } = 20.00m;
         public decimal MontantTVA { get; set; }
@@ -80,9 +80,32 @@ namespace Saf_alu_ci_Api.Controllers.Factures
         public DateTime DateEcheance { get; set; }
         public string? ConditionsPaiement { get; set; }
         public string? ReferenceClient { get; set; }
+        public string? Statut { get; set; }
         public List<CreateLigneFactureRequest>? Lignes { get; set; }
         public List<CreateEcheancierRequest>? Echeanciers { get; set; }
     }
+    public class UpdateFactureRequest
+    {
+        public int Id { get; set; }
+        public string Titre { get; set; }
+        public string? Description { get; set; }
+        public DateTime DateFacture { get; set; }
+        public DateTime DateEcheance { get; set; }
+        public string? ConditionsPaiement { get; set; }
+        public string? ReferenceClient { get; set; }
+        public string Statut { get; set; }  // Brouillon, Envoyee, Payee, EnRetard, Annulee
+        public decimal MontantHT { get; set; }
+        public decimal MontantTVA { get; set; }
+        public decimal MontantTTC { get; set; }
+        public DateTime DateModification { get; set; } = DateTime.UtcNow;
+
+        public virtual Client? Client { get; set; }
+        public virtual SousTraitant? SousTraitant { get; set; }
+        public virtual List<LigneFacture>? Lignes { get; set; }
+        public virtual List<Echeancier>? Echeanciers { get; set; }
+
+    }
+
 
     public class CreateLigneFactureRequest
     {

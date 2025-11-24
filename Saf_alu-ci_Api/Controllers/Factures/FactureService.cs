@@ -156,6 +156,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                 DateFacture = @DateFacture,
                 DateEcheance = @DateEcheance,
                 ConditionsPaiement = @ConditionsPaiement,
+                Statut = @Statut,
                 ReferenceClient = @ReferenceClient,
                 MontantHT = @MontantHT,
                 MontantTVA = @MontantTVA,
@@ -169,6 +170,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                 cmd.Parameters.AddWithValue("@DateFacture", facture.DateFacture);
                 cmd.Parameters.AddWithValue("@DateEcheance", facture.DateEcheance);
                 cmd.Parameters.AddWithValue("@ConditionsPaiement", facture.ConditionsPaiement);
+                cmd.Parameters.AddWithValue("@Statut", facture.Statut ?? "Brouillon");
                 cmd.Parameters.AddWithValue("@ReferenceClient", facture.ReferenceClient ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@MontantHT", facture.MontantHT);
                 cmd.Parameters.AddWithValue("@MontantTVA", facture.MontantTVA);

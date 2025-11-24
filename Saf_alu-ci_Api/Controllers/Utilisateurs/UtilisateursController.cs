@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Saf_alu_ci_Api.Services;
 using Saf_alu_ci_Api.Services.Jw;
 
 namespace Saf_alu_ci_Api.Controllers.Utilisateurs
@@ -109,7 +110,7 @@ namespace Saf_alu_ci_Api.Controllers.Utilisateurs
                     var userId = await _utilisateurService.CreateAsync(user);
                     user.Id = userId;
 
-                    var token = _jwtService.GenerateToken(user.Email/*, user.Id*/);
+                    var token = _jwtService.GenerateToken(user);
 
                     return Ok(new
                     {
@@ -152,7 +153,7 @@ namespace Saf_alu_ci_Api.Controllers.Utilisateurs
                     // Mettre à jour la dernière connexion
                     await _utilisateurService.UpdateDerniereConnexionAsync(user.Id);
 
-                    var token = _jwtService.GenerateToken(user.Email/*, user.Id*/);
+                    var token = _jwtService.GenerateToken(user);
 
                     return Ok(new
                     {
@@ -182,7 +183,7 @@ namespace Saf_alu_ci_Api.Controllers.Utilisateurs
             }
 
             [HttpPut("{id}")]
-            [Authorize]
+            //[Authorize]
             public async Task<IActionResult> Update(int id, [FromBody] Utilisateur model)
             {
                 try

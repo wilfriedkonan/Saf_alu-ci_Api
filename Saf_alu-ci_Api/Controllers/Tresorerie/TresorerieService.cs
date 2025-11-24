@@ -224,12 +224,12 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             }
 
             using var cmd = new SqlCommand(@"
-                INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, FactureId, ProjetId, SousTraitantId,
+                INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, FactureId, ProjetId, SousTraitantId, EtapeProjetId,
                                                Libelle, Description, Montant, DateMouvement, DateSaisie, ModePaiement,
-                                               Reference, CompteDestinationId, UtilisateurSaisie)
-                VALUES (@CompteId, @TypeMouvement, @Categorie, @FactureId, @ProjetId, @SousTraitantId,
+                                               Reference, CompteDestinationId, UtilisateurCreation)
+                VALUES (@CompteId, @TypeMouvement, @Categorie, @FactureId, @ProjetId, @SousTraitantId, @EtapeProjetId,
                        @Libelle, @Description, @Montant, @DateMouvement, @DateSaisie, @ModePaiement,
-                       @Reference, @CompteDestinationId, @UtilisateurSaisie);
+                       @Reference, @CompteDestinationId, @UtilisateurCreation);
                 SELECT CAST(SCOPE_IDENTITY() as int)", conn);
 
             AddMouvementParameters(cmd, mouvement);
@@ -291,14 +291,14 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     DateSaisie = DateTime.UtcNow,
                     Reference = virement.Reference,
                     CompteDestinationId = virement.CompteDestinationId,
-                    UtilisateurSaisie = utilisateurId
+                    UtilisateurCreation = utilisateurId
                 };
 
                 using var cmd = new SqlCommand(@"
                     INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, Libelle, Description, Montant,
-                                                   DateMouvement, DateSaisie, Reference, CompteDestinationId, UtilisateurSaisie)
+                                                   DateMouvement, DateSaisie, Reference, CompteDestinationId, UtilisateurCreation)
                     VALUES (@CompteId, @TypeMouvement, @Categorie, @Libelle, @Description, @Montant,
-                           @DateMouvement, @DateSaisie, @Reference, @CompteDestinationId, @UtilisateurSaisie)", conn, transaction);
+                           @DateMouvement, @DateSaisie, @Reference, @CompteDestinationId, @UtilisateurCreation)", conn, transaction);
 
                 AddMouvementParameters(cmd, mouvement);
                 await cmd.ExecuteNonQueryAsync();
@@ -342,14 +342,14 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                         DateMouvement = DateTime.UtcNow,
                         DateSaisie = DateTime.UtcNow,
                         Reference = correction.Reference,
-                        UtilisateurSaisie = utilisateurId
+                        UtilisateurCreation = utilisateurId
                     };
 
                     using var cmd = new SqlCommand(@"
                         INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, Libelle, Description, Montant,
-                                                       DateMouvement, DateSaisie, Reference, UtilisateurSaisie)
+                                                       DateMouvement, DateSaisie, Reference, UtilisateurCreation)
                         VALUES (@CompteId, @TypeMouvement, @Categorie, @Libelle, @Description, @Montant,
-                               @DateMouvement, @DateSaisie, @Reference, @UtilisateurSaisie)", conn, transaction);
+                               @DateMouvement, @DateSaisie, @Reference, @UtilisateurCreation)", conn, transaction);
 
                     AddMouvementParameters(cmd, mouvement);
                     await cmd.ExecuteNonQueryAsync();
@@ -419,10 +419,10 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             // Données pour les graphiques
             stats.FluxMensuels = await GetFluxMensuelsAsync(conn);
+            stats.FluxSemestre = await GetFluxSemestrielsAsync(conn);
             stats.BeneficesParProjet = await GetBeneficesParProjetAsync(conn);
             stats.RepartitionParCategorie = await GetRepartitionParCategorieAsync(conn);
             stats.EvolutionSoldes = await GetEvolutionSoldesAsync(conn);
-
             // Indicateurs avancés
             stats.Indicateurs = await GetIndicateursAsync(conn);
 
@@ -618,7 +618,85 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             return data;
         }
+        /// <summary>
+        /// Récupère les flux mensuels (entrées, sorties, résultat net) des 6 derniers mois
+        /// </summary>
+        private async Task<List<ChartData>> GetFluxSemestrielsAsync(SqlConnection conn)
+        {
+            var data = new List<ChartData>();
 
+            using var cmd = new SqlCommand(@"
+        -- CTE pour les 6 derniers mois complets
+        WITH Mois AS (
+            SELECT DISTINCT FORMAT(DateMouvement, 'yyyy-MM') as Mois
+            FROM MouvementsFinanciers
+            WHERE DateMouvement >= DATEADD(MONTH, -6, GETDATE())
+                AND DateMouvement <= GETDATE()
+            UNION
+            -- Ajouter les mois manquants s'il n'y a pas de mouvements
+            SELECT FORMAT(DATEADD(MONTH, -n, GETDATE()), 'yyyy-MM')
+            FROM (VALUES (0),(1),(2),(3),(4),(5)) AS Numbers(n)
+        ),
+        -- Calculer les totaux par mois et type
+        FluxMensuels AS (
+            SELECT 
+                FORMAT(DateMouvement, 'yyyy-MM') as Mois,
+                TypeMouvement,
+                SUM(Montant) as Total
+            FROM MouvementsFinanciers 
+            WHERE DateMouvement >= DATEADD(MONTH, -6, GETDATE())
+                AND DateMouvement <= GETDATE()
+                AND TypeMouvement IN ('Entree', 'Sortie')
+            GROUP BY FORMAT(DateMouvement, 'yyyy-MM'), TypeMouvement
+        ),
+        -- Pivoter les données pour avoir entrées et sorties sur la même ligne
+        FluxPivot AS (
+            SELECT 
+                m.Mois,
+                ISNULL(MAX(CASE WHEN fm.TypeMouvement = 'Entree' THEN fm.Total END), 0) as Entrees,
+                ISNULL(MAX(CASE WHEN fm.TypeMouvement = 'Sortie' THEN fm.Total END), 0) as Sorties
+            FROM Mois m
+            LEFT JOIN FluxMensuels fm ON m.Mois = fm.Mois
+            GROUP BY m.Mois
+        )
+        SELECT 
+            Mois,
+            Entrees,
+            Sorties,
+            (Entrees - Sorties) as ResultatNet
+        FROM FluxPivot
+        ORDER BY Mois ASC", conn);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var mois = reader.GetString(0); // Mois au format yyyy-MM
+                var entrees = reader.GetDecimal(1);
+                var sorties = reader.GetDecimal(2);
+                var resultatNet = reader.GetDecimal(3);
+
+                // Formater le label en français (ex: "Jan 2025")
+                var dateLabel = DateTime.ParseExact(mois + "-01", "yyyy-MM-dd", null);
+                var labelFormate = dateLabel.ToString("MMM yyyy", new System.Globalization.CultureInfo("fr-FR"));
+
+                data.Add(new ChartData
+                {
+                    Label = labelFormate, // "Nov 2025", "Déc 2025", etc.
+                    Value = resultatNet, // Résultat net pour l'axe principal
+                    Color = resultatNet >= 0 ? "#10b981" : "#ef4444", // Vert si positif, rouge si négatif
+                    MetaDonnees = new Dictionary<string, object>
+            {
+                { "mois", mois }, // Format original yyyy-MM pour le tri
+                { "entrees", entrees },
+                { "sorties", sorties },
+                { "resultatNet", resultatNet }
+            }
+                });
+            }
+
+            return data;
+        }
         private async Task<List<ChartData>> GetRepartitionParCategorieAsync(SqlConnection conn)
         {
             var data = new List<ChartData>();
@@ -659,31 +737,33 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var cmd = new SqlCommand(@"
                 WITH EvolutionSoldes AS (
                     SELECT 
-                        FORMAT(DateMouvement, 'yyyy-MM-dd') as Date,
+                        CAST(DateMouvement AS DATE) as DateMvt,
                         SUM(SUM(CASE WHEN TypeMouvement = 'Entree' THEN Montant 
                                     WHEN TypeMouvement = 'Sortie' THEN -Montant 
-                                    ELSE 0 END)) OVER (ORDER BY FORMAT(DateMouvement, 'yyyy-MM-dd')) as SoldeCumule
+                                    ELSE 0 END)) OVER (ORDER BY CAST(DateMouvement AS DATE)) as SoldeCumule
                     FROM MouvementsFinanciers 
                     WHERE DateMouvement >= DATEADD(DAY, -30, GETDATE())
-                    GROUP BY FORMAT(DateMouvement, 'yyyy-MM-dd')
+                    GROUP BY CAST(DateMouvement AS DATE)
                 )
-                SELECT Date, SoldeCumule FROM EvolutionSoldes
-                ORDER BY Date", conn);
+                SELECT 
+                    FORMAT(DateMvt, 'yyyy-MM-dd') as Date, 
+                    SoldeCumule 
+                FROM EvolutionSoldes
+                ORDER BY DateMvt", conn);
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 data.Add(new ChartData
                 {
-                    Label = reader.GetString("Date"),
-                    Value = reader.GetDecimal("SoldeCumule"),
+                    Label = reader.GetString(0),
+                    Value = reader.GetDecimal(1),
                     Color = "#3b82f6"
                 });
             }
 
             return data;
         }
-
         private async Task<TresorerieIndicateurs> GetIndicateursAsync(SqlConnection conn)
         {
             var indicateurs = new TresorerieIndicateurs();
@@ -774,6 +854,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             cmd.Parameters.AddWithValue("@FactureId", mouvement.FactureId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@ProjetId", mouvement.ProjetId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@SousTraitantId", mouvement.SousTraitantId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@EtapeProjetId", mouvement.EtapeProjetId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Libelle", mouvement.Libelle);
             cmd.Parameters.AddWithValue("@Description", mouvement.Description ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Montant", mouvement.Montant);
@@ -782,7 +863,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             cmd.Parameters.AddWithValue("@ModePaiement", mouvement.ModePaiement ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Reference", mouvement.Reference ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@CompteDestinationId", mouvement.CompteDestinationId ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@UtilisateurSaisie", mouvement.UtilisateurSaisie);
+            cmd.Parameters.AddWithValue("@UtilisateurCreation", mouvement.UtilisateurCreation);
         }
 
         private Compte MapToCompte(SqlDataReader reader)
@@ -812,6 +893,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 FactureId = reader.IsDBNull("FactureId") ? null : reader.GetInt32("FactureId"),
                 ProjetId = reader.IsDBNull("ProjetId") ? null : reader.GetInt32("ProjetId"),
                 SousTraitantId = reader.IsDBNull("SousTraitantId") ? null : reader.GetInt32("SousTraitantId"),
+                EtapeProjetId = reader.IsDBNull("EtapeProjetId") ? null : reader.GetInt32("EtapeProjetId"),
                 Libelle = reader.GetString("Libelle"),
                 Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
                 Montant = reader.GetDecimal("Montant"),
@@ -820,7 +902,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 ModePaiement = reader.IsDBNull("ModePaiement") ? null : reader.GetString("ModePaiement"),
                 Reference = reader.IsDBNull("Reference") ? null : reader.GetString("Reference"),
                 CompteDestinationId = reader.IsDBNull("CompteDestinationId") ? null : reader.GetInt32("CompteDestinationId"),
-                UtilisateurSaisie = reader.GetInt32("UtilisateurSaisie")
+                UtilisateurCreation = reader.GetInt32("UtilisateurCreation")
             };
         }
     }

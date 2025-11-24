@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
 using System.Globalization;
 using System.Security.Claims;
@@ -309,6 +310,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     Categorie = model.Categorie,
                     FactureId = model.FactureId,
                     ProjetId = model.ProjetId,
+                    EtapeProjetId = model.EtapeProjetId,
                     SousTraitantId = model.SousTraitantId,
                     Libelle = model.Libelle,
                     Description = model.Description,
@@ -318,7 +320,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     ModePaiement = model.ModePaiement,
                     Reference = model.Reference,
                     CompteDestinationId = model.CompteDestinationId,
-                    UtilisateurSaisie = utilisateurId
+                    UtilisateurCreation = utilisateurId
                 };
 
                 var mouvementId = await _tresorerieService.CreateMouvementAsync(mouvement);
@@ -332,6 +334,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     montant = mouvement.Montant
                 });
             }
+
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { message = ex.Message });
@@ -909,7 +912,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         private int GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out var userId) ? userId : 1; // Fallback pour développement
+            return int.TryParse(userIdClaim, out var userId) ? userId : 3; // Fallback pour développement
         }
 
         private static string GetStatutSolde(decimal solde, string typeCompte)

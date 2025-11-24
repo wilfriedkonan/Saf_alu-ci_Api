@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
 using Saf_alu_ci_Api.Controllers.Clients;
 using Saf_alu_ci_Api.Controllers.SousTraitants;
+using Saf_alu_ci_Api.Controllers.Tresorerie;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
 using System.Data;
 using System.Transactions;
@@ -696,10 +697,11 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             var setClause = new List<string>();
             var cmd = new SqlCommand { Connection = conn, /*Transaction = transaction*/ };
 
-
-            setClause.Add("PourcentageAvancement = @PourcentageAvancement");
-            cmd.Parameters.AddWithValue("@PourcentageAvancement", request.PourcentageAvancement);
-
+            if (request.PourcentageAvancement >= 1)
+            {
+                setClause.Add("PourcentageAvancement = @PourcentageAvancement");
+                cmd.Parameters.AddWithValue("@PourcentageAvancement", request.PourcentageAvancement);
+            }
             if (!string.IsNullOrEmpty(request.Statut))
             {
                 setClause.Add("Statut = @Statut");
@@ -927,60 +929,82 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         LEFT JOIN Utilisateurs u ON ep.ResponsableId = u.Id AND ep.TypeResponsable = 'Interne'
         LEFT JOIN SousTraitants st ON ep.IdSousTraitant = st.Id
         WHERE ep.ProjetId = @ProjetId And ep.EstActif=1
-        ORDER BY ep.Ordre", conn);
+        ORDER BY ep.Id", conn);
 
             cmd.Parameters.AddWithValue("@ProjetId", projetId);
 
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            // 1️⃣ Lire toutes les étapes
+            using (var reader = await cmd.ExecuteReaderAsync())
             {
-                var etape = new EtapeProjet
+                while (await reader.ReadAsync())
                 {
-                    Id = reader.GetInt32("Id"),
-                    ProjetId = reader.GetInt32("ProjetId"),
-                    Nom = reader.GetString("Nom"),
-                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                    Ordre = reader.GetInt32("Ordre"),
-                    DateDebut = reader.IsDBNull("DateDebut") ? null : reader.GetDateTime("DateDebut"),
-                    DateFinPrevue = reader.IsDBNull("DateFinPrevue") ? null : reader.GetDateTime("DateFinPrevue"),
-                    DateFinReelle = reader.IsDBNull("DateFinReelle") ? null : reader.GetDateTime("DateFinReelle"),
-                    Statut = reader.GetString("Statut"),
-                    PourcentageAvancement = reader.GetInt32("PourcentageAvancement"),
-                    BudgetPrevu = reader.GetDecimal("BudgetPrevu"),
-                    CoutReel = reader.GetDecimal("CoutReel"),
-                    Depense = reader.IsDBNull("Depense") ? 0 : reader.GetDecimal("Depense"),
-                    ResponsableId = reader.IsDBNull("ResponsableId") ? null : reader.GetInt32("ResponsableId"),
-                    TypeResponsable = reader.GetString("TypeResponsable"),
-                    EstActif = reader.GetBoolean("EstActif"),
-
-                    // ✅ NOUVEAU CHAMP
-                    IdSousTraitant = reader.IsDBNull("IdSousTraitant") ? null : reader.GetInt32("IdSousTraitant"),
-
-                    // Propriétés DQE existantes
-                    LinkedDqeLotId = reader.IsDBNull("LinkedDqeLotId") ? null : reader.GetInt32("LinkedDqeLotId"),
-                    LinkedDqeLotCode = reader.IsDBNull("LinkedDqeLotCode") ? null : reader.GetString("LinkedDqeLotCode"),
-                    LinkedDqeLotName = reader.IsDBNull("LinkedDqeLotName") ? null : reader.GetString("LinkedDqeLotName"),
-                    LinkedDqeReference = reader.IsDBNull("LinkedDqeReference") ? null : reader.GetString("LinkedDqeReference")
-                };
-
-                // ✅ MAPPER LE SOUS-TRAITANT SI PRÉSENT
-                if (!reader.IsDBNull("SousTraitantId"))
-                {
-                    etape.SousTraitant = new SousTraitant
+                    var etape = new EtapeProjet
                     {
-                        Id = reader.GetInt32("SousTraitantId"),
-                        Nom = reader.GetString("SousTraitantNom"),
-                        Email = reader.IsDBNull("SousTraitantEmail") ? null : reader.GetString("SousTraitantEmail"),
-                        Telephone = reader.IsDBNull("SousTraitantTelephone") ? null : reader.GetString("SousTraitantTelephone"),
-                        NoteMoyenne = reader.IsDBNull("SousTraitantNote") ? 0 : reader.GetDecimal("SousTraitantNote")
+                        Id = reader.GetInt32("Id"),
+                        ProjetId = reader.GetInt32("ProjetId"),
+                        Nom = reader.GetString("Nom"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        Ordre = reader.GetInt32("Ordre"),
+                        Niveau = reader.IsDBNull("Niveau") ? 0 : reader.GetInt32("Niveau"),
+                        DateDebut = reader.IsDBNull("DateDebut") ? null : reader.GetDateTime("DateDebut"),
+                        DateFinPrevue = reader.IsDBNull("DateFinPrevue") ? null : reader.GetDateTime("DateFinPrevue"),
+                        DateFinReelle = reader.IsDBNull("DateFinReelle") ? null : reader.GetDateTime("DateFinReelle"),
+                        Statut = reader.GetString("Statut"),
+                        PourcentageAvancement = reader.GetInt32("PourcentageAvancement"),
+                        BudgetPrevu = reader.GetDecimal("BudgetPrevu"),
+                        CoutReel = reader.GetDecimal("CoutReel"),
+                        Depense = reader.IsDBNull("Depense") ? 0 : reader.GetDecimal("Depense"),
+                        ResponsableId = reader.IsDBNull("ResponsableId") ? null : reader.GetInt32("ResponsableId"),
+                        TypeResponsable = reader.GetString("TypeResponsable"),
+                        EstActif = reader.GetBoolean("EstActif"),
+                        IdSousTraitant = reader.IsDBNull("IdSousTraitant") ? null : reader.GetInt32("IdSousTraitant"),
+                        LinkedDqeLotId = reader.IsDBNull("LinkedDqeLotId") ? null : reader.GetInt32("LinkedDqeLotId"),
+                        LinkedDqeLotCode = reader.IsDBNull("LinkedDqeLotCode") ? null : reader.GetString("LinkedDqeLotCode"),
+                        LinkedDqeLotName = reader.IsDBNull("LinkedDqeLotName") ? null : reader.GetString("LinkedDqeLotName"),
+                        LinkedDqeReference = reader.IsDBNull("LinkedDqeReference") ? null : reader.GetString("LinkedDqeReference")
                     };
-                }
 
-                etapes.Add(etape);
+                    if (!reader.IsDBNull("SousTraitantId"))
+                    {
+                        etape.SousTraitant = new SousTraitant
+                        {
+                            Id = reader.GetInt32("SousTraitantId"),
+                            Nom = reader.GetString("SousTraitantNom"),
+                            Email = reader.IsDBNull("SousTraitantEmail") ? null : reader.GetString("SousTraitantEmail"),
+                            Telephone = reader.IsDBNull("SousTraitantTelephone") ? null : reader.GetString("SousTraitantTelephone"),
+                            NoteMoyenne = reader.IsDBNull("SousTraitantNote") ? 0 : reader.GetDecimal("SousTraitantNote")
+                        };
+                    }
+
+                    etapes.Add(etape);
+                }
+            }
+
+            // 2️⃣ Maintenant que le reader est fermé → calculer les dépenses
+            foreach (var etape in etapes)
+            {
+                etape.Depense = await GetTotalSortiesByEtapeAsync(conn, etape.Id);
             }
 
             return etapes;
         }
+        public async Task<decimal> GetTotalSortiesByEtapeAsync(SqlConnection conn, int idEtape)
+        {
+
+            var query = @"
+        SELECT SUM(Montant)
+        FROM MouvementsFinanciers
+        WHERE EtapeProjetId = @IdEtape
+          AND TypeMouvement = 'Sortie'";
+
+            using var cmd = new SqlCommand(query, conn);
+            cmd.Parameters.AddWithValue("@IdEtape", idEtape);
+
+            var result = await cmd.ExecuteScalarAsync();
+
+            return result == DBNull.Value ? 0 : Convert.ToDecimal(result);
+        }
+
 
         private void AddProjetParameters(SqlCommand cmd, Projet projet)
         {

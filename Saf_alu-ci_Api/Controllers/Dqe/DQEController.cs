@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Saf_alu_ci_Api.Controllers.Dqe;
+using Saf_alu_ci_Api.Controllers.Projets;
 
 namespace Saf_alu_ci_Api.Controllers.Dqe
 {
@@ -11,13 +12,17 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
     {
         private readonly DQEService _dqeService;
         private readonly ConversionService _conversionService;
+        private readonly ProjetService _projetService;
+
+
 
         public DQEController(
             DQEService dqeService,
-            ConversionService conversionService)
+            ConversionService conversionService, ProjetService projetService)
         {
             _dqeService = dqeService;
             _conversionService = conversionService;
+            _projetService = projetService;
         }
 
         // ========================================
@@ -170,6 +175,28 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             try
             {
                 var existing = await _dqeService.GetByIdAsync(id);
+                var dqe = await _dqeService.GetByIdAsync(id);
+                bool DebourseSecOk = false;
+
+                foreach (var item_lot in dqe.Lots.ToList())
+                {
+                    foreach (var item_chap in item_lot.Chapters.ToList())
+                    {
+                        foreach (var item in item_chap.Items.ToList())
+                        {
+
+                            if (item.DeboursseSec <= 0.0m)
+                            {
+                                DebourseSecOk = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (DebourseSecOk != false)
+                {
+                    return BadRequest(new { message = "Veillez rensseigner tous les debourssé sec avant de convertir" });
+                }
                 if (existing == null)
                 {
                     return NotFound(new { message = "DQE introuvable" });

@@ -121,9 +121,11 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 return;
 
             int ordreEtapePrincipale = 1;
-
+            //ici Niveau correspond a etaps 
+            var Niveau = 0;
             foreach (var lot in lots.OrderBy(l => l.Ordre))
             {
+                Niveau++;
                 // ================================================
                 // ÉTAPE 1 : Créer l'étape principale (Lot)
                 // ================================================
@@ -146,6 +148,10 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     .SelectMany(c => c.Items)
                     .Sum(i => i.TotalRevenueHT);
 
+                var CoutReelEtape = lot.Chapters
+                    .SelectMany(c => c.Items)
+                    .Sum(i => i.TotalRevenueHT);
+
                 // Insérer l'étape principale
                 var etapeId = await InsertEtapePrincipaleAsync(
                     conn,
@@ -156,7 +162,9 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     dateDebutEtape,
                     dateFinEtape,
                     budgetEtape,
-                    dqeReference
+                    CoutReelEtape,
+                    dqeReference,
+                    Niveau
                 );
 
                 // ================================================
@@ -180,7 +188,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                             ordreSousEtape,
                             dateDebutEtape,
                             dateFinEtape,
-                            dqeReference
+                            dqeReference,
+                            Niveau
                         );
 
                         ordreSousEtape++;
@@ -203,7 +212,9 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             DateTime dateDebut,
             DateTime dateFinPrevue,
             decimal budgetPrevu,
-            string dqeReference)
+            decimal CoutReelEtape,
+            string dqeReference,
+            int Niveau)
         {
             using var cmd = new SqlCommand(@"
                 INSERT INTO EtapesProjets (
@@ -217,10 +228,10 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     EstActif, DateCreation, DateModification
                 ) VALUES (
                     @ProjetId, @Nom, @Description, @Ordre,
-                    NULL, 1, 'Lot',
+                    NULL, @Niveau, 'Lot',
                     @DateDebut, @DateFinPrevue,
                     'NonCommence', 0,
-                    @BudgetPrevu, 0, 0,
+                    @BudgetPrevu, @CoutReel, 0,
                     'Interne',
                     @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName, @LinkedDqeReference,
                     1, GETUTCDATE(), GETUTCDATE()
@@ -231,9 +242,11 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             cmd.Parameters.AddWithValue("@Nom", lot.Nom);
             cmd.Parameters.AddWithValue("@Description", lot.Description ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Ordre", ordre);
+            cmd.Parameters.AddWithValue("@Niveau", Niveau);
             cmd.Parameters.AddWithValue("@DateDebut", dateDebut);
             cmd.Parameters.AddWithValue("@DateFinPrevue", dateFinPrevue);
             cmd.Parameters.AddWithValue("@BudgetPrevu", budgetPrevu);
+            cmd.Parameters.AddWithValue("@CoutReel", CoutReelEtape);
             cmd.Parameters.AddWithValue("@LinkedDqeLotId", lot.Id);
             cmd.Parameters.AddWithValue("@LinkedDqeLotCode", lot.Code);
             cmd.Parameters.AddWithValue("@LinkedDqeLotName", lot.Nom);
@@ -257,7 +270,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             int ordre,
             DateTime dateDebut,
             DateTime dateFinPrevue,
-            string dqeReference)
+            string dqeReference,
+            int Niveau)
         {
             using var cmd = new SqlCommand(@"
                 INSERT INTO EtapesProjets (
@@ -275,10 +289,10 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     EstActif, DateCreation, DateModification
                 ) VALUES (
                     @ProjetId, @Nom, @Description, @Ordre,
-                    @EtapeParentId, 2, 'Item',
+                    @EtapeParentId, @Niveau, 'Item',
                     @DateDebut, @DateFinPrevue,
                     'NonCommence', 0,
-                    @BudgetPrevu, 0, 0,
+                    @BudgetPrevu, @CoutReel, 0,
                     @Unite, @QuantitePrevue, 0, @PrixUnitairePrevu,
                     'Interne',
                     @LinkedDqeLotId, @LinkedDqeLotCode,
@@ -293,9 +307,11 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             cmd.Parameters.AddWithValue("@Description", item.Description ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Ordre", ordre);
             cmd.Parameters.AddWithValue("@EtapeParentId", etapeParentId);
+            cmd.Parameters.AddWithValue("@Niveau", Niveau);
             cmd.Parameters.AddWithValue("@DateDebut", dateDebut);
             cmd.Parameters.AddWithValue("@DateFinPrevue", dateFinPrevue);
             cmd.Parameters.AddWithValue("@BudgetPrevu", item.TotalRevenueHT);
+            cmd.Parameters.AddWithValue("@CoutReel", item.DeboursseSec);
             cmd.Parameters.AddWithValue("@Unite", item.Unite);
             cmd.Parameters.AddWithValue("@QuantitePrevue", item.Quantite);
             cmd.Parameters.AddWithValue("@PrixUnitairePrevu", item.PrixUnitaireHT);
@@ -430,6 +446,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 WHERE Id = @Id", conn, transaction);
 
             cmd.Parameters.AddWithValue("@Id", dqeId);
+            cmd.Parameters.AddWithValue("@IsConverted", true);
             cmd.Parameters.AddWithValue("@LinkedProjectId", projetId);
             cmd.Parameters.AddWithValue("@LinkedProjectNumber", projetNumero);
             cmd.Parameters.AddWithValue("@ConvertedAt", DateTime.UtcNow);
@@ -513,17 +530,18 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             };
 
             var stagesPreview = new List<StagePreviewDTO>();
-
+            var Niveau = 0;
             // Ajouter les étapes principales avec leurs sous-étapes
             foreach (var lot in dqe.Lots.OrderBy(l => l.Ordre))
-            {
+            { //ici niveau egale lot 
+                Niveau += 1;
                 var nombreSousEtapes = lot.Chapters.SelectMany(c => c.Items).Count();
 
                 stagesPreview.Add(new StagePreviewDTO
                 {
                     Nom = lot.Nom,
                     BudgetPrevu = lot.TotalRevenueHT,
-                    Niveau = 1,
+                    Niveau = Niveau,
                     TypeEtape = "Lot",
                     NombreSousEtapes = nombreSousEtapes
                 });

@@ -152,6 +152,138 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetActivitesRecentes",
+    "RelativePath": "api/Dashboard/activites-recentes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "limite",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetDonneesCompletes",
+    "RelativePath": "api/Dashboard/donnees-completes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetEvolutionChiffreAffaires",
+    "RelativePath": "api/Dashboard/evolution-chiffre-affaires",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "mois",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetKPIs",
+    "RelativePath": "api/Dashboard/kpis",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetProjetsActifs",
+    "RelativePath": "api/Dashboard/projets-actifs",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetProjetsAlerte",
+    "RelativePath": "api/Dashboard/projets-alerte",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetRepartitionProjets",
+    "RelativePath": "api/Dashboard/repartition-projets",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetRepartitionProjetsParType",
+    "RelativePath": "api/Dashboard/repartition-projets-type",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetStatistiquesChefProjet",
+    "RelativePath": "api/Dashboard/statistiques-chef-projet",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetStatistiquesCommercial",
+    "RelativePath": "api/Dashboard/statistiques-commercial",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetStatistiquesComptable",
+    "RelativePath": "api/Dashboard/statistiques-comptable",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dashboard.DashboardController",
+    "Method": "GetStatistiquesGlobales",
+    "RelativePath": "api/Dashboard/statistiques-globales",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Devis.DevisController",
     "Method": "GetAll",
     "RelativePath": "api/Devis",

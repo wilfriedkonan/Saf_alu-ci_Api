@@ -45,7 +45,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         public int? FactureId { get; set; }
         public int? ProjetId { get; set; }
         public int? SousTraitantId { get; set; }
-
+        public int? EtapeProjetId { get; set; }
         [Required]
         [StringLength(200)]
         public string Libelle { get; set; }
@@ -68,7 +68,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         // Pour les virements
         public int? CompteDestinationId { get; set; }
 
-        public int UtilisateurSaisie { get; set; }
+        public int UtilisateurCreation { get; set; }
 
         // Navigation properties (optionnelles)
         public virtual Compte? Compte { get; set; }
@@ -130,6 +130,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         public int? FactureId { get; set; }
         public int? ProjetId { get; set; }
         public int? SousTraitantId { get; set; }
+        public int? EtapeProjetId { get; set; }
 
         [Required(ErrorMessage = "Le libellé est obligatoire")]
         [StringLength(200, ErrorMessage = "Le libellé ne peut pas dépasser 200 caractères")]
@@ -209,7 +210,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         public List<ChartData> BeneficesParProjet { get; set; } = new();
         public List<ChartData> RepartitionParCategorie { get; set; } = new();
         public List<ChartData> EvolutionSoldes { get; set; } = new();
-
+        public List<ChartData> FluxSemestre { get; set; } = new();
         public TresorerieIndicateurs Indicateurs { get; set; } = new();
     }
 
