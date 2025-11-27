@@ -6,8 +6,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
-    public class DevisController : ControllerBase
+    [Authorize]
+    public class DevisController : BaseController
     {
         private readonly DevisService _devisService;
 

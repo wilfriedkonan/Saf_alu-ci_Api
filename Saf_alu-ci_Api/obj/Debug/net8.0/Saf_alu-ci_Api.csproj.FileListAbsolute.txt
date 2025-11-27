@@ -28,6 +28,10 @@ C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Saf_a
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Azure.Core.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Azure.Identity.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\BCrypt.Net-Next.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\brevo_csharp.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\FubarCoder.RestSharp.Portable.Core.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\FubarCoder.RestSharp.Portable.HttpClient.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\JsonSubTypes.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Microsoft.Bcl.AsyncInterfaces.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Microsoft.Bcl.Cryptography.dll
@@ -46,6 +50,7 @@ C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Micro
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Microsoft.OpenApi.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Microsoft.SqlServer.Server.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Newtonsoft.Json.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\QuestPDF.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll

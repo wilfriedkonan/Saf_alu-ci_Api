@@ -43,6 +43,28 @@ namespace Saf_alu_ci_Api.Controllers.Dashboard
             return new DashboardKPIs();
         }
 
+        public async Task<DashboardKPIsCAFacture> GetKPIsCAFactureAsync()
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("SELECT * FROM VW_CA_MoisEnCours", conn);
+
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new DashboardKPIsCAFacture
+                {
+                    NombreFactureEmise = reader.GetInt32("NombreFactures"),
+                    ChiffreAffireHT = reader.GetDecimal("ChiffreAffaireHT"),
+                    ChiffreAffireTTC = reader.GetDecimal("ChiffreAffaireTTC"),
+                   
+                };
+            }
+
+            return new DashboardKPIsCAFacture();
+        }
+
         public async Task<List<ProjetActif>> GetProjetsActifsAsync()
         {
             var projets = new List<ProjetActif>();
@@ -166,6 +188,9 @@ namespace Saf_alu_ci_Api.Controllers.Dashboard
             // Récupérer les KPIs de base depuis la vue existante
             var kpis = await GetKPIsAsync();
 
+            //Chiffre d'affaire sur les factures emises (kpisCaFac) 
+            var kpisCaFac = await GetKPIsCAFactureAsync();
+
             // Calculer le changement par rapport au mois précédent
             using var cmd = new SqlCommand(@"
                 DECLARE @DebutMois DATETIME = DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
@@ -176,8 +201,8 @@ namespace Saf_alu_ci_Api.Controllers.Dashboard
                     SELECT ISNULL(SUM(MontantTTC), 0) 
                     FROM Factures 
                     WHERE Statut != 'Brouillon' AND Statut != 'Annulee'
-                    AND DatePaiement >= @DebutMoisPrecedent 
-                    AND DatePaiement < @DebutMois
+                    AND DateCreation >= @DebutMoisPrecedent 
+                    AND DateCreation < @DebutMois
                 )
 
                 -- Projets actifs mois précédent
@@ -219,7 +244,7 @@ namespace Saf_alu_ci_Api.Controllers.Dashboard
 
             // Calculer les changements
             var changementCA = caMoisPrecedent > 0
-                ? ((kpis.RevenusMois - caMoisPrecedent) / caMoisPrecedent) * 100
+                ? ((kpisCaFac.ChiffreAffireTTC - caMoisPrecedent) / caMoisPrecedent) * 100
                 : 0;
 
             var changementProjets = kpis.ProjetsActifs - projetsActifsMoisPrecedent;
@@ -232,7 +257,7 @@ namespace Saf_alu_ci_Api.Controllers.Dashboard
             {
                 ChiffreAffaires = new StatKPI
                 {
-                    Valeur = $"{kpis.RevenusMois:N0}F",
+                    Valeur = $"{kpisCaFac.ChiffreAffireTTC:N0}F",
                     Changement = $"{(changementCA >= 0 ? "+" : "")}{changementCA:F1}%",
                     Type = changementCA >= 0 ? "hausse" : "baisse"
                 },
@@ -816,6 +841,15 @@ ORDER BY SortValue DESC";
         public int FacturesImpayes { get; set; }
         public decimal RevenusMois { get; set; }
         public decimal TresorerieTotal { get; set; }
+        public decimal objectifFinancier { get; set; }
+    }
+
+    public class DashboardKPIsCAFacture
+    {
+       
+        public int NombreFactureEmise { get; set; }
+        public decimal ChiffreAffireHT { get; set; }
+        public decimal ChiffreAffireTTC{ get; set; }
         public decimal objectifFinancier { get; set; }
     }
 

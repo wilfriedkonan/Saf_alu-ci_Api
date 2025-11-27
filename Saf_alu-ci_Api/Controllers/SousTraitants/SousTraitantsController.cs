@@ -6,8 +6,8 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize]
-    public class SousTraitantsController : ControllerBase
+    [Authorize]
+    public class SousTraitantsController : BaseController
     {
         private readonly SousTraitantService _sousTraitantService;
 

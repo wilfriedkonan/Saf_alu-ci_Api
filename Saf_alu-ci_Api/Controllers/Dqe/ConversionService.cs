@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Microsoft.Identity.Client;
 using Saf_alu_ci_Api.Controllers.Dqe;
 using Saf_alu_ci_Api.Controllers.Projets;
 using System.Data;
@@ -562,7 +563,417 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 EtapesPrevues = stagesPreview
             };
         }
-    }
 
-    // DTOs pour preview
+        public async Task<bool> LinkDQEToExistingProjectAsync(
+        int dqeId,
+        int projetId,
+        int utilisateurId)
+        {
+            // 1. Vérifier que le DQE peut être converti
+            var (canConvert, reason) = await _dqeService.CanConvertToProjectAsync(dqeId);
+            if (!canConvert)
+            {
+                throw new InvalidOperationException(reason);
+            }
+
+            // 2. Récupérer le DQE complet avec Lots, Chapters et Items
+            var dqe = await _dqeService.GetByIdAsync(dqeId);
+            if (dqe == null)
+            {
+                throw new InvalidOperationException("DQE introuvable");
+            }
+
+            // 3. Récupérer le projet
+            var projet = await _projetService.GetByIdAsync(projetId);
+            if (projet == null)
+            {
+                throw new InvalidOperationException("Projet introuvable");
+            }
+
+            // Vérifications de sécurité
+            if (projet.Statut == "Termine" || projet.Statut == "Annule")
+            {
+                throw new InvalidOperationException("Impossible de lier à un projet terminé ou annulé");
+            }
+
+            if (projet.LinkedDqeId.HasValue)
+            {
+                throw new InvalidOperationException("Ce projet est déjà lié à un autre DQE");
+            }
+
+            // 4. Transaction pour garantir l'atomicité
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                // 4a. Récupérer l'ordre maximum actuel des étapes du projet
+                int ordreMax = await GetMaxOrdreEtapeAsync(conn, transaction, projetId);
+
+                // 4b. Créer les étapes hiérarchiques (Lots + Items) à partir du DQE
+                await CreateHierarchicalStagesForExistingProjectAsync(
+                    conn,
+                    transaction,
+                    projetId,
+                    dqe.Lots,
+                    ordreMax + 1, // Commencer après les étapes existantes
+                    projet.DateDebut ?? DateTime.UtcNow,
+                    projet.DateFinPrevue ?? DateTime.UtcNow.AddDays(90),
+                    dqe.Reference
+                );
+
+                // 4c. Mettre à jour le budget du projet
+                await UpdateProjetBudgetAsync(
+                    conn,
+                    transaction,
+                    projetId,
+                    dqe.TotalRevenueHT
+                );
+
+                // 4d. Marquer le DQE comme converti et lier au projet
+                await MarkDQEAsLinkedAsync(
+                    conn,
+                    transaction,
+                    dqeId,
+                    projetId,
+                    projet.Numero,
+                    utilisateurId
+                );
+
+                // 4e. Lier le projet au DQE
+                await LinkProjectToDQEAsync(
+                    conn,
+                    transaction,
+                    projetId,
+                    dqeId,
+                    dqe.Reference,
+                    dqe.Nom,
+                    dqe.TotalRevenueHT,
+                    utilisateurId
+                );
+
+                transaction.Commit();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new Exception($"Erreur lors de la liaison du DQE au projet: {ex.Message}", ex);
+            }
+        }
+        // <summary>
+        /// Récupère l'ordre maximum des étapes existantes dans le projet
+        /// </summary>
+        private async Task<int> GetMaxOrdreEtapeAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId)
+        {
+            using var cmd = new SqlCommand(@"
+        SELECT ISNULL(MAX(Ordre), 0) 
+        FROM EtapesProjets 
+        WHERE ProjetId = @ProjetId 
+        AND EtapeParentId IS NULL", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+
+            var result = await cmd.ExecuteScalarAsync();
+            return result != DBNull.Value ? Convert.ToInt32(result) : 0;
+        }
+
+        /// <summary>
+        /// Crée la hiérarchie complète des étapes pour un projet existant
+        /// Lots → Étapes principales (Niveau 1)
+        /// Items → Sous-étapes (Niveau 2)
+        /// </summary>
+        private async Task CreateHierarchicalStagesForExistingProjectAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId,
+            List<DQELotDTO> lots,
+            int ordreDebut,
+            DateTime dateDebutProjet,
+            DateTime dateFinProjet,
+            string dqeReference)
+        {
+            int ordreEtapePrincipale = ordreDebut;
+            var Niveau = 0;
+            foreach (var lot in lots.OrderBy(l => l.Ordre))
+            {
+                Niveau++;
+                // Étape principale (Lot)
+                var etapeId = await InsertEtapePrincipaleForLinkingAsync(
+                    conn,
+                    transaction,
+                    projetId,
+                    lot,
+                    ordreEtapePrincipale,
+                    dateDebutProjet,
+                    dateFinProjet,
+                    lot.TotalRevenueHT,
+                    0, // CoutReel
+                    dqeReference,
+                   Niveau
+                );
+
+                // Sous-étapes (Items)
+                if (lot.Chapters != null && lot.Chapters.Any())
+                {
+                    int ordreSousEtape = 1;
+
+                    foreach (var chapter in lot.Chapters.OrderBy(c => c.Ordre))
+                    {
+                        if (chapter.Items != null && chapter.Items.Any())
+                        {
+                            foreach (var item in chapter.Items.OrderBy(i => i.Ordre))
+                            {
+                                await InsertSousEtapeForLinkingAsync(
+                                    conn,
+                                    transaction,
+                                    projetId,
+                                    etapeId,
+                                    item,
+                                    chapter,
+                                    lot,
+                                    ordreSousEtape,
+                                    dateDebutProjet,
+                                    dateFinProjet,
+                                    dqeReference,
+                                    Niveau
+                                );
+
+                                ordreSousEtape++;
+                            }
+                        }
+                    }
+                }
+
+                ordreEtapePrincipale++;
+            }
+        }
+
+        /// <summary>
+        /// Insère une étape principale (Lot DQE) pour liaison
+        /// </summary>
+        private async Task<int> InsertEtapePrincipaleForLinkingAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId,
+            DQELotDTO lot,
+            int ordre,
+            DateTime dateDebut,
+            DateTime dateFinPrevue,
+            decimal budgetPrevu,
+            decimal coutReel,
+            string dqeReference,
+            int niveau)
+        {
+            using var cmd = new SqlCommand(@"
+        INSERT INTO EtapesProjets (
+            ProjetId, Nom, Description, Ordre,
+            EtapeParentId, Niveau, TypeEtape,
+            DateDebut, DateFinPrevue,
+            Statut, PourcentageAvancement,
+            BudgetPrevu, CoutReel, Depense,
+            Unite, QuantitePrevue, PrixUnitairePrevu,
+            ResponsableId, TypeResponsable, IdSousTraitant,
+            LinkedDqeLotId, LinkedDqeLotCode, LinkedDqeLotName,
+            LinkedDqeItemId, LinkedDqeItemCode,
+            LinkedDqeChapterId, LinkedDqeChapterCode,
+            LinkedDqeReference,
+            EstActif, DateCreation, DateModification
+        ) VALUES (
+            @ProjetId, @Nom, @Description, @Ordre,
+            NULL, @Niveau, 'Lot',
+            @DateDebut, @DateFinPrevue,
+            'NonCommence', 0,
+            @BudgetPrevu, @CoutReel, 0,
+            NULL, NULL, NULL,
+            NULL, 'Interne', NULL,
+            @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName,
+            NULL, NULL,
+            NULL, NULL,
+            @LinkedDqeReference,
+            1, GETUTCDATE(), GETUTCDATE()
+        );
+        SELECT CAST(SCOPE_IDENTITY() AS INT);", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+            cmd.Parameters.AddWithValue("@Nom", lot.Nom);
+            cmd.Parameters.AddWithValue("@Description", lot.Description ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Ordre", ordre);
+            cmd.Parameters.AddWithValue("@Niveau", niveau);
+            cmd.Parameters.AddWithValue("@DateDebut", dateDebut);
+            cmd.Parameters.AddWithValue("@DateFinPrevue", dateFinPrevue);
+            cmd.Parameters.AddWithValue("@BudgetPrevu", budgetPrevu);
+            cmd.Parameters.AddWithValue("@CoutReel", coutReel);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotId", lot.Id);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotCode", lot.Code);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotName", lot.Nom);
+            cmd.Parameters.AddWithValue("@LinkedDqeReference", dqeReference);
+
+            var etapeId = (int)await cmd.ExecuteScalarAsync();
+            return etapeId;
+        }
+
+        /// <summary>
+        /// Insère une sous-étape (Item DQE) pour liaison
+        /// </summary>
+        private async Task InsertSousEtapeForLinkingAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId,
+            int etapeParentId,
+            DQEItemDTO item,
+            DQEChapterDTO chapter,
+            DQELotDTO lot,
+            int ordre,
+            DateTime dateDebut,
+            DateTime dateFinPrevue,
+            string dqeReference,
+            int niveau)
+        {
+            using var cmd = new SqlCommand(@"
+        INSERT INTO EtapesProjets (
+            ProjetId, Nom, Description, Ordre,
+            EtapeParentId, Niveau, TypeEtape,
+            DateDebut, DateFinPrevue,
+            Statut, PourcentageAvancement,
+            BudgetPrevu, CoutReel, Depense,
+            Unite, QuantitePrevue, QuantiteRealisee, PrixUnitairePrevu,
+            ResponsableId, TypeResponsable, IdSousTraitant,
+            LinkedDqeLotId, LinkedDqeLotCode, 
+            LinkedDqeChapterId, LinkedDqeChapterCode,
+            LinkedDqeItemId, LinkedDqeItemCode,
+            LinkedDqeReference,
+            EstActif, DateCreation, DateModification
+        ) VALUES (
+            @ProjetId, @Nom, @Description, @Ordre,
+            @EtapeParentId, @Niveau, 'Item',
+            @DateDebut, @DateFinPrevue,
+            'NonCommence', 0,
+            @BudgetPrevu, @CoutReel, 0,
+            @Unite, @QuantitePrevue, 0, @PrixUnitairePrevu,
+            NULL, 'Interne', NULL,
+            @LinkedDqeLotId, @LinkedDqeLotCode, 
+            @LinkedDqeChapterId, @LinkedDqeChapterCode,
+            @LinkedDqeItemId, @LinkedDqeItemCode,
+            @LinkedDqeReference,
+            1, GETUTCDATE(), GETUTCDATE()
+        );", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+            cmd.Parameters.AddWithValue("@Nom", item.Designation);
+            cmd.Parameters.AddWithValue("@Description", item.Description ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Ordre", ordre);
+            cmd.Parameters.AddWithValue("@EtapeParentId", etapeParentId);
+            cmd.Parameters.AddWithValue("@Niveau", niveau);
+            cmd.Parameters.AddWithValue("@DateDebut", dateDebut);
+            cmd.Parameters.AddWithValue("@DateFinPrevue", dateFinPrevue);
+            cmd.Parameters.AddWithValue("@BudgetPrevu", item.TotalRevenueHT);
+            cmd.Parameters.AddWithValue("@CoutReel", item.DeboursseSec);
+            cmd.Parameters.AddWithValue("@Unite", item.Unite);
+            cmd.Parameters.AddWithValue("@QuantitePrevue", item.Quantite);
+            cmd.Parameters.AddWithValue("@PrixUnitairePrevu", item.PrixUnitaireHT);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotId", lot.Id);
+            cmd.Parameters.AddWithValue("@LinkedDqeLotCode", lot.Code);
+            cmd.Parameters.AddWithValue("@LinkedDqeChapterId", chapter.Id);
+            cmd.Parameters.AddWithValue("@LinkedDqeChapterCode", chapter.Code);
+            cmd.Parameters.AddWithValue("@LinkedDqeItemId", item.Id);
+            cmd.Parameters.AddWithValue("@LinkedDqeItemCode", item.Code);
+            cmd.Parameters.AddWithValue("@LinkedDqeReference", dqeReference);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Met à jour le budget du projet
+        /// </summary>
+        private async Task UpdateProjetBudgetAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId,
+            decimal budgetDQE)
+        {
+            using var cmd = new SqlCommand(@"
+        UPDATE Projets 
+        SET BudgetRevise = BudgetRevise + @BudgetDQE,
+            DateModification = GETUTCDATE()
+        WHERE Id = @ProjetId", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+            cmd.Parameters.AddWithValue("@BudgetDQE", budgetDQE);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Marque le DQE comme lié à un projet
+        /// </summary>
+        private async Task MarkDQEAsLinkedAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int dqeId,
+            int projetId,
+            string projetNumero,
+            int utilisateurId)
+        {
+            using var cmd = new SqlCommand(@"
+        UPDATE DQE 
+        SET IsConverted = 1,
+            LinkedProjectId = @ProjetId,
+            LinkedProjectNumber = @ProjetNumero,
+            ConvertedAt = GETUTCDATE(),
+            ConvertedById = @ConvertedById,
+            DateModification = GETUTCDATE()
+        WHERE Id = @DqeId", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@DqeId", dqeId);
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+            cmd.Parameters.AddWithValue("@ProjetNumero", projetNumero);
+            cmd.Parameters.AddWithValue("@ConvertedById", utilisateurId);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+
+
+        /// <summary>
+        /// Lie le projet au DQE
+        /// </summary>
+        private async Task LinkProjectToDQEAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int projetId,
+            int dqeId,
+            string dqeReference,
+            string dqeNom,
+            decimal dqeBudgetHT,
+            int utilisateurId)
+        {
+            using var cmd = new SqlCommand(@"
+        UPDATE Projets 
+        SET LinkedDqeId = @DqeId,
+            LinkedDqeReference = @DqeReference,
+            LinkedDqeName = @DqeNom,
+            LinkedDqeBudgetHT = @DqeBudgetHT,
+            DqeConvertedAt = GETUTCDATE(),
+            DqeConvertedById = @ConvertedById,
+            DateModification = GETUTCDATE(),
+            IsFromDqeConversion = @IsFromDqeConversion
+        WHERE Id = @ProjetId", conn, transaction);
+
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+            cmd.Parameters.AddWithValue("@DqeId", dqeId);
+            cmd.Parameters.AddWithValue("@DqeReference", dqeReference);
+            cmd.Parameters.AddWithValue("@DqeNom", dqeNom);
+            cmd.Parameters.AddWithValue("@DqeBudgetHT", dqeBudgetHT);
+            cmd.Parameters.AddWithValue("@ConvertedById", utilisateurId);
+            cmd.Parameters.AddWithValue("@IsFromDqeConversion", 1);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+        // DTOs pour preview
+    }
 }

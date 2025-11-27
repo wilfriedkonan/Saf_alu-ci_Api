@@ -8,7 +8,8 @@ namespace Saf_alu_ci_Api.Controllers.Dashboard
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class DashboardController : ControllerBase
+    [Authorize]
+    public class DashboardController : BaseController
     {
         private readonly DashboardService _dashboardService;
         private readonly ILogger<DashboardController> _logger;

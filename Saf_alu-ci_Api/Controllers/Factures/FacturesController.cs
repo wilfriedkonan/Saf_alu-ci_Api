@@ -6,8 +6,8 @@ namespace Saf_alu_ci_Api.Controllers.Factures
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
-    public class FacturesController : ControllerBase
+    [Authorize]
+    public class FacturesController : BaseController
     {
         private readonly FactureService _factureService;
 

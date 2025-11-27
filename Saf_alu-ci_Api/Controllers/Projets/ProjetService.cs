@@ -60,7 +60,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             {
                 projet.Etapes = await GetEtapesProjetAsync(conn, projet.Id);
 
-                // Calculer le pourcentage d'avancement
+                // Calculer le pourcentage d'avancement et depense totale
                 if (projet.Etapes != null && projet.Etapes.Any())
                 {
                     var etapesActives = projet.Etapes.Where(e => e.EstActif).ToList();
@@ -68,8 +68,11 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     if (etapesActives.Any())
                     {
                         var totalAvancement = etapesActives.Sum(x => x.PourcentageAvancement);
-                        var totalEtape = etapesActives.Count;
+                        var totalEtape = etapesActives.Where(x => x.LinkedDqeLotName == null).Count();
                         projet.PourcentageAvancement = Convert.ToInt32(totalAvancement / totalEtape);
+
+                        var depenseTotal = etapesActives.Sum(x => x.Depense);
+                        projet.DepenseGlobale = Convert.ToDecimal(depenseTotal);
                     }
                 }
             }
@@ -107,6 +110,8 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 if (projet.Etapes != null && projet.Etapes.Any())
                 {
                     projet.CoutReel = projet.Etapes.Sum(e => e.CoutReel);
+                    var nbEtap = projet.Etapes.Where(x => x.LinkedDqeLotName == null).Count();
+                    projet.PourcentageAvancement = (projet.Etapes.Sum(x => x.PourcentageAvancement) / nbEtap);
                 }
 
                 return projet;
@@ -975,6 +980,9 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                             NoteMoyenne = reader.IsDBNull("SousTraitantNote") ? 0 : reader.GetDecimal("SousTraitantNote")
                         };
                     }
+                    // ajout calcule depense 
+
+
 
                     etapes.Add(etape);
                 }
@@ -984,6 +992,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             foreach (var etape in etapes)
             {
                 etape.Depense = await GetTotalSortiesByEtapeAsync(conn, etape.Id);
+
             }
 
             return etapes;
@@ -1108,5 +1117,220 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 }
             };
         }
+
+        private Projet MapToProjetGetProjet(SqlDataReader reader)
+        {
+            return new Projet
+            {
+                Id = reader.GetInt32("Id"),
+                Numero = reader.GetString("Numero"),
+                Nom = reader.GetString("Nom"),
+                Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                ClientId = reader.GetInt32("ClientId"),
+                DevisId = reader.IsDBNull("DevisId") ? null : reader.GetInt32("DevisId"),
+                Statut = reader.GetString("Statut"),
+                DateDebut = reader.IsDBNull("DateDebut") ? null : reader.GetDateTime("DateDebut"),
+                DateFinPrevue = reader.IsDBNull("DateFinPrevue") ? null : reader.GetDateTime("DateFinPrevue"),
+                DateFinRelle = reader.IsDBNull("DateFinRelle") ? null : reader.GetDateTime("DateFinRelle"),
+                BudgetInitial = reader.GetDecimal("BudgetInitial"),
+                BudgetRevise = reader.GetDecimal("BudgetRevise"),
+                CoutReel = reader.GetDecimal("CoutReel"),
+                DepenseGlobale = reader.IsDBNull("DepenseGlobale") ? 0 : reader.GetDecimal("DepenseGlobale"),
+                AdresseChantier = reader.IsDBNull("AdresseChantier") ? null : reader.GetString("AdresseChantier"),
+                CodePostalChantier = reader.IsDBNull("CodePostalChantier") ? null : reader.GetString("CodePostalChantier"),
+                VilleChantier = reader.IsDBNull("VilleChantier") ? null : reader.GetString("VilleChantier"),
+                PourcentageAvancement = reader.GetInt32("PourcentageAvancement"),
+                ChefProjetId = reader.IsDBNull("ChefProjetId") ? null : reader.GetInt32("ChefProjetId"),
+                DateCreation = reader.GetDateTime("DateCreation"),
+                DateModification = reader.GetDateTime("DateModification"),
+                UtilisateurCreation = reader.GetInt32("UtilisateurCreation"),
+                Actif = reader.GetBoolean("Actif"),
+
+                // NOUVELLES PROPRIÉTÉS DQE
+                LinkedDqeId = reader.IsDBNull("LinkedDqeId") ? null : reader.GetInt32("LinkedDqeId"),
+                LinkedDqeReference = reader.IsDBNull("LinkedDqeReference") ? null : reader.GetString("LinkedDqeReference"),
+                LinkedDqeName = reader.IsDBNull("LinkedDqeName") ? null : reader.GetString("LinkedDqeName"),
+                LinkedDqeBudgetHT = reader.IsDBNull("LinkedDqeBudgetHT") ? null : reader.GetDecimal("LinkedDqeBudgetHT"),
+                IsFromDqeConversion = reader.GetBoolean("IsFromDqeConversion"),
+                DqeConvertedAt = reader.IsDBNull("DqeConvertedAt") ? null : reader.GetDateTime("DqeConvertedAt"),
+                DqeConvertedById = reader.IsDBNull("DqeConvertedById") ? null : reader.GetInt32("DqeConvertedById"),
+
+                Client = new Client
+                {
+                    Nom = reader.IsDBNull("NomClient") ? "" : reader.GetString("NomClient"),
+                },
+            };
+        }
+
+        public async Task<List<Projet>> GetAvailableProjectsForLinkingAsync()
+        {
+            var projets = new List<Projet>();
+
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+        SELECT 
+            p.*,
+            tp.Nom as TypeProjetNom,c.Nom as NomClient
+        FROM Projets p
+        LEFT JOIN TypesProjets tp ON p.TypeProjetId = tp.Id
+        LEFT JOIN Clients c ON p.ClientId = c.Id
+        WHERE p.Actif = 1
+        AND p.Statut NOT IN ('Terminé', 'Clôturé')
+        AND p.LinkedDqeId IS NULL
+        ORDER BY p.DateCreation DESC", conn);
+
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                projets.Add(MapToProjetGetProjet(reader));
+            }
+
+            return projets;
+        }
+
+        /// <summary>
+        /// Ajoute les étapes d'un DQE à un projet existant
+        /// </summary>
+        public async Task<bool> AddDQEStagesToExistingProjectAsync(
+     int projetId,
+     List<EtapeProjet> nouvellesEtapes,
+     decimal budgetDQE)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                // 1. Récupérer le nombre d'étapes existantes pour ajuster l'ordre
+                int ordreMax = 0;
+                using (var cmd = new SqlCommand(@"
+            SELECT ISNULL(MAX(Ordre), 0) 
+            FROM EtapesProjets 
+            WHERE ProjetId = @ProjetId", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@ProjetId", projetId);
+                    ordreMax = (int)await cmd.ExecuteScalarAsync();
+                }
+
+                // 2. Insérer les nouvelles étapes avec ordre ajusté
+                foreach (var etape in nouvellesEtapes)
+                {
+                    ordreMax++;
+                    etape.Ordre = ordreMax;
+
+                    using var cmd = new SqlCommand(@"
+                INSERT INTO EtapesProjets (
+                    ProjetId, Nom, Description, Ordre,
+                    EtapeParentId, Niveau, TypeEtape,
+                    DateDebut, DateFinPrevue,
+                    Statut, PourcentageAvancement,
+                    BudgetPrevu, CoutReel, Depense,
+                    Unite, QuantitePrevue, PrixUnitairePrevu,
+                    ResponsableId, TypeResponsable, IdSousTraitant,
+                    LinkedDqeLotId, LinkedDqeLotCode, LinkedDqeLotName,
+                    LinkedDqeItemId, LinkedDqeItemCode,
+                    LinkedDqeChapterId, LinkedDqeChapterCode,
+                    LinkedDqeReference,
+                    EstActif, DateCreation, DateModification
+                ) VALUES (
+                    @ProjetId, @Nom, @Description, @Ordre,
+                    @EtapeParentId, @Niveau, @TypeEtape,
+                    @DateDebut, @DateFinPrevue,
+                    @Statut, @PourcentageAvancement,
+                    @BudgetPrevu, @CoutReel, @Depense,
+                    @Unite, @QuantitePrevue, @PrixUnitairePrevu,
+                    @ResponsableId, @TypeResponsable, @IdSousTraitant,
+                    @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName,
+                    @LinkedDqeItemId, @LinkedDqeItemCode,
+                    @LinkedDqeChapterId, @LinkedDqeChapterCode,
+                    @LinkedDqeReference,
+                    @EstActif, @DateCreation, @DateModification
+                )", conn, transaction);
+
+                    // Paramètres obligatoires
+                    cmd.Parameters.AddWithValue("@ProjetId", projetId);
+                    cmd.Parameters.AddWithValue("@Nom", etape.Nom);
+                    cmd.Parameters.AddWithValue("@Description", etape.Description ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Ordre", etape.Ordre);
+
+                    // Hiérarchie
+                    cmd.Parameters.AddWithValue("@EtapeParentId", etape.EtapeParentId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Niveau", etape.Niveau);
+                    cmd.Parameters.AddWithValue("@TypeEtape", etape.TypeEtape ?? "Lot");
+
+                    // Dates
+                    cmd.Parameters.AddWithValue("@DateDebut", etape.DateDebut ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateFinPrevue", etape.DateFinPrevue ?? (object)DBNull.Value);
+
+                    // Statut
+                    cmd.Parameters.AddWithValue("@Statut", etape.Statut ?? "NonCommence");
+                    cmd.Parameters.AddWithValue("@PourcentageAvancement", etape.PourcentageAvancement);
+
+                    // Budget
+                    cmd.Parameters.AddWithValue("@BudgetPrevu", etape.BudgetPrevu);
+                    cmd.Parameters.AddWithValue("@CoutReel", etape.CoutReel);
+                    cmd.Parameters.AddWithValue("@Depense", etape.Depense);
+
+                    // Quantités (pour sous-étapes)
+                    cmd.Parameters.AddWithValue("@Unite", etape.Unite ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@QuantitePrevue", etape.QuantitePrevue ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@PrixUnitairePrevu", etape.PrixUnitairePrevu ?? (object)DBNull.Value);
+
+                    // Responsable
+                    cmd.Parameters.AddWithValue("@ResponsableId", etape.ResponsableId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@TypeResponsable", etape.TypeResponsable ?? "Interne");
+                    cmd.Parameters.AddWithValue("@IdSousTraitant", etape.IdSousTraitant ?? (object)DBNull.Value);
+
+                    // Traçabilité DQE - Lot
+                    cmd.Parameters.AddWithValue("@LinkedDqeLotId", etape.LinkedDqeLotId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@LinkedDqeLotCode", etape.LinkedDqeLotCode ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@LinkedDqeLotName", etape.LinkedDqeLotName ?? (object)DBNull.Value);
+
+                    // Traçabilité DQE - Item
+                    cmd.Parameters.AddWithValue("@LinkedDqeItemId", etape.LinkedDqeItemId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@LinkedDqeItemCode", etape.LinkedDqeItemCode ?? (object)DBNull.Value);
+
+                    // Traçabilité DQE - Chapter
+                    cmd.Parameters.AddWithValue("@LinkedDqeChapterId", etape.LinkedDqeChapterId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@LinkedDqeChapterCode", etape.LinkedDqeChapterCode ?? (object)DBNull.Value);
+
+                    // Référence commune
+                    cmd.Parameters.AddWithValue("@LinkedDqeReference", etape.LinkedDqeReference ?? (object)DBNull.Value);
+
+                    // Métadonnées
+                    cmd.Parameters.AddWithValue("@EstActif", etape.EstActif);
+                    cmd.Parameters.AddWithValue("@DateCreation", DateTime.UtcNow);
+                    cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // 3. Mettre à jour le budget du projet
+                using (var cmd = new SqlCommand(@"
+            UPDATE Projets 
+            SET BudgetRevise = BudgetRevise + @BudgetDQE,
+                DateModification = @DateModification
+            WHERE Id = @ProjetId", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@ProjetId", projetId);
+                    cmd.Parameters.AddWithValue("@BudgetDQE", budgetDQE);
+                    cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                transaction.Commit();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new Exception($"Erreur lors de l'ajout des étapes DQE au projet: {ex.Message}", ex);
+            }
+        }
+
     }
 }

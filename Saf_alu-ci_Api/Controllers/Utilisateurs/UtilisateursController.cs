@@ -10,7 +10,8 @@ namespace Saf_alu_ci_Api.Controllers.Utilisateurs
     {
         [ApiController]
         [Route("api/[controller]")]
-        public class UtilisateursController : ControllerBase
+
+        public class UtilisateursController : BaseController
         {
             private readonly UtilisateurService _utilisateurService;
             private readonly JwtService _jwtService;
@@ -22,7 +23,7 @@ namespace Saf_alu_ci_Api.Controllers.Utilisateurs
             }
 
             [HttpGet]
-            //[Authorize]
+            [Authorize]
             public async Task<IActionResult> GetAll()
             {
                 try
@@ -183,7 +184,7 @@ namespace Saf_alu_ci_Api.Controllers.Utilisateurs
             }
 
             [HttpPut("{id}")]
-            //[Authorize]
+            [Authorize]
             public async Task<IActionResult> Update(int id, [FromBody] Utilisateur model)
             {
                 try

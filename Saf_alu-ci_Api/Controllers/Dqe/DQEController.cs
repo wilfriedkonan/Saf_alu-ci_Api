@@ -7,8 +7,8 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize]
-    public class DQEController : ControllerBase
+     [Authorize]
+    public class DQEController : BaseController
     {
         private readonly DQEService _dqeService;
         private readonly ConversionService _conversionService;
@@ -83,7 +83,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             try
             {
                 // TODO: Récupérer l'utilisateur depuis JWT
-                var utilisateurId = 3;
+                var utilisateurId = Convert.ToInt32(GetCurrentUserId());
 
                 var dqeId = await _dqeService.CreateAsync(request, utilisateurId);
 
@@ -427,6 +427,69 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                     tauxConversion = tous.Count > 0 ?
                         Math.Round((decimal)convertis.Count / tous.Count * 100, 2) : 0
                 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
+            }
+        }
+
+        [HttpPost("{dqeId}/link-to-project/{projetId}")]
+        public async Task<IActionResult> LinkToExistingProject(int dqeId, int projetId)
+        {
+            try
+            {
+                // Vérifier que le DQE existe et peut être converti
+                var (canConvert, reason) = await _dqeService.CanConvertToProjectAsync(dqeId);
+                if (!canConvert)
+                {
+                    return BadRequest(new { message = reason });
+                }
+
+                // Vérifier que le projet existe et est disponible
+                var projet = await _projetService.GetByIdAsync(projetId);
+                if (projet == null)
+                {
+                    return NotFound(new { message = "Projet introuvable" });
+                }
+
+                if (projet.Statut == "Terminé" || projet.Statut == "Clôturé")
+                {
+                    return BadRequest(new { message = "Impossible de lier à un projet terminé" });
+                }
+
+                if (projet.LinkedDqeId.HasValue)
+                {
+                    return BadRequest(new { message = "Ce projet est déjà lié à un autre DQE" });
+                }
+
+                // Récupérer l'utilisateur depuis JWT
+                var utilisateurId = Convert.ToInt32(GetCurrentUserId());
+
+                // Lier le DQE au projet existant
+                var success = await _conversionService.LinkDQEToExistingProjectAsync(
+                    dqeId,
+                    projetId,
+                    utilisateurId
+                );
+
+                if (success)
+                {
+                    return Ok(new
+                    {
+                        message = "DQE lié au projet avec succès",
+                        projetId,
+                        redirectUrl = $"/projets/{projetId}"
+                    });
+                }
+                else
+                {
+                    return BadRequest(new { message = "Erreur lors de la liaison du DQE au projet" });
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {

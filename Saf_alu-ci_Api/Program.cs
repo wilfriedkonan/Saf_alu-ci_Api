@@ -12,6 +12,7 @@ using Saf_alu_ci_Api.Controllers.SousTraitants;
 using Saf_alu_ci_Api.Controllers.Tresorerie;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
 using Saf_alu_ci_Api.Services.Jw;
+using Saf_alu_ci_Api.Services.messagerie;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,11 +37,14 @@ builder.Services.AddScoped<ConversionService>(sp =>
     var projetService = sp.GetRequiredService<ProjetService>();
     return new ConversionService(connectionString, dqeService, projetService);
 });
+builder.Services.AddHttpClient<BrevoSmsService>();
+builder.Services.AddHttpClient<BrevoWhatsAppService>();
+
 
 
 // Services utilitaires
 builder.Services.AddScoped<JwtService>();
-
+builder.Services.AddScoped<MailServiceBrevo>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

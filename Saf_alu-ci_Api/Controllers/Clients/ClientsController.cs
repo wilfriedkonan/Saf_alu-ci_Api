@@ -6,8 +6,8 @@ namespace Saf_alu_ci_Api.Controllers.Clients
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
-    public class ClientsController : ControllerBase
+    [Authorize]
+    public class ClientsController : BaseController
     {
         private readonly ClientService _clientService;
 

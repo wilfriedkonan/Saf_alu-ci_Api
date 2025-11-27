@@ -537,6 +537,27 @@
   },
   {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "LinkToExistingProject",
+    "RelativePath": "api/DQE/{dqeId}/link-to-project/{projetId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dqeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "projetId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
     "Method": "GetById",
     "RelativePath": "api/DQE/{id}",
     "HttpMethod": "GET",
@@ -908,6 +929,38 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Messagerie.NotificationController",
+    "Method": "SendSms",
+    "RelativePath": "api/Notification/sms/send",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.Messagerie.NotificationController\u002BSmsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Messagerie.NotificationController",
+    "Method": "SendWhatsApp",
+    "RelativePath": "api/Notification/whatsapp/send",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.Messagerie.NotificationController\u002BSendWhatsAppRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.ObjectifFinancier.ObjectifFinancierController",
     "Method": "GetAll",
     "RelativePath": "api/ObjectifFinancier",
@@ -1238,6 +1291,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "GetAvailableProjectsForLinking",
+    "RelativePath": "api/Projets/available-for-linking",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

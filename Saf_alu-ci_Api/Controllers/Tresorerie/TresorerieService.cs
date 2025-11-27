@@ -902,7 +902,13 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 ModePaiement = reader.IsDBNull("ModePaiement") ? null : reader.GetString("ModePaiement"),
                 Reference = reader.IsDBNull("Reference") ? null : reader.GetString("Reference"),
                 CompteDestinationId = reader.IsDBNull("CompteDestinationId") ? null : reader.GetInt32("CompteDestinationId"),
-                UtilisateurCreation = reader.GetInt32("UtilisateurCreation")
+                UtilisateurCreation = reader.GetInt32("UtilisateurCreation"),
+
+                Compte = new Compte
+                {
+                    Nom = reader.GetString("CompteNom")
+                }
+
             };
         }
     }

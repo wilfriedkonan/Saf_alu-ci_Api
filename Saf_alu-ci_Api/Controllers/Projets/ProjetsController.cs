@@ -7,8 +7,8 @@ namespace Saf_alu_ci_Api.Controllers.Projets
 {
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
-    public class ProjetsController : ControllerBase
+    [Authorize]
+    public class ProjetsController : BaseController
     {
         private readonly ProjetService _projetService;
 
@@ -44,6 +44,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     TypeProjet = p.TypeProjet?.Nom,
                     ChefProjet = p.ChefProjet != null ? $"{p.ChefProjet.Prenom} {p.ChefProjet.Nom}" : null,
                     StatutAvancement = GetStatutAvancement(p),
+                    depenseGlobale = p.DepenseGlobale
                 });
 
                 return Ok(result);
@@ -72,13 +73,13 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 }
 
                 // Calcul des pourcentages
-                var totalAvancement = projet.Etapes.Sum(x => x.PourcentageAvancement);
-                var totalEtapes = projet.Etapes.Count;
+                //var totalAvancement = projet.Etapes.Sum(x => x.PourcentageAvancement);
+                //var totalEtapes = projet.Etapes.Count;
 
-                // division sécurisée
-                var moyennePourcent = (double)totalAvancement / totalEtapes;
+                //// division sécurisée
+                //var moyennePourcent = (double)totalAvancement / totalEtapes;
 
-                projet.PourcentageAvancement = Convert.ToInt32(moyennePourcent);
+                //projet.PourcentageAvancement = Convert.ToInt32(moyennePourcent);
 
                 return Ok(projet);
             }
@@ -684,6 +685,35 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Erreur serveur", error = ex.Message });
+            }
+        }
+        [HttpGet("available-for-linking")]
+        [Authorize]
+        public async Task<IActionResult> GetAvailableProjectsForLinking()
+        {
+            try
+            {
+                var projets = await _projetService.GetAvailableProjectsForLinkingAsync();
+
+                return Ok(projets.Select(p => new
+                {
+                    p.Id,
+                    p.Numero,
+                    p.Nom,
+                    TypeProjet = p.TypeProjet?.Nom ?? "Non défini",
+                    budgetInitial = p.BudgetInitial,
+                    p.Statut,
+                    Avancement = p.PourcentageAvancement,
+                    Client = p.Client,
+                    LinkedDqeId = p.LinkedDqeId,
+                    DateDebut = p.DateDebut,
+                    DateFinPrevue = p.DateFinPrevue
+                }));
+            }
+            catch (Exception ex)
+            {
+                //  _logger.LogError(ex, "Erreur lors de la récupération des projets disponibles");
+                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
 

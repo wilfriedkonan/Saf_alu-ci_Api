@@ -10,8 +10,8 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
     [ApiController]
     [Route("api/[controller]")]
-    //[Authorize]
-    public class TresorerieController : ControllerBase
+    [Authorize]
+    public class TresorerieController : BaseController
     {
         private readonly TresorerieService _tresorerieService;
 
@@ -224,7 +224,10 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         {
             try
             {
+                var debutAnnee = new DateTime(DateTime.Now.Year, 1, 1);
+                var finAnnee = new DateTime(DateTime.Now.Year, 12, 31);
                 var mouvements = await _tresorerieService.GetMouvementsAsync(compteId, nbJours, typeMouvement, categorie, dateDebut, dateFin);
+                var mouvementAN = await _tresorerieService.GetMouvementsAsync(compteId, nbJours, typeMouvement, categorie, debutAnnee, finAnnee);
 
                 // Pagination
                 var totalMouvements = mouvements.Count;
@@ -242,7 +245,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                                                       m.DateSaisie,
                                                       m.ModePaiement,
                                                       m.Reference,
-                                                      Compte = new { m.CompteId, Nom = "Nom du compte" }, // TODO: Navigation property
+                                                      Compte = new { m.CompteId, m.Compte?.Nom }, // TODO: Navigation property
                                                       CompteDestination = m.CompteDestinationId.HasValue ? new { m.CompteDestinationId, Nom = "Nom compte dest" } : null,
                                                       Couleur = GetCouleurTypeMouvement(m.TypeMouvement)
                                                   });
@@ -262,7 +265,12 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                         totalEntrees = mouvements.Where(m => m.TypeMouvement == "Entree").Sum(m => m.Montant),
                         totalSorties = mouvements.Where(m => m.TypeMouvement == "Sortie").Sum(m => m.Montant),
                         totalVirements = mouvements.Where(m => m.TypeMouvement == "Virement").Sum(m => m.Montant),
-                        nombreMouvements = totalMouvements
+                        nombreMouvements = totalMouvements,
+
+                        //calcule a l'année 
+                        totalEntreesAnnee = mouvements.Where(m => m.TypeMouvement == "Entree").Sum(m => m.Montant),
+                        totalSortiesAnne = mouvements.Where(m => m.TypeMouvement == "Sortie").Sum(m => m.Montant),
+
                     }
                 });
             }

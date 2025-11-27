@@ -327,7 +327,7 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
             using var cmd = new SqlCommand(@"
     INSERT INTO DQE (
         Reference, Nom, Description, ClientId, DevisId, Statut,
-        TotalRevenueHT, TauxTVA, MontantTVA, TotalTTC,,
+        TotalRevenueHT, TauxTVA, MontantTVA, TotalTTC,
         DateCreation, DateModification, UtilisateurCreation, UtilisateurModification, Actif
     ) VALUES (
         @Reference, @Nom, @Description, @ClientId, @DevisId, @Statut,

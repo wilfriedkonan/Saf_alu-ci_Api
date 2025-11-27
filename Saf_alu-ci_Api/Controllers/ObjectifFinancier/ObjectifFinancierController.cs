@@ -8,7 +8,7 @@ namespace Saf_alu_ci_Api.Controllers.ObjectifFinancier
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ObjectifFinancierController : ControllerBase
+    public class ObjectifFinancierController : BaseController
     {
         private readonly ObjectifFinacierService _objectifFinacierService;
 
