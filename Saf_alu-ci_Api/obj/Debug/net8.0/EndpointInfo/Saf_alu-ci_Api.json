@@ -408,6 +408,337 @@
         }
       }
     },
+    "/api/DetailDebourseSec/item/{itemId}": {
+      "get": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDetailDebourseSecRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDetailDebourseSecRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDetailDebourseSecRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/DetailDebourseSec/{id}": {
+      "get": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDetailDebourseSecRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDetailDebourseSecRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDetailDebourseSecRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailDebourseSecResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DetailDebourseSec/item/{itemId}/recapitulatif": {
+      "get": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecapitulatifDebourseSecResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecapitulatifDebourseSecResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecapitulatifDebourseSecResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/DetailDebourseSec/copy/{sourceItemId}/to/{targetItemId}": {
+      "post": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "parameters": [
+          {
+            "name": "sourceItemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "targetItemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DetailDebourseSec/item/{itemId}/all": {
+      "delete": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DetailDebourseSec/types": {
+      "get": {
+        "tags": [
+          "DetailDebourseSec"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Devis": {
       "get": {
         "tags": [
@@ -1097,6 +1428,75 @@
           },
           {
             "name": "projetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/{id}/export/excel": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/{id}/export/pdf": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/DQE/{id}/preview": {
+      "get": {
+        "tags": [
+          "DQE"
+        ],
+        "parameters": [
+          {
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
@@ -3634,6 +4034,67 @@
         },
         "additionalProperties": false
       },
+      "CreateDetailDebourseSecRequest": {
+        "required": [
+          "designation",
+          "prixUnitaireHT",
+          "quantite",
+          "typeDepense",
+          "unite"
+        ],
+        "type": "object",
+        "properties": {
+          "typeDepense": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "designation": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unite": {
+            "maxLength": 20,
+            "minLength": 1,
+            "type": "string"
+          },
+          "quantite": {
+            "minimum": 0,001,
+            "type": "number",
+            "format": "double"
+          },
+          "prixUnitaireHT": {
+            "minimum": 0,
+            "type": "number",
+            "format": "double"
+          },
+          "coefficient": {
+            "maximum": 100,
+            "minimum": 0,01,
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "referenceExterne": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateDevisRequest": {
         "type": "object",
         "properties": {
@@ -4222,6 +4683,107 @@
         },
         "additionalProperties": false
       },
+      "DetailDebourseSecResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "itemId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "typeDepense": {
+            "type": "string",
+            "nullable": true
+          },
+          "typeDepenseLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "designation": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unite": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantite": {
+            "type": "number",
+            "format": "double"
+          },
+          "prixUnitaireHT": {
+            "type": "number",
+            "format": "double"
+          },
+          "montantHT": {
+            "type": "number",
+            "format": "double"
+          },
+          "coefficient": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "referenceExterne": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "dateCreation": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dateModification": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "actif": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DetailParType": {
+        "type": "object",
+        "properties": {
+          "typeDepense": {
+            "type": "string",
+            "nullable": true
+          },
+          "typeDepenseLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombreLignes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "montantTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "pourcentageTotal": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "DureePersonnalisee": {
         "type": "object",
         "properties": {
@@ -4273,6 +4835,35 @@
           "datePaiement": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RecapitulatifDebourseSecResponse": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "itemCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemDesignation": {
+            "type": "string",
+            "nullable": true
+          },
+          "debourseSecTotal": {
+            "type": "number",
+            "format": "double"
+          },
+          "detailParType": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DetailParType"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4505,6 +5096,56 @@
             "nullable": true
           },
           "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateDetailDebourseSecRequest": {
+        "type": "object",
+        "properties": {
+          "typeDepense": {
+            "type": "string",
+            "nullable": true
+          },
+          "designation": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "unite": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantite": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "prixUnitaireHT": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "coefficient": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "referenceExterne": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
             "type": "string",
             "nullable": true
           }

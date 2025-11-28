@@ -1,6 +1,8 @@
 ﻿using Saf_alu_ci_Api.Controllers.Clients;
 using Saf_alu_ci_Api.Controllers.Projets;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Saf_alu_ci_Api.Controllers.Dqe
 {
@@ -169,6 +171,9 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         public virtual List<DQEItem>? Items { get; set; }
     }
 
+
+
+
     /// <summary>
     /// Poste (Item) = Ligne de détail avec quantité et prix (ex: POSTE 1.1.1 - Déblai manuel)
     /// </summary>
@@ -214,313 +219,543 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
         /// </summary>
         public decimal TotalRevenueHT { get; set; }
 
-        private decimal DeboursseSec { get; set; }
+        public decimal DeboursseSec { get; set; }
 
         // Navigation properties
         public virtual DQEChapter? Chapter { get; set; }
     }
 
-    /// <summary>
-    /// Template DQE réutilisable
-    /// </summary>
-    public class DQETemplate
+    public class DQEDetailDebourseSec
     {
         public int Id { get; set; }
-        public string Nom { get; set; }
+
+        /// <summary>
+        /// ID de l'item DQE parent
+        /// </summary>
+        [Required]
+        public int ItemId { get; set; }
+
+        /// <summary>
+        /// Type de dépense: MainOeuvre, Materiaux, Materiel, SousTraitance, Autres
+        /// </summary>
+        [Required]
+        [MaxLength(50)]
+        public string TypeDepense { get; set; }
+
+        /// <summary>
+        /// Description de la dépense (ex: "Chef d'équipe", "Ciment CPJ 45")
+        /// </summary>
+        [Required]
+        [MaxLength(500)]
+        public string Designation { get; set; }
+
+        /// <summary>
+        /// Détails supplémentaires (optionnel)
+        /// </summary>
         public string? Description { get; set; }
 
         /// <summary>
-        /// Type de projet pour lequel ce template est conçu
+        /// Ordre d'affichage dans la liste
         /// </summary>
-        public string? TypeProjet { get; set; }
+        public int Ordre { get; set; }
 
         /// <summary>
-        /// Structure DQE au format JSON
+        /// Unité de mesure (h, kg, m³, u, ens, sac, etc.)
         /// </summary>
-        public string JsonStructure { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string Unite { get; set; }
 
         /// <summary>
-        /// Indique si le template est public (accessible à tous)
+        /// Quantité nécessaire
         /// </summary>
-        public bool EstPublic { get; set; } = false;
+        [Column(TypeName = "decimal(15, 3)")]
+        public decimal Quantite { get; set; }
 
-        public int UtilisateurCreation { get; set; }
+        /// <summary>
+        /// Prix unitaire HT
+        /// </summary>
+        [Column(TypeName = "decimal(15, 2)")]
+        public decimal PrixUnitaireHT { get; set; }
+
+        /// <summary>
+        /// Montant total HT = Quantite × PrixUnitaireHT × Coefficient
+        /// Calculé automatiquement par trigger SQL
+        /// </summary>
+        [Column(TypeName = "decimal(15, 2)")]
+        public decimal MontantHT { get; set; }
+
+        /// <summary>
+        /// Coefficient multiplicateur (défaut 1.00)
+        /// </summary>
+        [Column(TypeName = "decimal(5, 2)")]
+        public decimal? Coefficient { get; set; } = 1.00M;
+
+        /// <summary>
+        /// Référence externe (code fournisseur, code article)
+        /// </summary>
+        [MaxLength(100)]
+        public string? ReferenceExterne { get; set; }
+
+        /// <summary>
+        /// Notes additionnelles
+        /// </summary>
+        public string? Notes { get; set; }
+
+        // Métadonnées
         public DateTime DateCreation { get; set; } = DateTime.UtcNow;
+        public DateTime? DateModification { get; set; }
         public bool Actif { get; set; } = true;
-    }
 
-    // ========================================
-    // DTOs - REQUÊTES
-    // ========================================
+        // Navigation property
+        public virtual DQEItem? Item { get; set; }
+    }
 
     /// <summary>
-    /// DTO pour créer un nouveau DQE
+    /// Enum pour les types de dépense
     /// </summary>
-    public class CreateDQERequest
+    public static class TypeDepenseEnum
     {
-        public string Nom { get; set; }
-        public string? Description { get; set; }
-        public int ClientId { get; set; }
-        public int? DevisId { get; set; }
-        public decimal TauxTVA { get; set; } = 18;
-        public bool IsConverted { get; set; } = false;
-        public List<CreateDQELotRequest>? Lots { get; set; }
+        public const string MainOeuvre = "MainOeuvre";
+        public const string Materiaux = "Materiaux";
+        public const string Materiel = "Materiel";
+        public const string SousTraitance = "SousTraitance";
+        public const string Autres = "Autres";
+
+        public static readonly string[] All = new[]
+        {
+            MainOeuvre,
+            Materiaux,
+            Materiel,
+            SousTraitance,
+            Autres
+        };
+
+        public static bool IsValid(string type)
+        {
+            return All.Contains(type);
+        }
+
+        public static string GetLabel(string type)
+        {
+            return type switch
+            {
+                MainOeuvre => "Main d'œuvre",
+                Materiaux => "Matériaux",
+                Materiel => "Matériel",
+                SousTraitance => "Sous-traitance",
+                Autres => "Autres",
+                _ => type
+            };
+        }
     }
 
-    public class CreateDQELotRequest
+    // =============================================
+    // DTOs pour les API
+    // =============================================
+
+    /// <summary>
+    /// DTO pour créer un détail de déboursé sec
+    /// </summary>
+    public class CreateDetailDebourseSecRequest
     {
-        public string Code { get; set; }
-        public string Nom { get; set; }
+        [Required(ErrorMessage = "Le type de dépense est requis")]
+        public string TypeDepense { get; set; }
+
+        [Required(ErrorMessage = "La désignation est requise")]
+        [MaxLength(500)]
+        public string Designation { get; set; }
+
         public string? Description { get; set; }
+
         public int Ordre { get; set; }
-        public List<CreateDQEChapterRequest>? Chapters { get; set; }
+
+        [Required(ErrorMessage = "L'unité est requise")]
+        [MaxLength(20)]
+        public string Unite { get; set; }
+
+        [Required(ErrorMessage = "La quantité est requise")]
+        [Range(0.001, double.MaxValue, ErrorMessage = "La quantité doit être supérieure à 0")]
+        public decimal Quantite { get; set; }
+
+        [Required(ErrorMessage = "Le prix unitaire est requis")]
+        [Range(0, double.MaxValue, ErrorMessage = "Le prix unitaire doit être >= 0")]
+        public decimal PrixUnitaireHT { get; set; }
+
+        [Range(0.01, 100, ErrorMessage = "Le coefficient doit être entre 0.01 et 100")]
+        public decimal? Coefficient { get; set; } = 1.00M;
+
+        [MaxLength(100)]
+        public string? ReferenceExterne { get; set; }
+
+        public string? Notes { get; set; }
     }
 
-    public class CreateDQEChapterRequest
+    /// <summary>
+    /// DTO pour mettre à jour un détail de déboursé sec
+    /// </summary>
+    public class UpdateDetailDebourseSecRequest
     {
-        public string Code { get; set; }
-        public string Nom { get; set; }
+        public string? TypeDepense { get; set; }
+        public string? Designation { get; set; }
         public string? Description { get; set; }
-        public int Ordre { get; set; }
-        public List<CreateDQEItemRequest>? Items { get; set; }
+        public int? Ordre { get; set; }
+        public string? Unite { get; set; }
+        public decimal? Quantite { get; set; }
+        public decimal? PrixUnitaireHT { get; set; }
+        public decimal? Coefficient { get; set; }
+        public string? ReferenceExterne { get; set; }
+        public string? Notes { get; set; }
     }
 
-    public class CreateDQEItemRequest
+    /// <summary>
+    /// DTO pour la réponse avec détails de déboursé sec
+    /// </summary>
+    public class DetailDebourseSecResponse
     {
-        public string Code { get; set; }
+        public int Id { get; set; }
+        public int ItemId { get; set; }
+        public string TypeDepense { get; set; }
+        public string TypeDepenseLabel { get; set; }
         public string Designation { get; set; }
         public string? Description { get; set; }
         public int Ordre { get; set; }
         public string Unite { get; set; }
         public decimal Quantite { get; set; }
         public decimal PrixUnitaireHT { get; set; }
-
-        public decimal DeboursseSec { get; set; }
-
-
-    }
-
-    /// <summary>
-    /// DTO pour mettre à jour un DQE existant
-    /// </summary>
-    public class UpdateDQERequest
-    {
-        public string Nom { get; set; }
-        public string? Description { get; set; }
-        public int ClientId { get; set; }
-        public int? DevisId { get; set; }
-        public decimal TauxTVA { get; set; }
-        public string Statut { get; set; }
-
-        public List<CreateDQELotRequest>? Lots { get; set; }
-    }
-
-    /// <summary>
-    /// DTO pour valider un DQE
-    /// </summary>
-    public class ValidateDQERequest
-    {
-        public string? Commentaire { get; set; }
-    }
-
-    /// <summary>
-    /// DTO pour créer un DQE depuis un template
-    /// </summary>
-    public class CreateDQEFromTemplateRequest
-    {
-        public int TemplateId { get; set; }
-        public string Nom { get; set; }
-        public string? Description { get; set; }
-        public int ClientId { get; set; }
-    }
-
-    /// <summary>
-    /// DTO pour la conversion DQE → Projet
-    /// </summary>
-    public class ConvertDQEToProjectRequest
-    {
-        public int DqeId { get; set; }
-        public string? NomProjet { get; set; }
-        public string? DescriptionProjet { get; set; }
-        public int TypeProjetId { get; set; }
-        public DateTime DateDebut { get; set; }
-        public int DureeTotaleJours { get; set; }
-        public int? ChefProjetId { get; set; }
-        public string? Priorite { get; set; }
-        public string StatutInitial { get; set; } = "Planification";
-        public string ModeCreationEtapes { get; set; } = "automatique";
-        public string MethodeCalculDurees { get; set; } = "proportionnelle";
-        public List<DureePersonnalisee>? DureesPersonnalisees { get; set; }
-        public string? AdresseChantier { get; set; }
-        public string? CodePostalChantier { get; set; }
-        public string? VilleChantier { get; set; }
-    }
-
-    public class DureePersonnalisee
-    {
-        public int LotId { get; set; }
-        public int DureeJours { get; set; }
-    }
-    // ========================================
-    // DTOs - RÉPONSES
-    // ========================================
-
-    /// <summary>
-    /// DTO pour l'affichage en liste
-    /// </summary>
-    public class DQEListItemDTO
-    {
-        public int Id { get; set; }
-        public string Reference { get; set; }
-        public string Nom { get; set; }
-        public string Statut { get; set; }
-        public decimal TotalRevenueHT { get; set; }
-        public int LotsCount { get; set; }
+        public decimal MontantHT { get; set; }
+        public decimal? Coefficient { get; set; }
+        public string? ReferenceExterne { get; set; }
+        public string? Notes { get; set; }
         public DateTime DateCreation { get; set; }
-
-        // Client
-        public int ClientId { get; set; }
-        public string ClientNom { get; set; }
-
-        // Conversion
-        public bool IsConverted { get; set; }
-        public int? LinkedProjectId { get; set; }
-        public string? LinkedProjectNumber { get; set; }
-        public DateTime? ConvertedAt { get; set; }
-
-        // État de conversion calculé
-        public string ConversionStatus { get; set; } // convertible, converti, non_convertible
+        public DateTime? DateModification { get; set; }
+        public bool Actif { get; set; }
     }
 
     /// <summary>
-    /// DTO pour l'affichage détaillé complet
+    /// DTO pour le récapitulatif des déboursés par type
     /// </summary>
-    public class DQEDetailDTO
+    public class RecapitulatifDebourseSecResponse
     {
-        public int Id { get; set; }
-        public string Reference { get; set; }
-        public string Nom { get; set; }
-        public string? Description { get; set; }
-        public string Statut { get; set; }
-        public decimal TotalRevenueHT { get; set; }
-        public decimal TauxTVA { get; set; }
-        public decimal MontantTVA { get; set; }
-        public decimal TotalTTC { get; set; }
-        public DateTime? DateValidation { get; set; }
-        public int? ValidePar { get; set; }
-        public DateTime DateCreation { get; set; }
-
-        // Client
-        public ClientDTO Client { get; set; }
-
-        // Conversion
-        public bool IsConverted { get; set; }
-        public ProjectLinkDTO? LinkedProject { get; set; }
-
-        // Structure hiérarchique
-        public List<DQELotDTO> Lots { get; set; }
+        public int ItemId { get; set; }
+        public string ItemCode { get; set; }
+        public string ItemDesignation { get; set; }
+        public decimal DebourseSecTotal { get; set; }
+        public List<DetailParType> DetailParType { get; set; }
     }
 
-    public class ClientDTO
+    public class DetailParType
     {
-        public int Id { get; set; }
-        public string Nom { get; set; }
-    }
-
-    public class ProjectLinkDTO
-    {
-        public int Id { get; set; }
-        public string Numero { get; set; }
-        public string Nom { get; set; }
-        public string Statut { get; set; }
-        public int PourcentageAvancement { get; set; }
-        public DateTime ConvertedAt { get; set; }
-        public string ConvertedBy { get; set; }
-    }
-
-    public class DQELotDTO
-    {
-        public int Id { get; set; }
-        public string Code { get; set; }
-        public string Nom { get; set; }
-        public string? Description { get; set; }
-        public int Ordre { get; set; }
-        public decimal TotalRevenueHT { get; set; }
+        public string TypeDepense { get; set; }
+        public string TypeDepenseLabel { get; set; }
+        public int NombreLignes { get; set; }
+        public decimal MontantTotal { get; set; }
         public decimal PourcentageTotal { get; set; }
-        public int ChaptersCount { get; set; }
-        public int ItemsCount { get; set; }
-        public List<DQEChapterDTO>? Chapters { get; set; }
-    }
-
-    public class DQEChapterDTO
-    {
-        public int Id { get; set; }
-        public string Code { get; set; }
-        public string Nom { get; set; }
-        public string? Description { get; set; }
-        public int Ordre { get; set; }
-        public decimal TotalRevenueHT { get; set; }
-        public int ItemsCount { get; set; }
-        public List<DQEItemDTO>? Items { get; set; }
-    }
-
-    public class DQEItemDTO
-    {
-        public int Id { get; set; }
-        public string Code { get; set; }
-        public string Designation { get; set; }
-        public string? Description { get; set; }
-        public int Ordre { get; set; }
-        public string Unite { get; set; }
-        public decimal Quantite { get; set; }
-        public decimal PrixUnitaireHT { get; set; }
-        public decimal TotalRevenueHT { get; set; }
-        public decimal DeboursseSec { get; set; }
-    }
-
-    /// <summary>
-    /// DTO pour la prévisualisation de conversion
-    /// </summary>
-    public class ConversionPreviewDTO
-    {
-        public DQESummaryDTO DQE { get; set; }
-        public ProjectPreviewDTO ProjetPrevu { get; set; }
-        public List<StagePreviewDTO> EtapesPrevues { get; set; }
-    }
-
-    public class DQESummaryDTO
-    {
-        public int Id { get; set; }
-        public string Reference { get; set; }
-        public string Nom { get; set; }
-        public decimal TotalRevenueHT { get; set; }
-        public int LotsCount { get; set; }
-        public string ClientNom { get; set; }
-    }
-
-    public class ProjectPreviewDTO
-    {
-        public string Nom { get; set; }
-        public string NumeroProjet { get; set; }
-        public decimal BudgetInitial { get; set; }
-        public DateTime DateDebut { get; set; }
-        public DateTime DateFinPrevue { get; set; }
-        public int DureeTotaleJours { get; set; }
-        public int NombreEtapes { get; set; }
-    }
-
-    public class StagePreviewDTO
-    {
-        public int Ordre { get; set; }
-        public string Nom { get; set; }
-        public string Code { get; set; }
-        public decimal BudgetPrevu { get; set; }
-        public int DureeJours { get; set; }
-        public DateTime DateDebut { get; set; }
-        public DateTime DateFinPrevue { get; set; }
-        public decimal PourcentageBudget { get; set; }
-        public int Niveau { get; set; }
-        public string TypeEtape { get; set; } = "Lot";
-        public int NombreSousEtapes { get; set; }
     }
 }
+
+
+/// <summary>
+/// Template DQE réutilisable
+/// </summary>
+public class DQETemplate
+{
+    public int Id { get; set; }
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Type de projet pour lequel ce template est conçu
+    /// </summary>
+    public string? TypeProjet { get; set; }
+
+    /// <summary>
+    /// Structure DQE au format JSON
+    /// </summary>
+    public string JsonStructure { get; set; }
+
+    /// <summary>
+    /// Indique si le template est public (accessible à tous)
+    /// </summary>
+    public bool EstPublic { get; set; } = false;
+
+    public int UtilisateurCreation { get; set; }
+    public DateTime DateCreation { get; set; } = DateTime.UtcNow;
+    public bool Actif { get; set; } = true;
+}
+
+// ========================================
+// DTOs - REQUÊTES
+// ========================================
+
+/// <summary>
+/// DTO pour créer un nouveau DQE
+/// </summary>
+public class CreateDQERequest
+{
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+    public int ClientId { get; set; }
+    public int? DevisId { get; set; }
+    public decimal TauxTVA { get; set; } = 18;
+    public bool IsConverted { get; set; } = false;
+    public List<CreateDQELotRequest>? Lots { get; set; }
+}
+
+public class CreateDQELotRequest
+{
+    public string Code { get; set; }
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+    public int Ordre { get; set; }
+    public List<CreateDQEChapterRequest>? Chapters { get; set; }
+}
+
+public class CreateDQEChapterRequest
+{
+    public string Code { get; set; }
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+    public int Ordre { get; set; }
+    public List<CreateDQEItemRequest>? Items { get; set; }
+}
+
+public class CreateDQEItemRequest
+{
+    public string Code { get; set; }
+    public string Designation { get; set; }
+    public string? Description { get; set; }
+    public int Ordre { get; set; }
+    public string Unite { get; set; }
+    public decimal Quantite { get; set; }
+    public decimal PrixUnitaireHT { get; set; }
+
+    public decimal DeboursseSec { get; set; }
+
+
+}
+
+/// <summary>
+/// DTO pour mettre à jour un DQE existant
+/// </summary>
+public class UpdateDQERequest
+{
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+    public int ClientId { get; set; }
+    public int? DevisId { get; set; }
+    public decimal TauxTVA { get; set; }
+    public string Statut { get; set; }
+
+    public List<CreateDQELotRequest>? Lots { get; set; }
+}
+
+/// <summary>
+/// DTO pour valider un DQE
+/// </summary>
+public class ValidateDQERequest
+{
+    public string? Commentaire { get; set; }
+}
+
+/// <summary>
+/// DTO pour créer un DQE depuis un template
+/// </summary>
+public class CreateDQEFromTemplateRequest
+{
+    public int TemplateId { get; set; }
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+    public int ClientId { get; set; }
+}
+
+/// <summary>
+/// DTO pour la conversion DQE → Projet
+/// </summary>
+public class ConvertDQEToProjectRequest
+{
+    public int DqeId { get; set; }
+    public string? NomProjet { get; set; }
+    public string? DescriptionProjet { get; set; }
+    public int TypeProjetId { get; set; }
+    public DateTime DateDebut { get; set; }
+    public int DureeTotaleJours { get; set; }
+    public int? ChefProjetId { get; set; }
+    public string? Priorite { get; set; }
+    public string StatutInitial { get; set; } = "Planification";
+    public string ModeCreationEtapes { get; set; } = "automatique";
+    public string MethodeCalculDurees { get; set; } = "proportionnelle";
+    public List<DureePersonnalisee>? DureesPersonnalisees { get; set; }
+    public string? AdresseChantier { get; set; }
+    public string? CodePostalChantier { get; set; }
+    public string? VilleChantier { get; set; }
+}
+
+public class DureePersonnalisee
+{
+    public int LotId { get; set; }
+    public int DureeJours { get; set; }
+}
+// ========================================
+// DTOs - RÉPONSES
+// ========================================
+
+/// <summary>
+/// DTO pour l'affichage en liste
+/// </summary>
+public class DQEListItemDTO
+{
+    public int Id { get; set; }
+    public string Reference { get; set; }
+    public string Nom { get; set; }
+    public string Statut { get; set; }
+    public decimal TotalRevenueHT { get; set; }
+    public int LotsCount { get; set; }
+    public DateTime DateCreation { get; set; }
+
+    // Client
+    public int ClientId { get; set; }
+    public string ClientNom { get; set; }
+
+    // Conversion
+    public bool IsConverted { get; set; }
+    public int? LinkedProjectId { get; set; }
+    public string? LinkedProjectNumber { get; set; }
+    public DateTime? ConvertedAt { get; set; }
+
+    // État de conversion calculé
+    public string ConversionStatus { get; set; } // convertible, converti, non_convertible
+}
+
+/// <summary>
+/// DTO pour l'affichage détaillé complet
+/// </summary>
+public class DQEDetailDTO
+{
+    public int Id { get; set; }
+    public string Reference { get; set; }
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+    public string Statut { get; set; }
+    public decimal TotalRevenueHT { get; set; }
+    public decimal TauxTVA { get; set; }
+    public decimal MontantTVA { get; set; }
+    public decimal TotalTTC { get; set; }
+    public DateTime? DateValidation { get; set; }
+    public int? ValidePar { get; set; }
+    public DateTime DateCreation { get; set; }
+
+    // Client
+    public ClientDTO Client { get; set; }
+
+    // Conversion
+    public bool IsConverted { get; set; }
+    public ProjectLinkDTO? LinkedProject { get; set; }
+
+    // Structure hiérarchique
+    public List<DQELotDTO> Lots { get; set; }
+}
+
+public class ClientDTO
+{
+    public int Id { get; set; }
+    public string Nom { get; set; }
+}
+
+public class ProjectLinkDTO
+{
+    public int Id { get; set; }
+    public string Numero { get; set; }
+    public string Nom { get; set; }
+    public string Statut { get; set; }
+    public int PourcentageAvancement { get; set; }
+    public DateTime ConvertedAt { get; set; }
+    public string ConvertedBy { get; set; }
+}
+
+public class DQELotDTO
+{
+    public int Id { get; set; }
+    public string Code { get; set; }
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+    public int Ordre { get; set; }
+    public decimal TotalRevenueHT { get; set; }
+    public decimal PourcentageTotal { get; set; }
+    public int ChaptersCount { get; set; }
+    public int ItemsCount { get; set; }
+    public List<DQEChapterDTO>? Chapters { get; set; }
+}
+
+public class DQEChapterDTO
+{
+    public int Id { get; set; }
+    public string Code { get; set; }
+    public string Nom { get; set; }
+    public string? Description { get; set; }
+    public int Ordre { get; set; }
+    public decimal TotalRevenueHT { get; set; }
+    public int ItemsCount { get; set; }
+    public List<DQEItemDTO>? Items { get; set; }
+}
+
+public class DQEItemDTO
+{
+    public int Id { get; set; }
+    public string Code { get; set; }
+    public string Designation { get; set; }
+    public string? Description { get; set; }
+    public int Ordre { get; set; }
+    public string Unite { get; set; }
+    public decimal Quantite { get; set; }
+    public decimal PrixUnitaireHT { get; set; }
+    public decimal TotalRevenueHT { get; set; }
+    public decimal DeboursseSec { get; set; }
+}
+
+/// <summary>
+/// DTO pour la prévisualisation de conversion
+/// </summary>
+public class ConversionPreviewDTO
+{
+    public DQESummaryDTO DQE { get; set; }
+    public ProjectPreviewDTO ProjetPrevu { get; set; }
+    public List<StagePreviewDTO> EtapesPrevues { get; set; }
+}
+
+public class DQESummaryDTO
+{
+    public int Id { get; set; }
+    public string Reference { get; set; }
+    public string Nom { get; set; }
+    public decimal TotalRevenueHT { get; set; }
+    public int LotsCount { get; set; }
+    public string ClientNom { get; set; }
+}
+
+public class ProjectPreviewDTO
+{
+    public string Nom { get; set; }
+    public string NumeroProjet { get; set; }
+    public decimal BudgetInitial { get; set; }
+    public DateTime DateDebut { get; set; }
+    public DateTime DateFinPrevue { get; set; }
+    public int DureeTotaleJours { get; set; }
+    public int NombreEtapes { get; set; }
+}
+
+public class StagePreviewDTO
+{
+    public int Ordre { get; set; }
+    public string Nom { get; set; }
+    public string Code { get; set; }
+    public decimal BudgetPrevu { get; set; }
+    public int DureeJours { get; set; }
+    public DateTime DateDebut { get; set; }
+    public DateTime DateFinPrevue { get; set; }
+    public decimal PourcentageBudget { get; set; }
+    public int Niveau { get; set; }
+    public string TypeEtape { get; set; } = "Lot";
+    public int NombreSousEtapes { get; set; }
+}
+

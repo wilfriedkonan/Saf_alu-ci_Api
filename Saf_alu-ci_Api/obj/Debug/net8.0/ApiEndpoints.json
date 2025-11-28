@@ -284,6 +284,209 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "GetById",
+    "RelativePath": "api/DetailDebourseSec/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.DetailDebourseSecResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "Update",
+    "RelativePath": "api/DetailDebourseSec/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.UpdateDetailDebourseSecRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.DetailDebourseSecResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "Delete",
+    "RelativePath": "api/DetailDebourseSec/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "CopyDetails",
+    "RelativePath": "api/DetailDebourseSec/copy/{sourceItemId}/to/{targetItemId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "sourceItemId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "targetItemId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "GetByItemId",
+    "RelativePath": "api/DetailDebourseSec/item/{itemId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "itemId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[Saf_alu_ci_Api.Controllers.Dqe.DetailDebourseSecResponse, Saf_alu-ci_Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "Create",
+    "RelativePath": "api/DetailDebourseSec/item/{itemId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "itemId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.CreateDetailDebourseSecRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.DetailDebourseSecResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "DeleteAll",
+    "RelativePath": "api/DetailDebourseSec/item/{itemId}/all",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "itemId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "GetRecapitulatif",
+    "RelativePath": "api/DetailDebourseSec/item/{itemId}/recapitulatif",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "itemId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Saf_alu_ci_Api.Controllers.Dqe.RecapitulatifDebourseSecResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DetailDebourseSec.DetailDebourseSecController",
+    "Method": "GetTypes",
+    "RelativePath": "api/DetailDebourseSec/types",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Devis.DevisController",
     "Method": "GetAll",
     "RelativePath": "api/Devis",
@@ -529,7 +732,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "Saf_alu_ci_Api.Controllers.Dqe.CreateDQERequest",
+        "Type": "CreateDQERequest",
         "IsRequired": true
       }
     ],
@@ -587,7 +790,7 @@
       },
       {
         "Name": "request",
-        "Type": "Saf_alu_ci_Api.Controllers.Dqe.UpdateDQERequest",
+        "Type": "UpdateDQERequest",
         "IsRequired": true
       }
     ],
@@ -640,7 +843,7 @@
       },
       {
         "Name": "request",
-        "Type": "Saf_alu_ci_Api.Controllers.Dqe.ConvertDQEToProjectRequest",
+        "Type": "ConvertDQEToProjectRequest",
         "IsRequired": true
       }
     ],
@@ -661,7 +864,55 @@
       },
       {
         "Name": "request",
-        "Type": "Saf_alu_ci_Api.Controllers.Dqe.ConvertDQEToProjectRequest",
+        "Type": "ConvertDQEToProjectRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "ExportToExcel",
+    "RelativePath": "api/DQE/{id}/export/excel",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "ExportToPdf",
+    "RelativePath": "api/DQE/{id}/export/pdf",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Dqe.DQEController",
+    "Method": "PreviewDqe",
+    "RelativePath": "api/DQE/{id}/preview",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],
@@ -682,7 +933,7 @@
       },
       {
         "Name": "request",
-        "Type": "Saf_alu_ci_Api.Controllers.Dqe.ValidateDQERequest",
+        "Type": "ValidateDQERequest",
         "IsRequired": false
       }
     ],

@@ -128,3 +128,11 @@ C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\obj\Debug\net8.0\refin
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\obj\Debug\net8.0\Saf_alu-ci_Api.pdb
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\obj\Debug\net8.0\Saf_alu-ci_Api.genruntimeconfig.cache
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\obj\Debug\net8.0\ref\Saf_alu-ci_Api.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\ClosedXML.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\ClosedXML.Parser.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\DocumentFormat.OpenXml.Framework.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\ExcelNumberFormat.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\RBush.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\SixLabors.Fonts.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\System.IO.Packaging.dll

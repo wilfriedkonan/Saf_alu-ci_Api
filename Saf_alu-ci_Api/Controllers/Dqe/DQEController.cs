@@ -7,22 +7,24 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
 {
     [ApiController]
     [Route("api/[controller]")]
-     [Authorize]
+    [Authorize]
     public class DQEController : BaseController
     {
         private readonly DQEService _dqeService;
         private readonly ConversionService _conversionService;
         private readonly ProjetService _projetService;
-
+        private readonly DQEExportService _dqeExportService;
 
 
         public DQEController(
             DQEService dqeService,
-            ConversionService conversionService, ProjetService projetService)
+            ConversionService conversionService, ProjetService projetService, DQEExportService dqeExportService)
         {
             _dqeService = dqeService;
             _conversionService = conversionService;
             _projetService = projetService;
+            _dqeExportService = dqeExportService;
+            _dqeExportService = dqeExportService;
         }
 
         // ========================================
@@ -496,5 +498,371 @@ namespace Saf_alu_ci_Api.Controllers.Dqe
                 return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
         }
+
+        // ========================================
+        // ENDPOINTS D'EXPORT (EXCEL & PDF)
+        // ========================================
+
+        /// <summary>
+        /// Exporte un DQE vers Excel
+        /// GET /api/dqe/{id}/export/excel
+        /// </summary>
+        [HttpGet("{id}/export/excel")]
+        public async Task<IActionResult> ExportToExcel(int id)
+        {
+            try
+            {
+                var dqe = await _dqeService.GetByIdAsync(id);
+                if (dqe == null)
+                {
+                    return NotFound(new { message = "DQE introuvable" });
+                }
+
+                var excelBytes = await _dqeExportService.ExportToExcelAsync(id);
+
+                var fileName = $"DQE_{dqe.Reference}_{DateTime.Now:yyyyMMdd}.xlsx";
+
+                return File(
+                    excelBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Erreur lors de l'export Excel : {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// Exporte un DQE vers PDF
+        /// GET /api/dqe/{id}/export/pdf
+        /// </summary>
+        [HttpGet("{id}/export/pdf")]
+        public async Task<IActionResult> ExportToPdf(int id)
+        {
+            try
+            {
+                var dqe = await _dqeService.GetByIdAsync(id);
+                if (dqe == null)
+                {
+                    return NotFound(new { message = "DQE introuvable" });
+                }
+
+                var pdfBytes = await _dqeExportService.ExportToPdfAsync(id);
+
+                var fileName = $"DQE_{dqe.Reference}_{DateTime.Now:yyyyMMdd}.pdf";
+
+                return File(
+                    pdfBytes,
+                    "application/pdf",
+                    fileName
+                );
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Erreur lors de l'export PDF : {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// Prévisualise un DQE en HTML (optionnel)
+        /// GET /api/dqe/{id}/preview
+        /// </summary>
+        [HttpGet("{id}/preview")]
+        public async Task<IActionResult> PreviewDqe(int id)
+        {
+            try
+            {
+                var dqe = await _dqeService.GetByIdAsync(id);
+                if (dqe == null)
+                {
+                    return NotFound(new { message = "DQE introuvable" });
+                }
+
+                var html = GenerateDqeHtmlPreview(dqe);
+                return Content(html, "text/html");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Erreur lors de la prévisualisation : {ex.Message}" });
+            }
+        }
+
+        // ========================================
+        // MÉTHODE PRIVÉE POUR PRÉVISUALISATION HTML
+        // ========================================
+
+        private string GenerateDqeHtmlPreview(DQEDetailDTO dqe)
+        {
+            var html = $@"
+<!DOCTYPE html>
+<html lang='fr'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>DQE - {dqe.Reference}</title>
+    <style>
+        body {{
+            font-family: 'Calibri', Arial, sans-serif;
+            margin: 20px;
+            font-size: 11pt;
+        }}
+        .header {{
+            background-color: #0066CC;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+        .header h1 {{
+            margin: 0;
+            font-size: 24pt;
+        }}
+        .info-section {{
+            background-color: #E7E6E6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }}
+        .info-row {{
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }}
+        .info-label {{
+            font-weight: bold;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }}
+        th {{
+            background-color: #4472C4;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }}
+        td {{
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }}
+        .lot-row {{
+            background-color: #D9E1F2;
+            font-weight: bold;
+            font-size: 12pt;
+        }}
+        .chapter-row {{
+            background-color: #F2F2F2;
+            font-style: italic;
+            padding-left: 20px;
+        }}
+        .item-row {{
+            padding-left: 40px;
+        }}
+        .total-section {{
+            margin-top: 30px;
+            text-align: right;
+        }}
+        .total-row {{
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+            font-size: 12pt;
+        }}
+        .total-label {{
+            font-weight: bold;
+            margin-right: 20px;
+            min-width: 150px;
+        }}
+        .total-value {{
+            min-width: 150px;
+            text-align: right;
+        }}
+        .total-ht {{
+            background-color: #FFF2CC;
+            padding: 10px;
+            font-weight: bold;
+        }}
+        .total-ttc {{
+            background-color: #C6E0B4;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 14pt;
+            border: 2px solid #0066CC;
+        }}
+        .footer {{
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #0066CC;
+            font-size: 9pt;
+            color: #666;
+            text-align: center;
+        }}
+        .text-right {{
+            text-align: right;
+        }}
+        .text-center {{
+            text-align: center;
+        }}
+        @media print {{
+            body {{
+                margin: 0;
+            }}
+            .header {{
+                page-break-after: avoid;
+            }}
+            table {{
+                page-break-inside: auto;
+            }}
+            tr {{
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>SAF ALU CI</h1>
+        <h2>DÉCOMPOSITION QUANTITATIVE ESTIMATIVE (DQE)</h2>
+    </div>
+
+    <div class='info-section'>
+        <div class='info-row'>
+            <div>
+                <span class='info-label'>Référence :</span> {dqe.Reference}
+            </div>
+            <div>
+                <span class='info-label'>Date :</span> {dqe.DateCreation:dd/MM/yyyy}
+            </div>
+        </div>
+        <div class='info-row'>
+            <div>
+                <span class='info-label'>Nom du projet :</span> {dqe.Nom}
+            </div>
+            <div>
+                <span class='info-label'>Statut :</span> <strong>{dqe.Statut.ToUpper()}</strong>
+            </div>
+        </div>
+        <div class='info-row'>
+            <div>
+                <span class='info-label'>Client :</span> {dqe.Client?.Nom ?? "N/A"}
+            </div>
+        </div>
+        {(!string.IsNullOrEmpty(dqe.Description) ? $@"
+        <div class='info-row'>
+            <div>
+                <span class='info-label'>Description :</span> {dqe.Description}
+            </div>
+        </div>" : "")}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>CODE</th>
+                <th>DÉSIGNATION</th>
+                <th class='text-center'>UNITÉ</th>
+                <th class='text-right'>QUANTITÉ</th>
+                <th class='text-right'>PRIX UNITAIRE HT</th>
+                <th class='text-right'>MONTANT HT</th>
+                <th class='text-center'>% TOTAL</th>
+            </tr>
+        </thead>
+        <tbody>
+";
+
+            // PARCOURIR LES LOTS
+            if (dqe.Lots != null && dqe.Lots.Any())
+            {
+                foreach (var lot in dqe.Lots.OrderBy(l => l.Ordre))
+                {
+                    html += $@"
+            <tr class='lot-row'>
+                <td>{lot.Code}</td>
+                <td>{lot.Nom.ToUpper()}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class='text-right'>{lot.TotalRevenueHT:N0} F</td>
+                <td class='text-center'>{lot.PourcentageTotal:F2}%</td>
+            </tr>";
+
+                    // PARCOURIR LES CHAPITRES
+                    if (lot.Chapters != null && lot.Chapters.Any())
+                    {
+                        foreach (var chapter in lot.Chapters.OrderBy(c => c.Ordre))
+                        {
+                            html += $@"
+            <tr class='chapter-row'>
+                <td>  {chapter.Code}</td>
+                <td>  {chapter.Nom}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class='text-right'>{chapter.TotalRevenueHT:N0} F</td>
+                <td></td>
+            </tr>";
+
+                            // PARCOURIR LES ITEMS
+                            if (chapter.Items != null && chapter.Items.Any())
+                            {
+                                foreach (var item in chapter.Items.OrderBy(i => i.Ordre))
+                                {
+                                    html += $@"
+            <tr class='item-row'>
+                <td>    {item.Code}</td>
+                <td>    {item.Designation}</td>
+                <td class='text-center'>{item.Unite}</td>
+                <td class='text-right'>{item.Quantite:N2}</td>
+                <td class='text-right'>{item.PrixUnitaireHT:N0} F</td>
+                <td class='text-right'>{item.TotalRevenueHT:N0} F</td>
+                <td></td>
+            </tr>";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            html += $@"
+        </tbody>
+    </table>
+
+    <div class='total-section'>
+        <div class='total-row total-ht'>
+            <div class='total-label'>TOTAL HT :</div>
+            <div class='total-value'>{dqe.TotalRevenueHT:N0} F</div>
+        </div>
+        <div class='total-row'>
+            <div class='total-label'>TVA ({dqe.TauxTVA}%) :</div>
+            <div class='total-value'>{dqe.MontantTVA:N0} F</div>
+        </div>
+        <div class='total-row total-ttc'>
+            <div class='total-label'>TOTAL TTC :</div>
+            <div class='total-value'>{dqe.TotalTTC:N0} F</div>
+        </div>
+    </div>
+
+    {(dqe.IsConverted && dqe.LinkedProject != null ? $@"
+    <div style='margin-top: 30px; padding: 15px; background-color: #FFF3CD; border-left: 4px solid #FF6B35;'>
+        <strong>⚠️ Ce DQE a été converti en projet</strong><br>
+        Projet : {dqe.LinkedProject.Numero} - {dqe.LinkedProject.Nom}<br>
+        Date de conversion : {dqe.LinkedProject.ConvertedAt:dd/MM/yyyy HH:mm}
+    </div>" : "")}
+
+    <div class='footer'>
+        <p>Document généré le {DateTime.Now:dd/MM/yyyy à HH:mm} - SAF ALU CI</p>
+    </div>
+</body>
+</html>";
+
+            return html;
+        }
+
     }
 }

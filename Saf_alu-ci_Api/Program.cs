@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Saf_alu_ci_Api.Controllers.Clients;
@@ -31,6 +32,12 @@ builder.Services.AddScoped(provider => new TresorerieService(connectionString));
 builder.Services.AddScoped(provider => new ProjetService(connectionString));
 builder.Services.AddScoped(provider => new ObjectifFinacierService(connectionString));
 builder.Services.AddScoped(provider => new DQEService(connectionString));
+builder.Services.AddScoped<DQEExportService>();
+builder.Services.AddScoped<DetailDebourseSecService>(sp =>
+    new DetailDebourseSecService(
+        connectionString,
+        sp.GetRequiredService<ILogger<DetailDebourseSecService>>()
+    ));
 builder.Services.AddScoped<ConversionService>(sp =>
 {
     var dqeService = sp.GetRequiredService<DQEService>();
