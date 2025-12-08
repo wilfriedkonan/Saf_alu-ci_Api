@@ -22,6 +22,9 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // Enregistrement des services métier
+
+//builder.Services.AddScoped<MailServiceBrevo>();
+builder.Services.AddScoped<SmtpEmailService>();
 builder.Services.AddScoped(provider => new UtilisateurService(connectionString));
 builder.Services.AddScoped(provider => new ClientService(connectionString));
 builder.Services.AddScoped(provider => new DevisService(connectionString));
@@ -32,6 +35,7 @@ builder.Services.AddScoped(provider => new TresorerieService(connectionString));
 builder.Services.AddScoped(provider => new ProjetService(connectionString));
 builder.Services.AddScoped(provider => new ObjectifFinacierService(connectionString));
 builder.Services.AddScoped(provider => new DQEService(connectionString));
+
 builder.Services.AddScoped<DQEExportService>();
 builder.Services.AddScoped<DetailDebourseSecService>(sp =>
     new DetailDebourseSecService(
@@ -44,6 +48,23 @@ builder.Services.AddScoped<ConversionService>(sp =>
     var projetService = sp.GetRequiredService<ProjetService>();
     return new ConversionService(connectionString, dqeService, projetService);
 });
+builder.Services.AddScoped<ParametresSystemeService>(sp =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    var utilisateurService = sp.GetRequiredService<UtilisateurService>();
+    return new ParametresSystemeService(connectionString, utilisateurService);
+});
+
+builder.Services.AddScoped<UtilisateurInvitationService>(sp =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    //var mailService = sp.GetRequiredService<MailServiceBrevo>();
+    var smtpService = sp.GetRequiredService<SmtpEmailService>();
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    return new UtilisateurInvitationService(connectionString, smtpService, configuration);
+});
+
+builder.Services.AddScoped<ResetPasswordService>();
 builder.Services.AddHttpClient<BrevoSmsService>();
 builder.Services.AddHttpClient<BrevoWhatsAppService>();
 
@@ -51,7 +72,6 @@ builder.Services.AddHttpClient<BrevoWhatsAppService>();
 
 // Services utilitaires
 builder.Services.AddScoped<JwtService>();
-builder.Services.AddScoped<MailServiceBrevo>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

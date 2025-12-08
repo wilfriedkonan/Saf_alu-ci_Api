@@ -112,6 +112,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     projet.CoutReel = projet.Etapes.Sum(e => e.CoutReel);
                     var nbEtap = projet.Etapes.Where(x => x.LinkedDqeLotName == null).Count();
                     projet.PourcentageAvancement = (projet.Etapes.Sum(x => x.PourcentageAvancement) / nbEtap);
+
                 }
 
                 return projet;
@@ -982,7 +983,10 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     }
                     // ajout calcule depense 
 
-
+                    if (etape.Depense > 0)
+                    {
+                        Console.WriteLine("Ici");
+                    }
 
                     etapes.Add(etape);
                 }

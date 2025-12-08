@@ -136,3 +136,6 @@ C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Excel
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\RBush.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\SixLabors.Fonts.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\System.IO.Packaging.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\MailKit.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\MimeKit.dll

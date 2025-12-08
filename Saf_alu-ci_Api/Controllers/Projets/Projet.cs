@@ -1,5 +1,6 @@
 ﻿using Saf_alu_ci_Api.Controllers.Clients;
 using Saf_alu_ci_Api.Controllers.SousTraitants;
+using Saf_alu_ci_Api.Controllers.Tresorerie;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
 using System.ComponentModel.DataAnnotations;
 
@@ -51,6 +52,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public virtual Utilisateur? ChefProjet { get; set; }
         public virtual Utilisateur? DqeConvertedBy { get; set; }
         public virtual List<EtapeProjet>? Etapes { get; set; }
+        public List<MouvementFinancier>? DepenseProjet { get; set; }
     }
 
     public class TypeProjet
@@ -194,6 +196,9 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public virtual List<EtapeProjet>? SousEtapes { get; set; }
         public virtual SousTraitant? SousTraitant { get; set; }
         public virtual Utilisateur? Responsable { get; set; }
+        public List<MouvementFinancier>? DepenseProjet { get; set; }
+
+
     }
 
     /// <summary>

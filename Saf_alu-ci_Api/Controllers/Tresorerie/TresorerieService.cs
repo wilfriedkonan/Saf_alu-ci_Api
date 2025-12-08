@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Reflection.Metadata;
 
 namespace Saf_alu_ci_Api.Controllers.Tresorerie
 {
@@ -186,6 +187,53 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             return mouvements;
         }
 
+        public async Task<List<MouvementFinancier>> GetMouvementDepenseByProjetIdAsync(int id)
+        {
+            var mouvements = new List<MouvementFinancier>();
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+        SELECT mf.*
+        FROM MouvementsFinanciers mf
+        WHERE mf.ProjetId = @Id 
+          AND mf.TypeMouvement = 'Sortie'
+    ", conn);
+
+            cmd.Parameters.AddWithValue("@Id", id);
+
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                mouvements.Add(MapToMouvementFinancier(reader));
+            }
+
+            return mouvements;
+        }
+        public async Task<List<MouvementFinancier?>> GetMouvementDepenseByIdFortEtapeAsync(int id)
+        {
+            var mouvements = new List<MouvementFinancier>();
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+        SELECT mf.*
+        FROM MouvementsFinanciers mf
+        WHERE mf.EtapeProjetId = @Id 
+          AND mf.TypeMouvement = 'Sortie'
+    ", conn);
+
+            cmd.Parameters.AddWithValue("@Id", id);
+
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+               mouvements.Add( MapToMouvementFinancier(reader));
+            }
+
+            return mouvements;
+        }
+
         public async Task<MouvementFinancier?> GetMouvementByIdAsync(int id)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -208,6 +256,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             return null;
         }
+
 
         public async Task<int> CreateMouvementAsync(MouvementFinancier mouvement)
         {
@@ -881,6 +930,17 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 Actif = reader.GetBoolean("Actif")
             };
         }
+        private bool ColumnExists(SqlDataReader reader, string columnName)
+        {
+            try
+            {
+                return reader.GetOrdinal(columnName) >= 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         private MouvementFinancier MapToMouvementFinancier(SqlDataReader reader)
         {
@@ -904,10 +964,12 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 CompteDestinationId = reader.IsDBNull("CompteDestinationId") ? null : reader.GetInt32("CompteDestinationId"),
                 UtilisateurCreation = reader.GetInt32("UtilisateurCreation"),
 
-                Compte = new Compte
+                Compte = ColumnExists(reader, "CompteNom") && !reader.IsDBNull("CompteNom")
+                ? new Compte
                 {
                     Nom = reader.GetString("CompteNom")
                 }
+                : null
 
             };
         }

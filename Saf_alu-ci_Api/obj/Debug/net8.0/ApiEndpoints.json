@@ -1,5 +1,53 @@
 [
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ResetPasswordController",
+    "Method": "ForgotPassword",
+    "RelativePath": "api/auth/forgot-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Utilisateurs.ForgotPasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ResetPasswordController",
+    "Method": "ResetPassword",
+    "RelativePath": "api/auth/reset-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Utilisateurs.ResetPasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ResetPasswordController",
+    "Method": "ValidateResetToken",
+    "RelativePath": "api/auth/validate-reset-token",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Clients.ClientsController",
     "Method": "GetAll",
     "RelativePath": "api/Clients",
@@ -1291,6 +1339,193 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetAllPermissions",
+    "RelativePath": "api/Parametres/permissions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetAllRoles",
+    "RelativePath": "api/Parametres/roles",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "CreateRole",
+    "RelativePath": "api/Parametres/roles",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Utilisateurs.CreateRoleRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetRoleById",
+    "RelativePath": "api/Parametres/roles/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "UpdateRole",
+    "RelativePath": "api/Parametres/roles/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Utilisateurs.UpdateRoleRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "DeleteRole",
+    "RelativePath": "api/Parametres/roles/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetRolesList",
+    "RelativePath": "api/Parametres/roles/liste",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetStatistiquesRoles",
+    "RelativePath": "api/Parametres/statistiques/roles",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetAllParametres",
+    "RelativePath": "api/Parametres/systeme",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "UpdateParametre",
+    "RelativePath": "api/Parametres/systeme",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Parametres.UpdateParametreRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetParametreByKey",
+    "RelativePath": "api/Parametres/systeme/{cle}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "cle",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetParametresByCategorie",
+    "RelativePath": "api/Parametres/systeme/categories",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "SearchUtilisateurs",
+    "RelativePath": "api/Parametres/utilisateurs/search",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Parametres.SearchUtilisateursRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "GetStatistiquesUtilisateurs",
+    "RelativePath": "api/Parametres/utilisateurs/statistiques",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
     "Method": "GetAll",
     "RelativePath": "api/Projets",
@@ -2293,6 +2528,70 @@
       {
         "Name": "id",
         "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.UtilisateurInvitationController",
+    "Method": "RenvoyerInvitation",
+    "RelativePath": "api/utilisateurs/{id}/renvoyer-invitation",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.UtilisateurInvitationController",
+    "Method": "CompleterInscription",
+    "RelativePath": "api/utilisateurs/completer-inscription",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Utilisateurs.CompleterInscriptionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.UtilisateurInvitationController",
+    "Method": "ValiderToken",
+    "RelativePath": "api/utilisateurs/invitation/valider",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.UtilisateurInvitationController",
+    "Method": "InviterUtilisateur",
+    "RelativePath": "api/utilisateurs/inviter",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Utilisateurs.InviterUtilisateurRequest",
         "IsRequired": true
       }
     ],

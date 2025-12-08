@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.Identity.Client;
 using Saf_alu_ci_Api.Controllers.Factures;
+using Saf_alu_ci_Api.Controllers.Tresorerie;
 
 namespace Saf_alu_ci_Api.Controllers.Projets
 {
@@ -11,10 +13,11 @@ namespace Saf_alu_ci_Api.Controllers.Projets
     public class ProjetsController : BaseController
     {
         private readonly ProjetService _projetService;
-
-        public ProjetsController(ProjetService projetService)
+        private readonly TresorerieService _tresorerieService;
+        public ProjetsController(ProjetService projetService, TresorerieService tresorerieService)
         {
             _projetService = projetService;
+            _tresorerieService = tresorerieService;
         }
 
         [HttpGet]
@@ -40,6 +43,8 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                         p.Client.Id,
                         Nom = !string.IsNullOrEmpty(p.Client.Nom) ? p.Client.Nom :
                               $"{p.Client.Nom}".Trim(),
+                        telephone = p.Client.Telephone,
+
                     } : null,
                     TypeProjet = p.TypeProjet?.Nom,
                     ChefProjet = p.ChefProjet != null ? $"{p.ChefProjet.Prenom} {p.ChefProjet.Nom}" : null,
@@ -62,24 +67,20 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             {
                 var projet = await _projetService.GetByIdAsync(id);
 
+
                 if (projet == null)
                     return NotFound("Projet non trouvé");
+                var depenseProjet = await _tresorerieService.GetMouvementDepenseByProjetIdAsync(projet.Id);
 
                 // Vérifier que la liste n'est pas nulle et pas vide
                 if (projet.Etapes == null || !projet.Etapes.Any())
                 {
-                    projet.PourcentageAvancement = 0;
                     return Ok(projet);
                 }
-
-                // Calcul des pourcentages
-                //var totalAvancement = projet.Etapes.Sum(x => x.PourcentageAvancement);
-                //var totalEtapes = projet.Etapes.Count;
-
-                //// division sécurisée
-                //var moyennePourcent = (double)totalAvancement / totalEtapes;
-
-                //projet.PourcentageAvancement = Convert.ToInt32(moyennePourcent);
+                if (depenseProjet != null)
+                {
+                    projet.DepenseProjet = depenseProjet;
+                }
 
                 return Ok(projet);
             }
@@ -142,6 +143,19 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             try
             {
                 var etapes = await _projetService.GetEtapesProjetAsync(id);
+                if (etapes == null)
+                {
+                    return Ok(etapes);
+                }
+                foreach (var item in etapes)
+                {
+                    var depenseProjet = await _tresorerieService.GetMouvementDepenseByIdFortEtapeAsync(item.Id);
+                    if (depenseProjet != null)
+                    {
+                        item.DepenseProjet = depenseProjet;
+                    }
+                }
+
                 return Ok(etapes);
             }
             catch (Exception ex)
