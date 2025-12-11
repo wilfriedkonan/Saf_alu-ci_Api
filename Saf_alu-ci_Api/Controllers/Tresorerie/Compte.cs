@@ -1,4 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Saf_alu_ci_Api.Controllers.Factures;
+using Saf_alu_ci_Api.Controllers.Projets;
+using Saf_alu_ci_Api.Controllers.SousTraitants;
+using Saf_alu_ci_Api.Controllers.Utilisateurs;
+using System.ComponentModel.DataAnnotations;
 
 namespace Saf_alu_ci_Api.Controllers.Tresorerie
 {
@@ -73,10 +77,10 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         // Navigation properties (optionnelles)
         public virtual Compte? Compte { get; set; }
         public virtual Compte? CompteDestination { get; set; }
-        // public virtual Facture? Facture { get; set; }
-        // public virtual Projet? Projet { get; set; }
-        // public virtual SousTraitant? SousTraitant { get; set; }
-        // public virtual Utilisateur? UtilisateurSaisieProp { get; set; }
+        public virtual Facture? Facture { get; set; }
+        public virtual Projet? Projet { get; set; }
+        public virtual SousTraitant? SousTraitant { get; set; }
+        public virtual Utilisateur? UtilisateurSaisieProp { get; set; }
     }
 
     // =============================================

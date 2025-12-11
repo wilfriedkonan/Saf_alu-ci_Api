@@ -247,7 +247,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                                                       m.Reference,
                                                       Compte = new { m.CompteId, m.Compte?.Nom }, // TODO: Navigation property
                                                       CompteDestination = m.CompteDestinationId.HasValue ? new { m.CompteDestinationId, Nom = "Nom compte dest" } : null,
-                                                      Couleur = GetCouleurTypeMouvement(m.TypeMouvement)
+                                                      Couleur = GetCouleurTypeMouvement(m.TypeMouvement),
                                                   });
 
                 return Ok(new

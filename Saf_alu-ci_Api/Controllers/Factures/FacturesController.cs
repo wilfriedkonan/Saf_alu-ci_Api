@@ -494,7 +494,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             try
             {
                 var factures = await _factureService.GetAllAsync();
-                var impayes = factures.Where(f => f.Statut == "Envoyee" && (f.MontantTTC - f.MontantPaye) > 0)
+                var impayes = factures.Where(f => (f.MontantTTC - f.MontantPaye) > 0)
                                      .Select(f => new
                                      {
                                          f.Id,
@@ -506,8 +506,8 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                                          f.DateEcheance,
                                          JoursRetard = f.DateEcheance < DateTime.Now ? (DateTime.Now - f.DateEcheance).Days : 0,
                                          Debiteur = f.ClientId.HasValue ?
-                                             (!string.IsNullOrEmpty(f.Client?.RaisonSociale) ? f.Client.RaisonSociale :
-                                              $"{f.Client?.Nom}".Trim()) :
+                                             (!string.IsNullOrEmpty(f.Client?.Nom) ? f.Client.Nom :
+                                              $"{f.Client?.Email}".Trim()) :
                                              f.SousTraitant?.Nom,
                                          Email = f.ClientId.HasValue ? f.Client?.Email : f.SousTraitant?.Email,
                                          Telephone = f.ClientId.HasValue ? f.Client?.Telephone : f.SousTraitant?.Telephone

@@ -1,4 +1,8 @@
 ﻿using Microsoft.Data.SqlClient;
+using Saf_alu_ci_Api.Controllers.Factures;
+using Saf_alu_ci_Api.Controllers.Projets;
+using Saf_alu_ci_Api.Controllers.SousTraitants;
+using Saf_alu_ci_Api.Controllers.Utilisateurs;
 using System.Data;
 using System.Reflection.Metadata;
 
@@ -228,7 +232,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             while (await reader.ReadAsync())
             {
-               mouvements.Add( MapToMouvementFinancier(reader));
+                mouvements.Add(MapToMouvementFinancier(reader));
             }
 
             return mouvements;
@@ -238,11 +242,30 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                SELECT mf.*, c.Nom as CompteNom, cd.Nom as CompteDestinationNom
-                FROM MouvementsFinanciers mf
-                LEFT JOIN Comptes c ON mf.CompteId = c.Id
-                LEFT JOIN Comptes cd ON mf.CompteDestinationId = cd.Id
-                WHERE mf.Id = @Id", conn);
+               SELECT 
+            mf.*,
+            c.Nom AS CompteNom,
+            cd.Nom AS CompteDestinationNom,
+
+            -- Colonnes facture
+            f.Numero AS FactureNumero,
+            f.MontantHT AS FactureMontantHT,
+            f.ReferenceClient AS FactureReferenceClient,
+
+            -- Colonnes utilisateur
+            u.Nom AS NomUtilisateur,
+            u.Prenom AS PrenomUtilisateur,
+            u.Email AS EmailUtilisateur,
+
+             p.Numero AS NumeroProjet
+
+              FROM MouvementsFinanciers mf
+            LEFT JOIN Comptes c ON mf.CompteId = c.Id
+            LEFT JOIN Comptes cd ON mf.CompteDestinationId = cd.Id
+            LEFT JOIN Factures f ON mf.FactureId = f.Id
+            LEFT JOIN Projets p ON mf.ProjetId = p.Id
+            LEFT JOIN Utilisateurs u ON mf.UtilisateurCreation = u.Id
+            WHERE mf.Id = @Id", conn);
 
             cmd.Parameters.AddWithValue("@Id", id);
 
@@ -965,12 +988,35 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 UtilisateurCreation = reader.GetInt32("UtilisateurCreation"),
 
                 Compte = ColumnExists(reader, "CompteNom") && !reader.IsDBNull("CompteNom")
-                ? new Compte
-                {
-                    Nom = reader.GetString("CompteNom")
-                }
-                : null
+                    ? new Compte { Nom = reader.GetString("CompteNom") }
+                    : null,
 
+                Facture = ColumnExists(reader, "FactureNumero") && !reader.IsDBNull("FactureNumero")
+                    ? new Facture
+                    {
+                        Numero = reader.GetString("FactureNumero"),
+                        MontantHT = reader.GetDecimal("FactureMontantHT"),
+                        ReferenceClient = reader.IsDBNull("FactureReferenceClient")
+                                          ? null
+                                          : reader.GetString("FactureReferenceClient")
+                    }
+                    : null,
+
+
+                UtilisateurSaisieProp = ColumnExists(reader, "EmailUtilisateur") && !reader.IsDBNull("EmailUtilisateur")
+                    ? new Utilisateur
+                    {
+                        Nom = reader.GetString("NomUtilisateur"),
+                        Prenom = reader.GetString("PrenomUtilisateur"),
+                        Email = reader.GetString("EmailUtilisateur")
+                    }
+                    : null,
+                Projet = ColumnExists(reader, "NumeroProjet") && !reader.IsDBNull("NumeroProjet")
+                    ? new Projet
+                    {
+                        Numero = reader.GetString("NumeroProjet"),
+                    }
+                    : null,
             };
         }
     }
