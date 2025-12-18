@@ -450,6 +450,8 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             return echeanciers;
         }
 
+
+
         private void AddFactureParameters(SqlCommand cmd, Facture facture)
         {
             cmd.Parameters.AddWithValue("@Numero", facture.Numero);
@@ -518,5 +520,8 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                 }
             };
         }
+
+
+
     }
 }

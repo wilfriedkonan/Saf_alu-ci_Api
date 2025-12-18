@@ -602,7 +602,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                 {
                     // Golbal 
                     totalFacturesGolbal = factures.Count(),
-                    retardPayementGolbal = factures.Where(x => x.DateEcheance > DateTime.Now).Count(),
+                    retardPayementGolbal = factures.Where(x => x.DateEcheance < DateTime.Now).Count(),
                     montantTotalPayeGolbal = factures.Sum(f => f.MontantPaye),
                     montantRestantARecouvrerGolbal = factures.Sum(f => f.MontantTTC - f.MontantPaye),
 
