@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Saf_alu_ci_Api.Controllers.Tresorerie;
 using System.Security.Claims;
 
 namespace Saf_alu_ci_Api.Controllers.Factures
@@ -10,10 +11,11 @@ namespace Saf_alu_ci_Api.Controllers.Factures
     public class FacturesController : BaseController
     {
         private readonly FactureService _factureService;
-
-        public FacturesController(FactureService factureService)
+        private readonly TresorerieService _tresorerieService;
+        public FacturesController(FactureService factureService, TresorerieService? tresorerieService)
         {
             _factureService = factureService;
+            _tresorerieService = tresorerieService;
         }
 
         /// <summary>
@@ -22,6 +24,7 @@ namespace Saf_alu_ci_Api.Controllers.Factures
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? statut = null, [FromQuery] string? typeFacture = null)
         {
+            var result = new List<object>();
             try
             {
                 var factures = await _factureService.GetAllAsync();
@@ -36,56 +39,62 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                 {
                     factures = factures.Where(f => f.TypeFacture.Equals(typeFacture, StringComparison.OrdinalIgnoreCase)).ToList();
                 }
-
-                var result = factures.Select(f => new
+                foreach (var f in factures)
                 {
-                    f.Id,
-                    f.Numero,
-                    f.TypeFacture,
-                    f.Titre,
-                    f.Statut,
-                    f.MontantHT,
-                    f.MontantTVA,
-                    f.MontantTTC,
-                    f.MontantPaye,
-                    MontantRestant = f.MontantTTC - f.MontantPaye,
-                    f.DateFacture,
-                    f.DateEcheance,
-                    f.DateCreation,
-                    f.ConditionsPaiement,
-                    // Débiteur (Client ou Sous-traitant)
-                    Debiteur = f.ClientId.HasValue ? f.Client?.Nom : null,
-                    DebiteurType = f.ClientId.HasValue ? "Client" : "Sous-traitant",
-                    // Relations
-                    f.DevisId,
-                    f.ProjetId,
-                    // Indicateurs
-                    EstEnRetard = f.Statut == "Envoyee" && f.DateEcheance < DateTime.Now,
-                    JoursRetard = f.Statut == "Envoyee" && f.DateEcheance < DateTime.Now ?
-                        (DateTime.Now - f.DateEcheance).Days : 0,
-                    DetailDebiteur = f.Client != null
-                    ? new
-                    {
-                        f.Client.Id,
-                        nom = !string.IsNullOrEmpty(f.Client.Nom) ? $"{f.Client.Nom}".Trim() : "",
-                        ncc = !string.IsNullOrEmpty(f.Client.Ncc) ? $"{f.Client.Ncc}".Trim() : "",
-                        raisonSociale = !string.IsNullOrEmpty(f.Client.RaisonSociale) ? $"{f.Client.RaisonSociale}".Trim() : "",
-                        email = !string.IsNullOrEmpty(f.Client.Email) ? $"{f.Client.Email}".Trim() : "",
-                        telephone = !string.IsNullOrEmpty(f.Client.Telephone) ? $"{f.Client.Telephone}".Trim() : "",
-                        adresse = !string.IsNullOrEmpty(f.Client.Adresse) ? $"{f.Client.Adresse}".Trim() : "",
+                    var montantPaye = await _tresorerieService.GetMontantPayeFactureAsync(f.Id);
+                    var montantRestant = f.MontantTTC - montantPaye;
 
-                    } : f.SousTraitant != null
-                   ? new
-                   {
-                       f.SousTraitant.Id,
-                       nom = !string.IsNullOrEmpty(f.SousTraitant.Nom) ? $"{f.SousTraitant.Nom}".Trim() : "",
-                       ncc = !string.IsNullOrEmpty(f.SousTraitant.Ncc) ? $"{f.SousTraitant.Ncc}".Trim() : "",
-                       raisonSociale = !string.IsNullOrEmpty(f.SousTraitant.RaisonSociale) ? $"{f.SousTraitant.RaisonSociale}".Trim() : "",
-                       email = !string.IsNullOrEmpty(f.SousTraitant.Email) ? $"{f.SousTraitant.Email}".Trim() : "",
-                       telephone = !string.IsNullOrEmpty(f.SousTraitant.Telephone) ? $"{f.SousTraitant.Telephone}".Trim() : "",
-                       adresse = !string.IsNullOrEmpty(f.SousTraitant.Adresse) ? $"{f.SousTraitant.Adresse}".Trim() : "",
-                   } : null
-                }).OrderByDescending(f => f.DateCreation);
+                    result.Add(new
+                    {
+                        f.Id,
+                        f.Numero,
+                        f.TypeFacture,
+                        f.Titre,
+                        f.Statut,
+                        f.MontantHT,
+                        f.MontantTVA,
+                        f.MontantTTC,
+                        MontantPaye = montantPaye,
+                        MontantRestant = montantRestant,
+                        f.DateFacture,
+                        f.DateEcheance,
+                        f.DateCreation,
+                        f.ConditionsPaiement,
+                        // Débiteur (Client ou Sous-traitant)
+                        Debiteur = f.ClientId.HasValue ? f.Client?.Nom : null,
+                        DebiteurType = f.ClientId.HasValue ? "Client" : "Sous-traitant",
+                        // Relations
+                        f.DevisId,
+                        f.ProjetId,
+                        // Indicateurs
+                        EstEnRetard = f.Statut == "Envoyee" && f.DateEcheance < DateTime.Now,
+                        JoursRetard = f.Statut == "Envoyee" && f.DateEcheance < DateTime.Now ?
+                        (DateTime.Now - f.DateEcheance).Days : 0,
+                        DetailDebiteur = f.Client != null
+                        ? new
+                        {
+                            f.Client.Id,
+                            nom = !string.IsNullOrEmpty(f.Client.Nom) ? $"{f.Client.Nom}".Trim() : "",
+                            ncc = !string.IsNullOrEmpty(f.Client.Ncc) ? $"{f.Client.Ncc}".Trim() : "",
+                            raisonSociale = !string.IsNullOrEmpty(f.Client.RaisonSociale) ? $"{f.Client.RaisonSociale}".Trim() : "",
+                            email = !string.IsNullOrEmpty(f.Client.Email) ? $"{f.Client.Email}".Trim() : "",
+                            telephone = !string.IsNullOrEmpty(f.Client.Telephone) ? $"{f.Client.Telephone}".Trim() : "",
+                            adresse = !string.IsNullOrEmpty(f.Client.Adresse) ? $"{f.Client.Adresse}".Trim() : "",
+
+                        } : f.SousTraitant != null
+                       ? new
+                       {
+                           f.SousTraitant.Id,
+                           nom = !string.IsNullOrEmpty(f.SousTraitant.Nom) ? $"{f.SousTraitant.Nom}".Trim() : "",
+                           ncc = !string.IsNullOrEmpty(f.SousTraitant.Ncc) ? $"{f.SousTraitant.Ncc}".Trim() : "",
+                           raisonSociale = !string.IsNullOrEmpty(f.SousTraitant.RaisonSociale) ? $"{f.SousTraitant.RaisonSociale}".Trim() : "",
+                           email = !string.IsNullOrEmpty(f.SousTraitant.Email) ? $"{f.SousTraitant.Email}".Trim() : "",
+                           telephone = !string.IsNullOrEmpty(f.SousTraitant.Telephone) ? $"{f.SousTraitant.Telephone}".Trim() : "",
+                           adresse = !string.IsNullOrEmpty(f.SousTraitant.Adresse) ? $"{f.SousTraitant.Adresse}".Trim() : "",
+                       } : null
+                    });
+
+                }
 
                 return Ok(result);
             }
@@ -106,7 +115,8 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             {
                 var facture = await _factureService.GetByIdAsync(id);
                 if (facture == null) return NotFound(new { message = "Facture non trouvée" });
-
+                var montantPaye = await _tresorerieService.GetMontantPayeFactureAsync(facture.Id);
+                var montantRestant = facture.MontantTTC - montantPaye;
                 var result = new
                 {
                     facture.Id,
@@ -119,8 +129,8 @@ namespace Saf_alu_ci_Api.Controllers.Factures
                     facture.MontantTVA,
                     facture.TauxTVA,
                     facture.MontantTTC,
-                    facture.MontantPaye,
-                    MontantRestant = facture.MontantTTC - facture.MontantPaye,
+                    MontantPaye = montantPaye,
+                    MontantRestant = montantRestant,
                     facture.DateFacture,
                     facture.DateEcheance,
                     facture.DateEnvoi,
@@ -494,35 +504,64 @@ namespace Saf_alu_ci_Api.Controllers.Factures
             try
             {
                 var factures = await _factureService.GetAllAsync();
-                var impayes = factures.Where(f => (f.MontantTTC - f.MontantPaye) > 0)
-                                     .Select(f => new
-                                     {
-                                         f.Id,
-                                         f.Numero,
-                                         f.Titre,
-                                         f.MontantTTC,
-                                         f.MontantPaye,
-                                         MontantRestant = f.MontantTTC - f.MontantPaye,
-                                         f.DateEcheance,
-                                         JoursRetard = f.DateEcheance < DateTime.Now ? (DateTime.Now - f.DateEcheance).Days : 0,
-                                         Debiteur = f.ClientId.HasValue ?
-                                             (!string.IsNullOrEmpty(f.Client?.Nom) ? f.Client.Nom :
-                                              $"{f.Client?.Email}".Trim()) :
-                                             f.SousTraitant?.Nom,
-                                         Email = f.ClientId.HasValue ? f.Client?.Email : f.SousTraitant?.Email,
-                                         Telephone = f.ClientId.HasValue ? f.Client?.Telephone : f.SousTraitant?.Telephone
-                                     })
-                                     .OrderByDescending(f => f.JoursRetard)
-                                     .ThenByDescending(f => f.MontantRestant);
+                var impayes = new List<object>();
 
-                return Ok(impayes);
+                foreach (var f in factures)
+                {
+                    if (f.Statut != "Envoyee" && f.Statut != "EnRetard")
+                        continue;
+
+                    var montantPaye = await _tresorerieService.GetMontantPayeFactureAsync(f.Id);
+                    var montantRestant = f.MontantTTC - montantPaye;
+
+                    if (montantRestant <= 0)
+                        continue;
+
+                    impayes.Add(new
+                    {
+                        f.Id,
+                        f.Numero,
+                        f.Titre,
+                        f.MontantTTC,
+                        MontantPaye = montantPaye,
+                        MontantRestant = montantRestant,
+                        f.DateEcheance,
+
+                        JoursRetard = f.DateEcheance < DateTime.Now
+                            ? (DateTime.Now - f.DateEcheance).Days
+                            : 0,
+
+                        Debiteur = f.ClientId.HasValue
+                            ? (!string.IsNullOrEmpty(f.Client?.Nom)
+                                ? f.Client.Nom
+                                : f.Client?.Email)
+                            : f.SousTraitant?.Nom,
+
+                        Email = f.ClientId.HasValue
+                            ? f.Client?.Email
+                            : f.SousTraitant?.Email,
+
+                        Telephone = f.ClientId.HasValue
+                            ? f.Client?.Telephone
+                            : f.SousTraitant?.Telephone
+                    });
+                }
+
+                return Ok(
+                    impayes
+                        .OrderByDescending(f => ((dynamic)f).JoursRetard)
+                        .ThenByDescending(f => ((dynamic)f).MontantRestant)
+                );
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Erreur serveur", error = ex.Message });
+                return StatusCode(500, new
+                {
+                    message = "Erreur serveur",
+                    error = ex.Message
+                });
             }
         }
-
         /// <summary>
         /// Génère et télécharge le PDF d'une facture
         /// </summary>

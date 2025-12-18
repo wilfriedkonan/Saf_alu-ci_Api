@@ -1,4 +1,5 @@
-﻿// Controllers/Devis/DevisServiceComplet.cs
+﻿// Controllers/Devis/DevisService.cs
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Saf_alu_ci_Api.Controllers.Clients;
 using System.Data;
@@ -14,13 +15,21 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             _connectionString = connectionString;
         }
 
-        public async Task<List<Devis>> GetAllAsync()
+        // =====================================================
+        // MÉTHODES DE LECTURE
+        // =====================================================
+
+        public async Task<List<DevisListItem>> GetAllAsync()
         {
-            var devisList = new List<Devis>();
+            var devisList = new List<DevisListItem>();
 
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                SELECT d.*, c.Nom as ClientNom, c.RaisonSociale, c.Email, c.Telephone,c.Adresse
+                SELECT 
+                    d.Id, d.Numero, d.Titre, d.Statut, d.MontantTTC, 
+                    d.DateCreation, d.DateValidite, d.Chantier,
+                    c.Id as ClientId, 
+                    ISNULL(c.Nom, c.RaisonSociale ) as ClientNom
                 FROM Devis d
                 LEFT JOIN Clients c ON d.ClientId = c.Id
                 ORDER BY d.DateCreation DESC", conn);
@@ -30,38 +39,131 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
             while (await reader.ReadAsync())
             {
-                devisList.Add(MapToDevis(reader));
+                devisList.Add(new DevisListItem
+                {
+                    Id = reader.GetInt32("Id"),
+                    Numero = reader.GetString("Numero"),
+                    Titre = reader.GetString("Titre"),
+                    Statut = reader.GetString("Statut"),
+                    MontantTTC = reader.GetDecimal("MontantTTC"),
+                    DateCreation = reader.GetDateTime("DateCreation"),
+                    DateValidite = reader.IsDBNull("DateValidite") ? null : reader.GetDateTime("DateValidite"),
+                    Chantier = reader.IsDBNull("Chantier") ? null : reader.GetString("Chantier"),
+                    Client = new ClientInfo
+                    {
+                        Id = reader.GetInt32("ClientId"),
+                        Nom = reader.GetString("ClientNom")
+                    }
+                });
             }
 
             return devisList;
         }
 
-        public async Task<Devis?> GetByIdAsync(int id)
+        public async Task<DevisCompletResponse?> GetByIdAsync(int id)
         {
             using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand(@"
-                SELECT d.*, c.Nom as ClientNom, c.RaisonSociale ,c.Email, c.Telephone, c.Adresse
-                FROM Devis d
-                LEFT JOIN Clients c ON d.ClientId = c.Id
-                WHERE d.Id = @Id", conn);
-
-            cmd.Parameters.AddWithValue("@Id", id);
             await conn.OpenAsync();
 
+            // Utiliser la procédure stockée qui retourne tout d'un coup
+            using var cmd = new SqlCommand("sp_GetDevisComplet", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@DevisId", id);
+
+            DevisCompletResponse? devisResponse = null;
+            Dictionary<int, DevisSectionResponse> sectionsDict = new();
+
             using var reader = await cmd.ExecuteReaderAsync();
+
+            // Premier résultat: Informations du devis
             if (await reader.ReadAsync())
             {
-                var devis = MapToDevis(reader);
-
-                // Charger les lignes
-                reader.Close();
-                devis.Lignes = await GetLignesDevisAsync(conn, id);
-
-                return devis;
+                devisResponse = new DevisCompletResponse
+                {
+                    Id = reader.GetInt32("Id"),
+                    Numero = reader.GetString("Numero"),
+                    ClientId = reader.GetInt32("ClientId"),
+                    Titre = reader.GetString("Titre"),
+                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                    Statut = reader.GetString("Statut"),
+                    MontantHT = reader.GetDecimal("MontantHT"),
+                    TauxTVA = reader.GetDecimal("TauxTVA"),
+                    MontantTTC = reader.GetDecimal("MontantTTC"),
+                    DateCreation = reader.GetDateTime("DateCreation"),
+                    DateValidite = reader.IsDBNull("DateValidite") ? null : reader.GetDateTime("DateValidite"),
+                    DateEnvoi = reader.IsDBNull("DateEnvoi") ? null : reader.GetDateTime("DateEnvoi"),
+                    DateValidation = reader.IsDBNull("DateValidation") ? null : reader.GetDateTime("DateValidation"),
+                    Conditions = reader.IsDBNull("Conditions") ? null : reader.GetString("Conditions"),
+                    Notes = reader.IsDBNull("Notes") ? null : reader.GetString("Notes"),
+                    Chantier = reader.IsDBNull("Chantier") ? null : reader.GetString("Chantier"),
+                    Contact = reader.IsDBNull("Contact") ? null : reader.GetString("Contact"),
+                    QualiteMateriel = reader.IsDBNull("QualiteMateriel") ? null : reader.GetString("QualiteMateriel"),
+                    TypeVitrage = reader.IsDBNull("TypeVitrage") ? null : reader.GetString("TypeVitrage"),
+                    Client = new ClientInfo
+                    {
+                        Id = reader.GetInt32("ClientId"),
+                        Nom = reader.IsDBNull("ClientNom") ? "" : reader.GetString("ClientNom"),
+                        Email = reader.IsDBNull("ClientEmail") ? "" : reader.GetString("ClientEmail"),
+                        Telephone = reader.IsDBNull("ClientTelephone") ? "" : reader.GetString("ClientTelephone"),
+                        Adresse = reader.IsDBNull("ClientAdresse") ? "" : reader.GetString("ClientAdresse")
+                    },
+                    Sections = new List<DevisSectionResponse>()
+                };
             }
 
-            return null;
+            if (devisResponse == null)
+                return null;
+
+            // Deuxième résultat: Sections
+            await reader.NextResultAsync();
+            while (await reader.ReadAsync())
+            {
+                var section = new DevisSectionResponse
+                {
+                    Id = reader.GetInt32("Id"),
+                    Nom = reader.GetString("Nom"),
+                    Ordre = reader.GetInt32("Ordre"),
+                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                    Lignes = new List<LigneDevisResponse>(),
+                    TotalSectionHT = 0
+                };
+                sectionsDict[section.Id] = section;
+                devisResponse.Sections.Add(section);
+            }
+
+            // Troisième résultat: Lignes
+            await reader.NextResultAsync();
+            while (await reader.ReadAsync())
+            {
+                var sectionId = reader.IsDBNull("SectionId") ? 0 : reader.GetInt32("SectionId");
+                if (sectionId > 0 && sectionsDict.ContainsKey(sectionId))
+                {
+                    var ligne = new LigneDevisResponse
+                    {
+                        Id = reader.GetInt32("Id"),
+                        Ordre = reader.GetInt32("Ordre"),
+                        TypeElement = reader.IsDBNull("TypeElement") ? null : reader.GetString("TypeElement"),
+                        Designation = reader.GetString("Designation"),
+                        Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                        Longueur = reader.IsDBNull("Longueur") ? null : reader.GetDecimal("Longueur"),
+                        Hauteur = reader.IsDBNull("Hauteur") ? null : reader.GetDecimal("Hauteur"),
+                        Quantite = reader.GetDecimal("Quantite"),
+                        Unite = reader.GetString("Unite"),
+                        PrixUnitaireHT = reader.GetDecimal("PrixUnitaireHT"),
+                        TotalHT = reader.GetDecimal("Quantite") * reader.GetDecimal("PrixUnitaireHT")
+                    };
+
+                    sectionsDict[sectionId].Lignes.Add(ligne);
+                    sectionsDict[sectionId].TotalSectionHT += ligne.TotalHT;
+                }
+            }
+
+            return devisResponse;
         }
+
+        // =====================================================
+        // MÉTHODES DE CRÉATION
+        // =====================================================
 
         public async Task<string> GenerateNumeroAsync()
         {
@@ -81,7 +183,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             return outputParam.Value.ToString();
         }
 
-        public async Task<int> CreateAsync(Devis devis)
+        public async Task<int> CreateAsync(CreateDevisRequest request, int utilisateurId)
         {
             using var conn = new SqlConnection(_connectionString);
             await conn.OpenAsync();
@@ -89,27 +191,68 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
             try
             {
-                // Générer le numéro automatiquement
-                if (string.IsNullOrEmpty(devis.Numero))
+                // 1. Générer le numéro automatiquement
+                var numero = await GenerateNumeroWithTransactionAsync(conn, transaction);
+
+                // 2. Calculer les montants initiaux
+                decimal montantHT = 0;
+                if (request.Sections != null)
                 {
-                    devis.Numero = await GenerateNumeroWithTransactionAsync(conn, transaction);
+                    foreach (var section in request.Sections)
+                    {
+                        if (section.Lignes != null)
+                        {
+                            montantHT += section.Lignes.Sum(l => l.Quantite * l.PrixUnitaireHT);
+                        }
+                    }
                 }
 
-                // Créer le devis
-                using var cmd = new SqlCommand(@"
-                    INSERT INTO Devis (Numero, ClientId, Titre, Description, Statut, MontantHT, TauxTVA, MontantTTC,
-                                     DateCreation, DateValidite, DateModification, Conditions, Notes, UtilisateurCreation)
-                    VALUES (@Numero, @ClientId, @Titre, @Description, @Statut, @MontantHT, @TauxTVA, @MontantTTC,
-                           @DateCreation, @DateValidite, @DateModification, @Conditions, @Notes, @UtilisateurCreation);
+                decimal tauxTVA = 18.00m;
+                decimal montantTTC = montantHT * (1 + tauxTVA / 100);
+
+                // 3. Créer le devis
+                using var devisCmd = new SqlCommand(@"
+                    INSERT INTO Devis (
+                        Numero, ClientId, Titre, Description, Statut, 
+                        MontantHT, TauxTVA, MontantTTC,
+                        DateCreation, DateValidite, DateModification, 
+                        Conditions, Notes, UtilisateurCreation,
+                        Chantier, Contact, QualiteMateriel, TypeVitrage
+                    )
+                    VALUES (
+                        @Numero, @ClientId, @Titre, @Description, @Statut,
+                        @MontantHT, @TauxTVA, @MontantTTC,
+                        @DateCreation, @DateValidite, @DateModification,
+                        @Conditions, @Notes, @UtilisateurCreation,
+                        @Chantier, @Contact, @QualiteMateriel, @TypeVitrage
+                    );
                     SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
 
-                AddDevisParameters(cmd, devis);
-                var devisId = (int)await cmd.ExecuteScalarAsync();
+                devisCmd.Parameters.AddWithValue("@Numero", numero);
+                devisCmd.Parameters.AddWithValue("@ClientId", request.ClientId);
+                devisCmd.Parameters.AddWithValue("@Titre", request.Titre);
+                devisCmd.Parameters.AddWithValue("@Description", request.Description ?? (object)DBNull.Value);
+                devisCmd.Parameters.AddWithValue("@Statut", "Brouillon");
+                devisCmd.Parameters.AddWithValue("@MontantHT", montantHT);
+                devisCmd.Parameters.AddWithValue("@TauxTVA", tauxTVA);
+                devisCmd.Parameters.AddWithValue("@MontantTTC", montantTTC);
+                devisCmd.Parameters.AddWithValue("@DateCreation", DateTime.UtcNow);
+                devisCmd.Parameters.AddWithValue("@DateValidite", request.DateValidite ?? (object)DBNull.Value);
+                devisCmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
+                devisCmd.Parameters.AddWithValue("@Conditions", request.Conditions ?? (object)DBNull.Value);
+                devisCmd.Parameters.AddWithValue("@Notes", request.Notes ?? (object)DBNull.Value);
+                devisCmd.Parameters.AddWithValue("@UtilisateurCreation", utilisateurId);
+                devisCmd.Parameters.AddWithValue("@Chantier", request.Chantier ?? (object)DBNull.Value);
+                devisCmd.Parameters.AddWithValue("@Contact", request.Contact ?? (object)DBNull.Value);
+                devisCmd.Parameters.AddWithValue("@QualiteMateriel", request.QualiteMateriel ?? (object)DBNull.Value);
+                devisCmd.Parameters.AddWithValue("@TypeVitrage", request.TypeVitrage ?? (object)DBNull.Value);
 
-                // Ajouter les lignes
-                if (devis.Lignes != null && devis.Lignes.Any())
+                var devisId = (int)await devisCmd.ExecuteScalarAsync();
+
+                // 4. Créer les sections et leurs lignes
+                if (request.Sections != null && request.Sections.Any())
                 {
-                    await CreateLignesAsync(conn, transaction, devisId, devis.Lignes);
+                    await CreateSectionsAsync(conn, transaction, devisId, request.Sections);
                 }
 
                 await transaction.CommitAsync();
@@ -122,7 +265,11 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
-        public async Task UpdateAsync(Devis devis)
+        // =====================================================
+        // MÉTHODES DE MISE À JOUR
+        // =====================================================
+
+        public async Task UpdateAsync(int devisId, CreateDevisRequest request)
         {
             using var conn = new SqlConnection(_connectionString);
             await conn.OpenAsync();
@@ -130,29 +277,50 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
             try
             {
-                // Mettre à jour le devis
-                using var cmd = new SqlCommand(@"
+                // 1. Mettre à jour le devis principal
+                using var updateCmd = new SqlCommand(@"
                     UPDATE Devis SET 
-                        ClientId = @ClientId, Titre = @Titre, Description = @Description, Statut = @Statut,
-                        MontantHT = @MontantHT, TauxTVA = @TauxTVA, MontantTTC = @MontantTTC,
-                        DateValidite = @DateValidite, DateModification = @DateModification, 
-                        Conditions = @Conditions, Notes = @Notes
+                        ClientId = @ClientId, 
+                        Titre = @Titre, 
+                        Description = @Description,
+                        DateValidite = @DateValidite, 
+                        DateModification = @DateModification, 
+                        Conditions = @Conditions, 
+                        Notes = @Notes,
+                        Chantier = @Chantier,
+                        Contact = @Contact,
+                        QualiteMateriel = @QualiteMateriel,
+                        TypeVitrage = @TypeVitrage
                     WHERE Id = @Id", conn, transaction);
 
-                cmd.Parameters.AddWithValue("@Id", devis.Id);
-                AddDevisParameters(cmd, devis);
-                await cmd.ExecuteNonQueryAsync();
+                updateCmd.Parameters.AddWithValue("@Id", devisId);
+                updateCmd.Parameters.AddWithValue("@ClientId", request.ClientId);
+                updateCmd.Parameters.AddWithValue("@Titre", request.Titre);
+                updateCmd.Parameters.AddWithValue("@Description", request.Description ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@DateValidite", request.DateValidite ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
+                updateCmd.Parameters.AddWithValue("@Conditions", request.Conditions ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@Notes", request.Notes ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@Chantier", request.Chantier ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@Contact", request.Contact ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@QualiteMateriel", request.QualiteMateriel ?? (object)DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@TypeVitrage", request.TypeVitrage ?? (object)DBNull.Value);
 
-                // Supprimer les anciennes lignes
-                using var deleteLignesCmd = new SqlCommand("DELETE FROM LignesDevis WHERE DevisId = @DevisId", conn, transaction);
-                deleteLignesCmd.Parameters.AddWithValue("@DevisId", devis.Id);
-                await deleteLignesCmd.ExecuteNonQueryAsync();
+                await updateCmd.ExecuteNonQueryAsync();
 
-                // Ajouter les nouvelles lignes
-                if (devis.Lignes != null && devis.Lignes.Any())
+                // 2. Supprimer toutes les sections existantes (cascade supprime aussi les lignes)
+                using var deleteSectionsCmd = new SqlCommand(
+                    "DELETE FROM DevisSections WHERE DevisId = @DevisId", conn, transaction);
+                deleteSectionsCmd.Parameters.AddWithValue("@DevisId", devisId);
+                await deleteSectionsCmd.ExecuteNonQueryAsync();
+
+                // 3. Recréer les sections et lignes
+                if (request.Sections != null && request.Sections.Any())
                 {
-                    await CreateLignesAsync(conn, transaction, devis.Id, devis.Lignes);
+                    await CreateSectionsAsync(conn, transaction, devisId, request.Sections);
                 }
+
+                // 4. Le trigger trg_UpdateDevisMontants calculera automatiquement les nouveaux montants
 
                 await transaction.CommitAsync();
             }
@@ -162,6 +330,10 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 throw;
             }
         }
+
+        // =====================================================
+        // MÉTHODES DE SUPPRESSION
+        // =====================================================
 
         public async Task DeleteAsync(int id)
         {
@@ -171,15 +343,10 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
             try
             {
-                // Supprimer les lignes en premier (contrainte de clé étrangère)
-                using var deleteLignesCmd = new SqlCommand("DELETE FROM LignesDevis WHERE DevisId = @DevisId", conn, transaction);
-                deleteLignesCmd.Parameters.AddWithValue("@DevisId", id);
-                await deleteLignesCmd.ExecuteNonQueryAsync();
-
-                // Supprimer le devis
-                using var deleteDevisCmd = new SqlCommand("DELETE FROM Devis WHERE Id = @Id", conn, transaction);
-                deleteDevisCmd.Parameters.AddWithValue("@Id", id);
-                await deleteDevisCmd.ExecuteNonQueryAsync();
+                // Les contraintes CASCADE supprimeront automatiquement les sections et lignes
+                using var deleteCmd = new SqlCommand("DELETE FROM Devis WHERE Id = @Id", conn, transaction);
+                deleteCmd.Parameters.AddWithValue("@Id", id);
+                await deleteCmd.ExecuteNonQueryAsync();
 
                 await transaction.CommitAsync();
             }
@@ -190,39 +357,54 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
-        public async Task UpdateStatutAsync(int id, string nouveauStatut)
+        // =====================================================
+        // GESTION DES STATUTS
+        // =====================================================
+
+        public async Task UpdateStatutAsync(int devisId, string nouveauStatut)
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                UPDATE Devis SET 
-                    Statut = @Statut, 
-                    DateModification = @DateModification,
+                UPDATE Devis 
+                SET Statut = @Statut,
                     DateEnvoi = CASE WHEN @Statut = 'Envoye' THEN GETDATE() ELSE DateEnvoi END,
-                    DateValidation = CASE WHEN @Statut = 'Valide' THEN GETDATE() ELSE DateValidation END
+                    DateValidation = CASE WHEN @Statut = 'Valide' THEN GETDATE() ELSE DateValidation END,
+                    DateModification = GETDATE()
                 WHERE Id = @Id", conn);
 
-            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@Id", devisId);
             cmd.Parameters.AddWithValue("@Statut", nouveauStatut);
-            cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
 
             await conn.OpenAsync();
             await cmd.ExecuteNonQueryAsync();
         }
 
+        // =====================================================
+        // RECHERCHE ET STATISTIQUES
+        // =====================================================
+
         public async Task<RechercheDevisResult> RechercherAsync(RechercheDevisRequest request)
         {
-            var devisList = new List<Devis>();
+            var result = new RechercheDevisResult
+            {
+                Page = request.Page,
+                Devis = new List<DevisListItem>()
+            };
+
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            // Construction de la requête dynamique
             var whereConditions = new List<string>();
             var parameters = new List<SqlParameter>();
 
-            // Construire la clause WHERE dynamiquement
-            if (!string.IsNullOrEmpty(request.Search))
+            if (!string.IsNullOrWhiteSpace(request.Search))
             {
                 whereConditions.Add("(d.Numero LIKE @Search OR d.Titre LIKE @Search OR c.Nom LIKE @Search OR c.RaisonSociale LIKE @Search)");
                 parameters.Add(new SqlParameter("@Search", $"%{request.Search}%"));
             }
 
-            if (!string.IsNullOrEmpty(request.Statut))
+            if (!string.IsNullOrWhiteSpace(request.Statut))
             {
                 whereConditions.Add("d.Statut = @Statut");
                 parameters.Add(new SqlParameter("@Statut", request.Statut));
@@ -246,49 +428,61 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 parameters.Add(new SqlParameter("@DateFin", request.DateFin.Value));
             }
 
-            var whereClause = whereConditions.Any() ? $"WHERE {string.Join(" AND ", whereConditions)}" : "";
-
-            using var conn = new SqlConnection(_connectionString);
-            await conn.OpenAsync();
+            var whereClause = whereConditions.Any() ? "WHERE " + string.Join(" AND ", whereConditions) : "";
 
             // Compter le total
-            var countQuery = $@"
+            using (var countCmd = new SqlCommand($@"
                 SELECT COUNT(*) 
-                FROM Devis d 
-                LEFT JOIN Clients c ON d.ClientId = c.Id 
-                {whereClause}";
-
-            using var countCmd = new SqlCommand(countQuery, conn);
-            countCmd.Parameters.AddRange(parameters.ToArray());
-            var total = (int)await countCmd.ExecuteScalarAsync();
+                FROM Devis d
+                LEFT JOIN Clients c ON d.ClientId = c.Id
+                {whereClause}", conn))
+            {
+                countCmd.Parameters.AddRange(parameters.ToArray());
+                result.Total = (int)await countCmd.ExecuteScalarAsync();
+                result.TotalPages = (int)Math.Ceiling((double)result.Total / request.Limit);
+            }
 
             // Récupérer les données paginées
             var offset = (request.Page - 1) * request.Limit;
-            var dataQuery = $@"
-                SELECT d.*, c.Nom as ClientNom, c.Prenom as ClientPrenom, c.RaisonSociale
+            using (var dataCmd = new SqlCommand($@"
+                SELECT 
+                    d.Id, d.Numero, d.Titre, d.Statut, d.MontantTTC, 
+                    d.DateCreation, d.DateValidite, d.Chantier,
+                    c.Id as ClientId, 
+                    ISNULL(c.RaisonSociale, c.Nom) as ClientNom
                 FROM Devis d
                 LEFT JOIN Clients c ON d.ClientId = c.Id
                 {whereClause}
                 ORDER BY d.DateCreation DESC
-                OFFSET {offset} ROWS
-                FETCH NEXT {request.Limit} ROWS ONLY";
-
-            using var dataCmd = new SqlCommand(dataQuery, conn);
-            dataCmd.Parameters.AddRange(parameters.Select(p => new SqlParameter(p.ParameterName, p.Value)).ToArray());
-
-            using var reader = await dataCmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+                OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY", conn))
             {
-                devisList.Add(MapToDevis(reader));
+                dataCmd.Parameters.AddRange(parameters.ToArray());
+                dataCmd.Parameters.AddWithValue("@Offset", offset);
+                dataCmd.Parameters.AddWithValue("@Limit", request.Limit);
+
+                using var reader = await dataCmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    result.Devis.Add(new DevisListItem
+                    {
+                        Id = reader.GetInt32("Id"),
+                        Numero = reader.GetString("Numero"),
+                        Titre = reader.GetString("Titre"),
+                        Statut = reader.GetString("Statut"),
+                        MontantTTC = reader.GetDecimal("MontantTTC"),
+                        DateCreation = reader.GetDateTime("DateCreation"),
+                        DateValidite = reader.IsDBNull("DateValidite") ? null : reader.GetDateTime("DateValidite"),
+                        Chantier = reader.IsDBNull("Chantier") ? null : reader.GetString("Chantier"),
+                        Client = new ClientInfo
+                        {
+                            Id = reader.GetInt32("ClientId"),
+                            Nom = reader.GetString("ClientNom")
+                        }
+                    });
+                }
             }
 
-            return new RechercheDevisResult
-            {
-                Devis = devisList,
-                Total = total,
-                Page = request.Page,
-                TotalPages = (int)Math.Ceiling((double)total / request.Limit)
-            };
+            return result;
         }
 
         public async Task<StatistiquesDevis> GetStatistiquesAsync()
@@ -297,14 +491,14 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             using var cmd = new SqlCommand(@"
                 SELECT 
                     COUNT(*) as Total,
-                    COUNT(CASE WHEN Statut = 'Brouillon' THEN 1 END) as Brouillon,
-                    COUNT(CASE WHEN Statut = 'Envoye' THEN 1 END) as Envoye,
-                    COUNT(CASE WHEN Statut = 'EnNegociation' THEN 1 END) as EnNegociation,
-                    COUNT(CASE WHEN Statut = 'Valide' THEN 1 END) as Valide,
-                    COUNT(CASE WHEN Statut = 'Refuse' THEN 1 END) as Refuse,
-                    COUNT(CASE WHEN Statut = 'Expire' THEN 1 END) as Expire,
-                    ISNULL(SUM(MontantTTC), 0) as MontantTotal,
-                    ISNULL(SUM(CASE WHEN Statut = 'Valide' THEN MontantTTC ELSE 0 END), 0) as MontantValide
+                    SUM(CASE WHEN Statut = 'Brouillon' THEN 1 ELSE 0 END) as Brouillon,
+                    SUM(CASE WHEN Statut = 'Envoye' THEN 1 ELSE 0 END) as Envoye,
+                    SUM(CASE WHEN Statut = 'EnNegociation' THEN 1 ELSE 0 END) as EnNegociation,
+                    SUM(CASE WHEN Statut = 'Valide' THEN 1 ELSE 0 END) as Valide,
+                    SUM(CASE WHEN Statut = 'Refuse' THEN 1 ELSE 0 END) as Refuse,
+                    SUM(CASE WHEN Statut = 'Expire' THEN 1 ELSE 0 END) as Expire,
+                    SUM(MontantTTC) as MontantTotal,
+                    SUM(CASE WHEN Statut = 'Valide' THEN MontantTTC ELSE 0 END) as MontantValide
                 FROM Devis", conn);
 
             await conn.OpenAsync();
@@ -329,23 +523,23 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             return new StatistiquesDevis();
         }
 
-        public async Task<byte[]> GeneratePDFAsync(Devis devis)
+        // =====================================================
+        // GÉNÉRATION PDF
+        // =====================================================
+
+        public async Task<byte[]> GeneratePDFAsync(int devisId)
         {
-            try
-            {
-                // Utiliser le service PDF
-                var pdfService = new DevisPDFService();
-                return await Task.Run(() => pdfService.GeneratePDF(devis));
-            }
-            catch (Exception ex)
-            {
-                // Logger l'erreur
-                Console.WriteLine($"Erreur génération PDF: {ex.Message}");
-                throw new Exception($"Erreur lors de la génération du PDF: {ex.Message}", ex);
-            }
+            var devis = await GetByIdAsync(devisId);
+            if (devis == null)
+                throw new Exception("Devis introuvable");
+
+            var pdfService = new DevisPDFService();
+            return await Task.Run(() => pdfService.GeneratePDF(devis));
         }
 
-        // Méthodes privées helpers
+        // =====================================================
+        // MÉTHODES PRIVÉES HELPERS
+        // =====================================================
 
         private async Task<string> GenerateNumeroWithTransactionAsync(SqlConnection conn, SqlTransaction transaction)
         {
@@ -359,137 +553,69 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             return $"DEV{annee}{prochainNumero:0000}";
         }
 
-        private async Task CreateLignesAsync(SqlConnection conn, SqlTransaction transaction, int devisId, List<LigneDevis> lignes)
+        private async Task CreateSectionsAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int devisId,
+            List<CreateDevisSectionRequest> sections)
+        {
+            foreach (var sectionRequest in sections)
+            {
+                // Créer la section
+                using var sectionCmd = new SqlCommand(@"
+                    INSERT INTO DevisSections (DevisId, Nom, Ordre, Description)
+                    VALUES (@DevisId, @Nom, @Ordre, @Description);
+                    SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
+
+                sectionCmd.Parameters.AddWithValue("@DevisId", devisId);
+                sectionCmd.Parameters.AddWithValue("@Nom", sectionRequest.Nom);
+                sectionCmd.Parameters.AddWithValue("@Ordre", sectionRequest.Ordre);
+                sectionCmd.Parameters.AddWithValue("@Description", sectionRequest.Description ?? (object)DBNull.Value);
+
+                var sectionId = (int)await sectionCmd.ExecuteScalarAsync();
+
+                // Créer les lignes de la section
+                if (sectionRequest.Lignes != null && sectionRequest.Lignes.Any())
+                {
+                    await CreateLignesAsync(conn, transaction, devisId, sectionId, sectionRequest.Lignes);
+                }
+            }
+        }
+
+        private async Task CreateLignesAsync(
+            SqlConnection conn,
+            SqlTransaction transaction,
+            int devisId,
+            int sectionId,
+            List<CreateLigneDevisRequest> lignes)
         {
             for (int i = 0; i < lignes.Count; i++)
             {
                 using var cmd = new SqlCommand(@"
-                    INSERT INTO LignesDevis (DevisId, Ordre, Designation, Description, Quantite, Unite, PrixUnitaireHT)
-                    VALUES (@DevisId, @Ordre, @Designation, @Description, @Quantite, @Unite, @PrixUnitaireHT)", conn, transaction);
+                    INSERT INTO LignesDevis (
+                        DevisId, SectionId, Ordre, TypeElement, Designation, Description, 
+                        Longueur, Hauteur, Quantite, Unite, PrixUnitaireHT
+                    )
+                    VALUES (
+                        @DevisId, @SectionId, @Ordre, @TypeElement, @Designation, @Description,
+                        @Longueur, @Hauteur, @Quantite, @Unite, @PrixUnitaireHT
+                    )", conn, transaction);
 
+                var ligne = lignes[i];
                 cmd.Parameters.AddWithValue("@DevisId", devisId);
-                cmd.Parameters.AddWithValue("@Ordre", lignes[i].Ordre);
-                cmd.Parameters.AddWithValue("@Designation", lignes[i].Designation);
-                cmd.Parameters.AddWithValue("@Description", lignes[i].Description ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@Quantite", lignes[i].Quantite);
-                cmd.Parameters.AddWithValue("@Unite", lignes[i].Unite);
-                cmd.Parameters.AddWithValue("@PrixUnitaireHT", lignes[i].PrixUnitaireHT);
+                cmd.Parameters.AddWithValue("@SectionId", sectionId);
+                cmd.Parameters.AddWithValue("@Ordre", i + 1);
+                cmd.Parameters.AddWithValue("@TypeElement", ligne.TypeElement ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Designation", ligne.Designation);
+                cmd.Parameters.AddWithValue("@Description", ligne.Description ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Longueur", ligne.Longueur ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Hauteur", ligne.Hauteur ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Quantite", ligne.Quantite);
+                cmd.Parameters.AddWithValue("@Unite", ligne.Unite);
+                cmd.Parameters.AddWithValue("@PrixUnitaireHT", ligne.PrixUnitaireHT);
 
                 await cmd.ExecuteNonQueryAsync();
             }
         }
-
-        private async Task<List<LigneDevis>> GetLignesDevisAsync(SqlConnection conn, int devisId)
-        {
-            var lignes = new List<LigneDevis>();
-
-            using var cmd = new SqlCommand("SELECT * FROM LignesDevis WHERE DevisId = @DevisId ORDER BY Ordre", conn);
-            cmd.Parameters.AddWithValue("@DevisId", devisId);
-
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                lignes.Add(new LigneDevis
-                {
-                    Id = reader.GetInt32("Id"),
-                    DevisId = reader.GetInt32("DevisId"),
-                    Ordre = reader.GetInt32("Ordre"),
-                    Designation = reader.GetString("Designation"),
-                    Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                    Quantite = reader.GetDecimal("Quantite"),
-                    Unite = reader.GetString("Unite"),
-                    PrixUnitaireHT = reader.GetDecimal("PrixUnitaireHT")
-                });
-            }
-
-            return lignes;
-        }
-
-        private void AddDevisParameters(SqlCommand cmd, Devis devis)
-        {
-            cmd.Parameters.AddWithValue("@Numero", devis.Numero);
-            cmd.Parameters.AddWithValue("@ClientId", devis.ClientId);
-            cmd.Parameters.AddWithValue("@Titre", devis.Titre);
-            cmd.Parameters.AddWithValue("@Description", devis.Description ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@Statut", devis.Statut);
-            cmd.Parameters.AddWithValue("@MontantHT", devis.MontantHT);
-            cmd.Parameters.AddWithValue("@TauxTVA", devis.TauxTVA);
-            cmd.Parameters.AddWithValue("@MontantTTC", devis.MontantTTC);
-            cmd.Parameters.AddWithValue("@DateCreation", devis.DateCreation);
-            cmd.Parameters.AddWithValue("@DateValidite", devis.DateValidite ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
-            cmd.Parameters.AddWithValue("@Conditions", devis.Conditions ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@Notes", devis.Notes ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@UtilisateurCreation", devis.UtilisateurCreation);
-        }
-
-        private Devis MapToDevis(SqlDataReader reader)
-        {
-            return new Devis
-            {
-                Id = reader.GetInt32("Id"),
-                Numero = reader.GetString("Numero"),
-                ClientId = reader.GetInt32("ClientId"),
-                Titre = reader.GetString("Titre"),
-                Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
-                Statut = reader.GetString("Statut"),
-                MontantHT = reader.GetDecimal("MontantHT"),
-                TauxTVA = reader.GetDecimal("TauxTVA"),
-                MontantTTC = reader.GetDecimal("MontantTTC"),
-                DateCreation = reader.GetDateTime("DateCreation"),
-                DateValidite = reader.IsDBNull("DateValidite") ? null : reader.GetDateTime("DateValidite"),
-                DateEnvoi = reader.IsDBNull("DateEnvoi") ? null : reader.GetDateTime("DateEnvoi"),
-                DateValidation = reader.IsDBNull("DateValidation") ? null : reader.GetDateTime("DateValidation"),
-                DateModification = reader.GetDateTime("DateModification"),
-                Conditions = reader.IsDBNull("Conditions") ? null : reader.GetString("Conditions"),
-                Notes = reader.IsDBNull("Notes") ? null : reader.GetString("Notes"),
-                CheminPDF = reader.IsDBNull("CheminPDF") ? null : reader.GetString("CheminPDF"),
-                UtilisateurCreation = reader.GetInt32("UtilisateurCreation"),
-                UtilisateurValidation = reader.IsDBNull("UtilisateurValidation") ? null : reader.GetInt32("UtilisateurValidation"),
-                Client = new Client
-                {
-                    Id = reader.GetInt32("ClientId"),
-                    Nom = reader.IsDBNull("ClientNom") ? "" : reader.GetString("ClientNom"),
-                    RaisonSociale = reader.IsDBNull("RaisonSociale") ? null : reader.GetString("RaisonSociale"),
-                    Email = reader.IsDBNull("Email") ? null : reader.GetString("Email"),
-                    Telephone = reader.IsDBNull("Telephone") ? null : reader.GetString("Telephone"),
-                    Adresse = reader.IsDBNull("Adresse") ? null : reader.GetString("Adresse"),
-
-                }
-            };
-        }
-    }
-
-    // Classes pour la recherche et les statistiques
-    public class RechercheDevisRequest
-    {
-        public string? Search { get; set; }
-        public string? Statut { get; set; }
-        public int? ClientId { get; set; }
-        public DateTime? DateDebut { get; set; }
-        public DateTime? DateFin { get; set; }
-        public int Page { get; set; } = 1;
-        public int Limit { get; set; } = 10;
-    }
-
-    public class RechercheDevisResult
-    {
-        public List<Devis> Devis { get; set; } = new();
-        public int Total { get; set; }
-        public int Page { get; set; }
-        public int TotalPages { get; set; }
-    }
-
-    public class StatistiquesDevis
-    {
-        public int Total { get; set; }
-        public int Brouillon { get; set; }
-        public int Envoye { get; set; }
-        public int EnNegociation { get; set; }
-        public int Valide { get; set; }
-        public int Refuse { get; set; }
-        public int Expire { get; set; }
-        public decimal MontantTotal { get; set; }
-        public decimal MontantValide { get; set; }
     }
 }

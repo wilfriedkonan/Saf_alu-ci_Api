@@ -821,17 +821,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateDevisRequest"
+                "$ref": "#/components/schemas/UpdateDevisRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateDevisRequest"
+                "$ref": "#/components/schemas/UpdateDevisRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateDevisRequest"
+                "$ref": "#/components/schemas/UpdateDevisRequest"
               }
             }
           }
@@ -4613,6 +4613,47 @@
             "type": "string",
             "nullable": true
           },
+          "chantier": {
+            "type": "string",
+            "nullable": true
+          },
+          "contact": {
+            "type": "string",
+            "nullable": true
+          },
+          "qualiteMateriel": {
+            "type": "string",
+            "nullable": true
+          },
+          "typeVitrage": {
+            "type": "string",
+            "nullable": true
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDevisSectionRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDevisSectionRequest": {
+        "type": "object",
+        "properties": {
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
           "lignes": {
             "type": "array",
             "items": {
@@ -4879,12 +4920,26 @@
       "CreateLigneDevisRequest": {
         "type": "object",
         "properties": {
+          "typeElement": {
+            "type": "string",
+            "nullable": true
+          },
           "designation": {
             "type": "string",
             "nullable": true
           },
           "description": {
             "type": "string",
+            "nullable": true
+          },
+          "longueur": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "hauteur": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           },
           "quantite": {
@@ -5755,6 +5810,60 @@
           },
           "notes": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateDevisRequest": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "titre": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "dateValidite": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "conditions": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "chantier": {
+            "type": "string",
+            "nullable": true
+          },
+          "contact": {
+            "type": "string",
+            "nullable": true
+          },
+          "qualiteMateriel": {
+            "type": "string",
+            "nullable": true
+          },
+          "typeVitrage": {
+            "type": "string",
+            "nullable": true
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDevisSectionRequest"
+            },
             "nullable": true
           }
         },

@@ -1,6 +1,7 @@
 ﻿// Controllers/Devis/DevisController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Saf_alu_ci_Api.Controllers.Devis
 {
@@ -16,30 +17,16 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             _devisService = devisService;
         }
 
+        /// <summary>
+        /// Récupérer la liste de tous les devis (version simplifiée)
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             try
             {
                 var devisList = await _devisService.GetAllAsync();
-                var result = devisList.Select(d => new
-                {
-                    d.Id,
-                    d.Numero,
-                    d.Titre,
-                    d.Statut,
-                    d.MontantTTC,
-                    d.DateCreation,
-                    d.DateValidite,
-                    Client = d.Client != null ? new
-                    {
-                        d.Client.Id,
-                        Nom = !string.IsNullOrEmpty(d.Client.RaisonSociale) ? d.Client.RaisonSociale :
-                              $"{d.Client.Nom}".Trim()
-                    } : null
-                });
-
-                return Ok(result);
+                return Ok(devisList);
             }
             catch (Exception ex)
             {
@@ -47,6 +34,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Récupérer un devis complet par son ID (avec sections et lignes)
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
@@ -64,6 +54,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Créer un nouveau devis avec sections et lignes
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateDevisRequest model)
         {
@@ -78,40 +71,10 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     });
                 }
 
-                var devis = new Devis
-                {
-                    ClientId = model.ClientId,
-                    Titre = model.Titre,
-                    Description = model.Description,
-                    Statut = "Brouillon",
-                    DateCreation = DateTime.UtcNow,
-                    DateValidite = model.DateValidite,
-                    DateModification = DateTime.UtcNow,
-                    Conditions = model.Conditions,
-                    Notes = model.Notes,
-                    TauxTVA = 18.00m, // 18% par défaut
-                    UtilisateurCreation = 3 // TODO: Récupérer depuis JWT
-                };
+                // Récupérer l'utilisateur depuis le JWT
+                var utilisateurId = GetCurrentUserId();
 
-                // Mapper les lignes
-                if (model.Lignes != null && model.Lignes.Any())
-                {
-                    devis.Lignes = model.Lignes.Select((l, index) => new LigneDevis
-                    {
-                        Ordre = index + 1,
-                        Designation = l.Designation,
-                        Description = l.Description,
-                        Quantite = l.Quantite,
-                        Unite = l.Unite,
-                        PrixUnitaireHT = l.PrixUnitaireHT
-                    }).ToList();
-
-                    // Calculer les montants
-                    devis.MontantHT = devis.Lignes.Sum(l => l.TotalHT);
-                    devis.MontantTTC = devis.MontantHT * (1 + devis.TauxTVA / 100);
-                }
-
-                var devisId = await _devisService.CreateAsync(devis);
+                var devisId = await _devisService.CreateAsync(model, utilisateurId);
 
                 return CreatedAtAction(nameof(Get), new { id = devisId }, new
                 {
@@ -125,8 +88,11 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Mettre à jour un devis existant
+        /// </summary>
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] CreateDevisRequest model)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateDevisRequest model)
         {
             try
             {
@@ -149,33 +115,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     return BadRequest(new { message = "Ce devis ne peut plus être modifié" });
                 }
 
-                existing.ClientId = model.ClientId;
-                existing.Titre = model.Titre;
-                existing.Description = model.Description;
-                existing.DateValidite = model.DateValidite;
-                existing.Conditions = model.Conditions;
-                existing.Notes = model.Notes;
-                existing.DateModification = DateTime.UtcNow;
-
-                // Mapper les lignes
-                if (model.Lignes != null && model.Lignes.Any())
-                {
-                    existing.Lignes = model.Lignes.Select((l, index) => new LigneDevis
-                    {
-                        Ordre = index + 1,
-                        Designation = l.Designation,
-                        Description = l.Description,
-                        Quantite = l.Quantite,
-                        Unite = l.Unite,
-                        PrixUnitaireHT = l.PrixUnitaireHT
-                    }).ToList();
-
-                    // Recalculer les montants
-                    existing.MontantHT = existing.Lignes.Sum(l => l.TotalHT);
-                    existing.MontantTTC = existing.MontantHT * (1 + existing.TauxTVA / 100);
-                }
-
-                await _devisService.UpdateAsync(existing);
+                await _devisService.UpdateAsync(id, model);
                 return Ok(new { message = "Devis modifié avec succès" });
             }
             catch (Exception ex)
@@ -184,6 +124,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Supprimer un devis
+        /// </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -208,6 +151,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Envoyer un devis au client
+        /// </summary>
         [HttpPost("{id}/envoyer")]
         public async Task<IActionResult> Envoyer(int id)
         {
@@ -234,6 +180,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Valider un devis
+        /// </summary>
         [HttpPost("{id}/valider")]
         public async Task<IActionResult> Valider(int id)
         {
@@ -257,6 +206,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Refuser un devis
+        /// </summary>
         [HttpPost("{id}/refuser")]
         public async Task<IActionResult> Refuser(int id)
         {
@@ -280,6 +232,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Dupliquer un devis existant
+        /// </summary>
         [HttpPost("{id}/dupliquer")]
         public async Task<IActionResult> Dupliquer(int id)
         {
@@ -289,32 +244,41 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 if (original == null)
                     return NotFound(new { message = "Devis non trouvé" });
 
-                var nouveauDevis = new Devis
+                var utilisateurId = GetCurrentUserId();
+
+                // Créer une nouvelle demande basée sur le devis original
+                var duplicateRequest = new CreateDevisRequest
                 {
                     ClientId = original.ClientId,
                     Titre = $"Copie de {original.Titre}",
                     Description = original.Description,
-                    Statut = "Brouillon",
-                    MontantHT = original.MontantHT,
-                    TauxTVA = original.TauxTVA,
-                    MontantTTC = original.MontantTTC,
-                    DateCreation = DateTime.UtcNow,
-                    DateModification = DateTime.UtcNow,
+                    DateValidite = null, // Pas de date de validité pour la copie
                     Conditions = original.Conditions,
                     Notes = original.Notes,
-                    UtilisateurCreation = 3,
-                    Lignes = original.Lignes?.Select((l, index) => new LigneDevis
+                    Chantier = original.Chantier,
+                    Contact = original.Contact,
+                    QualiteMateriel = original.QualiteMateriel,
+                    TypeVitrage = original.TypeVitrage,
+                    Sections = original.Sections?.Select(s => new CreateDevisSectionRequest
                     {
-                        Ordre = index + 1,
-                        Designation = l.Designation,
-                        Description = l.Description,
-                        Quantite = l.Quantite,
-                        Unite = l.Unite,
-                        PrixUnitaireHT = l.PrixUnitaireHT
+                        Nom = s.Nom,
+                        Ordre = s.Ordre,
+                        Description = s.Description,
+                        Lignes = s.Lignes?.Select(l => new CreateLigneDevisRequest
+                        {
+                            TypeElement = l.TypeElement,
+                            Designation = l.Designation,
+                            Description = l.Description,
+                            Longueur = l.Longueur,
+                            Hauteur = l.Hauteur,
+                            Quantite = l.Quantite,
+                            Unite = l.Unite,
+                            PrixUnitaireHT = l.PrixUnitaireHT
+                        }).ToList()
                     }).ToList()
                 };
 
-                var nouveauId = await _devisService.CreateAsync(nouveauDevis);
+                var nouveauId = await _devisService.CreateAsync(duplicateRequest, utilisateurId);
 
                 return CreatedAtAction(nameof(Get), new { id = nouveauId }, new
                 {
@@ -328,6 +292,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Exporter un devis en PDF
+        /// </summary>
         [HttpGet("{id}/pdf")]
         public async Task<IActionResult> ExporterPDF(int id)
         {
@@ -337,9 +304,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 if (devis == null)
                     return NotFound(new { message = "Devis non trouvé" });
 
-                // TODO: Implémenter la génération PDF
-                // Pour l'instant, retourner un placeholder
-                var pdfBytes = await _devisService.GeneratePDFAsync(devis);
+                var pdfBytes = await _devisService.GeneratePDFAsync(id);
 
                 return File(pdfBytes, "application/pdf", $"devis-{devis.Numero}.pdf");
             }
@@ -349,6 +314,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Rechercher des devis avec filtres et pagination
+        /// </summary>
         [HttpGet("search")]
         public async Task<IActionResult> Rechercher(
             [FromQuery] string? search,
@@ -380,6 +348,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
+        /// <summary>
+        /// Obtenir les statistiques des devis
+        /// </summary>
         [HttpGet("statistiques")]
         public async Task<IActionResult> GetStatistiques()
         {
@@ -392,6 +363,19 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             {
                 return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
             }
+        }
+
+        /// <summary>
+        /// Récupérer l'ID de l'utilisateur actuel depuis le JWT
+        /// </summary>
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(userIdClaim, out int userId))
+            {
+                return userId;
+            }
+            return 3; // Fallback - à améliorer
         }
     }
 }

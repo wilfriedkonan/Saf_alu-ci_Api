@@ -836,6 +836,24 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             return data;
         }
+        public async Task<decimal> GetMontantPayeFactureAsync(int factureId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+                SELECT ISNULL(SUM(Montant), 0)
+                FROM MouvementsFinanciers
+                WHERE FactureId = @FactureId
+                AND TypeMouvement = 'Entree'
+                ", conn);
+
+            cmd.Parameters.AddWithValue("@FactureId", factureId);
+
+            await conn.OpenAsync();
+            var result = await cmd.ExecuteScalarAsync();
+
+            return Convert.ToDecimal(result);
+        }
+
         private async Task<TresorerieIndicateurs> GetIndicateursAsync(SqlConnection conn)
         {
             var indicateurs = new TresorerieIndicateurs();
