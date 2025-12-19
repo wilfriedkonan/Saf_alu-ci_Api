@@ -14,7 +14,12 @@ using Saf_alu_ci_Api.Controllers.Tresorerie;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
 using Saf_alu_ci_Api.Services.Jw;
 using Saf_alu_ci_Api.Services.messagerie;
+using System.Globalization;
 using System.Text;
+
+// Configuration culture
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +40,7 @@ builder.Services.AddScoped(provider => new TresorerieService(connectionString));
 builder.Services.AddScoped(provider => new ProjetService(connectionString));
 builder.Services.AddScoped(provider => new ObjectifFinacierService(connectionString));
 builder.Services.AddScoped(provider => new DQEService(connectionString));
-
+builder.Services.AddScoped<DevisPDFService>();
 builder.Services.AddScoped<DQEExportService>();
 builder.Services.AddScoped<DetailDebourseSecService>(sp =>
     new DetailDebourseSecService(
@@ -153,6 +158,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();

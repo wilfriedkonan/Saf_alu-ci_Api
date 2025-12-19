@@ -139,3 +139,4 @@ C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Syste
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\MailKit.dll
 C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\MimeKit.dll
+C:\Users\kan_w\source\repos\Saf_alu-ci_Api\Saf_alu-ci_Api\bin\Debug\net8.0\Saf_alu-ci_Api.staticwebassets.runtime.json

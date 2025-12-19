@@ -4557,7 +4557,7 @@
             "type": "string"
           },
           "quantite": {
-            "minimum": 0,001,
+            "minimum": 0.001,
             "type": "number",
             "format": "double"
           },
@@ -4568,7 +4568,7 @@
           },
           "coefficient": {
             "maximum": 100,
-            "minimum": 0,01,
+            "minimum": 0.01,
             "type": "number",
             "format": "double",
             "nullable": true
@@ -5038,7 +5038,7 @@
             "nullable": true
           },
           "montant": {
-            "minimum": 0,01,
+            "minimum": 0.01,
             "type": "number",
             "format": "double"
           },
@@ -6286,7 +6286,7 @@
             "format": "int32"
           },
           "montant": {
-            "minimum": 0,01,
+            "minimum": 0.01,
             "type": "number",
             "format": "double"
           },

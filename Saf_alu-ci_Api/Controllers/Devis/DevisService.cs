@@ -546,15 +546,15 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         // GÉNÉRATION PDF
         // =====================================================
 
-        public async Task<byte[]> GeneratePDFAsync(int devisId)
-        {
-            var devis = await GetByIdAsync(devisId);
-            if (devis == null)
-                throw new Exception("Devis introuvable");
+        //public async Task<byte[]> GeneratePDFAsync(int devisId)
+        //{
+        //    var devis = await GetByIdAsync(devisId);
+        //    if (devis == null)
+        //        throw new Exception("Devis introuvable");
 
-            var pdfService = new DevisPDFService();
-            return await Task.Run(() => pdfService.GeneratePDF(devis));
-        }
+        //    var pdfService = new DevisPDFService();
+        //    return await Task.Run(() => pdfService.GeneratePDF(devis));
+        //}
 
         // =====================================================
         // MÉTHODES PRIVÉES HELPERS

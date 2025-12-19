@@ -11,10 +11,11 @@ namespace Saf_alu_ci_Api.Controllers.Devis
     public class DevisController : BaseController
     {
         private readonly DevisService _devisService;
-
-        public DevisController(DevisService devisService)
+        private readonly DevisPDFService _pdfService;
+        public DevisController(DevisService devisService, DevisPDFService pdfService)
         {
             _devisService = devisService;
+            _pdfService = pdfService;
         }
 
         /// <summary>
@@ -304,15 +305,24 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 if (devis == null)
                     return NotFound(new { message = "Devis non trouvé" });
 
-                var pdfBytes = await _devisService.GeneratePDFAsync(id);
+                var pdfBytes = _pdfService.GeneratePDF(devis);
 
-                return File(pdfBytes, "application/pdf", $"devis-{devis.Numero}.pdf");
+                return File(
+                    pdfBytes,
+                    "application/pdf",
+                    $"Devis_{devis.Numero}.pdf"
+                );
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
+                return StatusCode(500, new
+                {
+                    message = "Erreur lors de la génération du PDF",
+                    error = ex.Message
+                });
             }
         }
+
 
         /// <summary>
         /// Rechercher des devis avec filtres et pagination
