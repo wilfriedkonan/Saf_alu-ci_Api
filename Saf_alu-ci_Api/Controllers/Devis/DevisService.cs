@@ -489,17 +489,17 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         {
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                SELECT 
-                    COUNT(*) as Total,
-                    SUM(CASE WHEN Statut = 'Brouillon' THEN 1 ELSE 0 END) as Brouillon,
-                    SUM(CASE WHEN Statut = 'Envoye' THEN 1 ELSE 0 END) as Envoye,
-                    SUM(CASE WHEN Statut = 'EnNegociation' THEN 1 ELSE 0 END) as EnNegociation,
-                    SUM(CASE WHEN Statut = 'Valide' THEN 1 ELSE 0 END) as Valide,
-                    SUM(CASE WHEN Statut = 'Refuse' THEN 1 ELSE 0 END) as Refuse,
-                    SUM(CASE WHEN Statut = 'Expire' THEN 1 ELSE 0 END) as Expire,
-                    SUM(MontantTTC) as MontantTotal,
-                    SUM(CASE WHEN Statut = 'Valide' THEN MontantTTC ELSE 0 END) as MontantValide
-                FROM Devis", conn);
+                   SELECT 
+                   COUNT(*) AS Total,
+                    SUM(CASE WHEN Statut = 'Brouillon' THEN 1 ELSE 0 END) AS Brouillon,
+                    SUM(CASE WHEN Statut = 'Envoye' THEN 1 ELSE 0 END) AS Envoye,
+                    SUM(CASE WHEN Statut = 'EnNegociation' THEN 1 ELSE 0 END) AS EnNegociation,
+                    SUM(CASE WHEN Statut = 'Valide' THEN 1 ELSE 0 END) AS Valide,
+                    SUM(CASE WHEN Statut = 'Refuse' THEN 1 ELSE 0 END) AS Refuse,
+                    SUM(CASE WHEN Statut = 'Expire' THEN 1 ELSE 0 END) AS Expire,
+                    ISNULL(SUM(MontantTTC), 0) AS MontantTotal,
+                    ISNULL(SUM(CASE WHEN Statut = 'Valide' THEN MontantTTC ELSE 0 END), 0) AS MontantValide
+                    FROM  Devis", conn);
 
             await conn.OpenAsync();
             using var reader = await cmd.ExecuteReaderAsync();
@@ -508,15 +508,34 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             {
                 return new StatistiquesDevis
                 {
-                    Total = reader.GetInt32("Total"),
-                    Brouillon = reader.GetInt32("Brouillon"),
-                    Envoye = reader.GetInt32("Envoye"),
-                    EnNegociation = reader.GetInt32("EnNegociation"),
-                    Valide = reader.GetInt32("Valide"),
-                    Refuse = reader.GetInt32("Refuse"),
-                    Expire = reader.GetInt32("Expire"),
-                    MontantTotal = reader.GetDecimal("MontantTotal"),
-                    MontantValide = reader.GetDecimal("MontantValide")
+                    Total = reader.IsDBNull("Total")
+                    ? 0
+                    : reader.GetInt32("Total"),
+                    Brouillon = reader.IsDBNull("Brouillon")
+                    ? 0
+                    : reader.GetInt32("Brouillon"),
+                    Envoye = reader.IsDBNull("Envoye")
+                    ? 0
+                    : reader.GetInt32("Envoye"),
+                    EnNegociation = reader.IsDBNull("EnNegociation")
+                    ? 0
+                    : reader.GetInt32("EnNegociation"),
+                    Valide = reader.IsDBNull("Valide")
+                    ? 0
+                    : reader.GetInt32("Valide"),
+                    Refuse = reader.IsDBNull("Refuse")
+                    ? 0
+                    : reader.GetInt32("Refuse"),
+                    Expire = reader.IsDBNull("Expire")
+                    ? 0
+                    : reader.GetInt32("Expire"),
+                    MontantTotal = reader.IsDBNull("MontantTotal")
+                    ? 0
+                    : reader.GetDecimal("MontantTotal"),
+
+                    MontantValide = reader.IsDBNull("MontantValide")
+                    ? 0
+                    : reader.GetDecimal("MontantValide"),
                 };
             }
 

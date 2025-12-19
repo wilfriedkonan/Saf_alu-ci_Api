@@ -7,6 +7,10 @@
       "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\devis\\deviscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\devis\\devisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\devis\\devisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\factures\\facturescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\factures\\facturescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -26,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -42,20 +46,33 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DevisService.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
+              "ViewState": "AgIAAAUCAAAAAAAAAAAmwB4CAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-19T12:22:35.775Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "DevisController.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
               "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
-              "ViewState": "AgIAAFMBAAAAAAAAAAAiwGYBAAA2AAAAAAAAAA==",
+              "ViewState": "AgIAADABAAAAAAAAAAAcwG0BAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-18T23:03:38.81Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "DQEController.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Dqe\\DQEController.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Dqe\\DQEController.cs",
@@ -63,11 +80,12 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Dqe\\DQEController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4CAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T20:53:25.491Z"
+              "WhenOpened": "2025-12-18T20:53:25.491Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "FactureService.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Factures\\FactureService.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Factures\\FactureService.cs",
@@ -75,11 +93,12 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Factures\\FactureService.cs",
               "ViewState": "AgIAAKABAAAAAAAAAAAqwAwCAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T20:53:25.726Z"
+              "WhenOpened": "2025-12-18T20:53:25.726Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "FacturesController.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Factures\\FacturesController.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Factures\\FacturesController.cs",
@@ -87,7 +106,8 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Factures\\FacturesController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAFICAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T20:52:48.607Z"
+              "WhenOpened": "2025-12-18T20:52:48.607Z",
+              "EditorCaption": ""
             }
           ]
         }
