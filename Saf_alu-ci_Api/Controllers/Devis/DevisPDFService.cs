@@ -2,6 +2,7 @@
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Globalization;
 
 namespace Saf_alu_ci_Api.Controllers.Devis
 {
@@ -9,25 +10,39 @@ namespace Saf_alu_ci_Api.Controllers.Devis
     {
         public byte[] GeneratePDF(DevisCompletResponse devis)
         {
-            // Configuration de la licence (Community pour usage non commercial)
-            QuestPDF.Settings.License = LicenseType.Community;
+            // Forcer la culture invariante pour les nombres (point décimal)
+            var originalCulture = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
 
-            var document = Document.Create(container =>
+            try
             {
-                container.Page(page =>
+                // Configuration de la licence (Community pour usage non commercial)
+                QuestPDF.Settings.License = LicenseType.Community;
+
+                var document = Document.Create(container =>
                 {
-                    page.Size(PageSizes.A4);
-                    page.Margin(1.5f, Unit.Centimetre);
-                    page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(1.5f, Unit.Centimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
 
-                    page.Header().Element(c => ComposeHeader(c, devis));
-                    page.Content().Element(c => ComposeContent(c, devis));
-                    page.Footer().Element(ComposeFooter);
+                        page.Header().Element(c => ComposeHeader(c, devis));
+                        page.Content().Element(c => ComposeContent(c, devis));
+                        page.Footer().Element(ComposeFooter);
+                    });
                 });
-            });
 
-            return document.GeneratePdf();
+                return document.GeneratePdf();
+            }
+            finally
+            {
+                // Restaurer la culture originale
+                CultureInfo.CurrentCulture = originalCulture;
+                CultureInfo.CurrentUICulture = originalCulture;
+            }
         }
 
         void ComposeHeader(IContainer container, DevisCompletResponse devis)
@@ -37,10 +52,10 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 // Logo et informations entreprise
                 column.Item().Row(row =>
                 {
-                    // Logo + Nom entreprise
+                    // Logo + Nom entreprise (remplacé ☐ par □)
                     row.RelativeItem().Column(logoCol =>
                     {
-                        logoCol.Item().Text("☐ SAF ALU-CI").FontSize(18).Bold().FontColor(Colors.Blue.Darken2);
+                        logoCol.Item().Text("□ SAF ALU-CI").FontSize(18).Bold().FontColor(Colors.Blue.Darken2);
                         logoCol.Item().Text("BTP - MENUISERIE ALUMINIUM - DIVERS").FontSize(8).Italic();
                         logoCol.Item().PaddingTop(3).Text("+225 27 22 23 39 64 / 07 07 08 08 36").FontSize(8);
                     });
@@ -177,34 +192,34 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                                         }
                                     });
 
-                                    // Longueur
+                                    // Longueur (formatage avec InvariantCulture)
                                     table.Cell().Padding(4).AlignCenter()
-                                        .Text(ligne.Longueur.HasValue ? ligne.Longueur.Value.ToString("N0") : "-")
+                                        .Text(ligne.Longueur.HasValue ? ligne.Longueur.Value.ToString("N0", CultureInfo.InvariantCulture) : "-")
                                         .FontSize(8);
 
-                                    // Hauteur
+                                    // Hauteur (formatage avec InvariantCulture)
                                     table.Cell().Padding(4).AlignCenter()
-                                        .Text(ligne.Hauteur.HasValue ? ligne.Hauteur.Value.ToString("N0") : "-")
+                                        .Text(ligne.Hauteur.HasValue ? ligne.Hauteur.Value.ToString("N0", CultureInfo.InvariantCulture) : "-")
                                         .FontSize(8);
 
-                                    // Quantité
+                                    // Quantité (formatage avec InvariantCulture)
                                     table.Cell().Padding(4).AlignCenter()
-                                        .Text(ligne.Quantite.ToString("N0")).FontSize(8);
+                                        .Text(ligne.Quantite.ToString("N0", CultureInfo.InvariantCulture)).FontSize(8);
 
-                                    // Prix unitaire
+                                    // Prix unitaire (formatage avec InvariantCulture)
                                     table.Cell().Padding(4).AlignRight()
-                                        .Text($"{ligne.PrixUnitaireHT:N0}").FontSize(8);
+                                        .Text(ligne.PrixUnitaireHT.ToString("N0", CultureInfo.InvariantCulture)).FontSize(8);
 
-                                    // Total
+                                    // Total (formatage avec InvariantCulture)
                                     table.Cell().Padding(4).AlignRight()
-                                        .Text($"{ligne.TotalHT:N0}").FontSize(8).Bold();
+                                        .Text(ligne.TotalHT.ToString("N0", CultureInfo.InvariantCulture)).FontSize(8).Bold();
                                 }
                             }
                         }
                     }
                 });
 
-                // Total HT
+                // Total HT (formatage avec InvariantCulture)
                 column.Item().PaddingTop(15).AlignRight().Column(totalCol =>
                 {
                     totalCol.Item().BorderTop(2).BorderColor(Colors.Black)
@@ -212,7 +227,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                         .Row(row =>
                         {
                             row.ConstantItem(150).Text("MONTANT TOTAL HT").FontSize(11).Bold();
-                            row.ConstantItem(100).AlignRight().Text($"{devis.MontantHT:N0}").FontSize(11).Bold();
+                            row.ConstantItem(100).AlignRight()
+                                .Text(devis.MontantHT.ToString("N0", CultureInfo.InvariantCulture))
+                                .FontSize(11).Bold();
                         });
                 });
 
@@ -240,7 +257,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         {
             container.Column(column =>
             {
-                // 🔴 Ligne de séparation rouge
+                // Ligne de séparation rouge
                 column.Item()
                     .PaddingBottom(5)
                     .LineHorizontal(1.5f)
