@@ -34,7 +34,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,6 +50,19 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "DevisController.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
+              "ViewState": "AgIAACQBAAAAAAAAAAAAACwBAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-18T23:03:38.81Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 3,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Program.cs",
@@ -58,8 +71,7 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Program.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-19T16:18:53.341Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-19T16:18:53.341Z"
             },
             {
               "$type": "Document",
@@ -71,8 +83,7 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisPDFService.cs",
               "ViewState": "AgIAAJEAAAAAAAAAAAAAAKIAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-19T13:12:31.11Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-19T13:12:31.11Z"
             },
             {
               "$type": "Document",
@@ -84,21 +95,7 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
               "ViewState": "AgIAAAwCAAAAAAAAAADgvywCAAALAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-19T12:22:35.775Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "DevisController.cs",
-              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
-              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
-              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
-              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
-              "ViewState": "AgIAACEBAAAAAAAAAAAAACwBAAAIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-18T23:03:38.81Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-19T12:22:35.775Z"
             },
             {
               "$type": "Document",
