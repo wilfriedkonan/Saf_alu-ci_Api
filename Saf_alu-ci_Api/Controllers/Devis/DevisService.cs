@@ -27,7 +27,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             using var cmd = new SqlCommand(@"
                 SELECT 
                     d.Id, d.Numero, d.Titre, d.Statut, d.MontantTTC, 
-                    d.DateCreation, d.DateValidite, d.Chantier,
+                    d.DateCreation, d.DateValidite, d.Chantier,d.UtilisateurCreation,
                     c.Id as ClientId, 
                     ISNULL(c.Nom, c.RaisonSociale ) as ClientNom
                 FROM Devis d
@@ -53,7 +53,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     {
                         Id = reader.GetInt32("ClientId"),
                         Nom = reader.GetString("ClientNom")
-                    }
+                    },
+                    UtilisateurCreation = reader.GetInt32("UtilisateurCreation")
+
                 });
             }
 

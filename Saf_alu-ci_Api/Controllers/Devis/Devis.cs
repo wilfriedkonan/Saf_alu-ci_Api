@@ -181,6 +181,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public DateTime? DateValidite { get; set; }
         public string? Chantier { get; set; }
         public ClientInfo? Client { get; set; }
+        public int UtilisateurCreation { get; set; }
     }
 
     /// <summary>
