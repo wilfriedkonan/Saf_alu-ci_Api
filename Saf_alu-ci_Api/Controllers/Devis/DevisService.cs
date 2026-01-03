@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Saf_alu_ci_Api.Controllers.Clients;
+using System.Collections.Generic;
 using System.Data;
 
 namespace Saf_alu_ci_Api.Controllers.Devis
@@ -14,7 +15,37 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         {
             _connectionString = connectionString;
         }
+        // =====================================================
+        // ✅ MÉTHODE HELPER POUR CALCULER LES MONTANTS AVEC REMISE
+        // =====================================================
 
+        private (decimal montantHTBrut, decimal montantRemise, decimal montantHTNet, decimal montantTTC) CalculerMontantsAvecRemise(
+            decimal montantHTBrut,
+            decimal remiseValeur,
+            decimal remisePourcentage,
+            decimal tauxTVA)
+        {
+            // 1. Appliquer d'abord la remise en pourcentage sur le montant brut
+            decimal montantRemisePourcentage = montantHTBrut * (remisePourcentage / 100);
+
+            // 2. Montant après remise pourcentage
+            decimal montantApresRemisePourcentage = montantHTBrut - montantRemisePourcentage;
+
+            // 3. Appliquer ensuite la remise en valeur
+            decimal montantHTNet = montantApresRemisePourcentage - remiseValeur;
+
+            // 4. S'assurer que le montant net ne soit pas négatif
+            if (montantHTNet < 0)
+                montantHTNet = 0;
+
+            // 5. Calculer le total de la remise
+            decimal montantRemiseTotal = montantHTBrut - montantHTNet;
+
+            // 6. Calculer le montant TTC
+            decimal montantTTC = montantHTNet * (1 + (tauxTVA / 100));
+
+            return (montantHTBrut, montantRemiseTotal, montantHTNet, montantTTC);
+        }
         // =====================================================
         // MÉTHODES DE LECTURE
         // =====================================================
@@ -28,10 +59,12 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 SELECT 
                     d.Id, d.Numero, d.Titre, d.Statut, d.MontantTTC, 
                     d.DateCreation, d.DateValidite, d.Chantier,d.UtilisateurCreation,
+                    d.RemiseValeur, d.RemisePourcentage,
                     c.Id as ClientId, 
                     ISNULL(c.Nom, c.RaisonSociale ) as ClientNom
                 FROM Devis d
                 LEFT JOIN Clients c ON d.ClientId = c.Id
+                WHERE d.Actif = 1
                 ORDER BY d.DateCreation DESC", conn);
 
             await conn.OpenAsync();
@@ -46,6 +79,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     Titre = reader.GetString("Titre"),
                     Statut = reader.GetString("Statut"),
                     MontantTTC = reader.GetDecimal("MontantTTC"),
+                    RemiseValeur = reader.GetDecimal("RemiseValeur"),
+                    RemisePourcentage = reader.GetDecimal("RemisePourcentage"),
                     DateCreation = reader.GetDateTime("DateCreation"),
                     DateValidite = reader.IsDBNull("DateValidite") ? null : reader.GetDateTime("DateValidite"),
                     Chantier = reader.IsDBNull("Chantier") ? null : reader.GetString("Chantier"),
@@ -91,6 +126,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     MontantHT = reader.GetDecimal("MontantHT"),
                     TauxTVA = reader.GetDecimal("TauxTVA"),
                     MontantTTC = reader.GetDecimal("MontantTTC"),
+                    RemiseValeur = reader.GetDecimal("RemiseValeur"),  // ✅
+                    RemisePourcentage = reader.GetDecimal("RemisePourcentage"),
                     DateCreation = reader.GetDateTime("DateCreation"),
                     DateValidite = reader.IsDBNull("DateValidite") ? null : reader.GetDateTime("DateValidite"),
                     DateEnvoi = reader.IsDBNull("DateEnvoi") ? null : reader.GetDateTime("DateEnvoi"),
@@ -210,13 +247,18 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 }
 
                 decimal tauxTVA = 18.00m;
-                decimal montantTTC = montantHT * (1 + tauxTVA / 100);
+                decimal remiseValeur = request.RemiseValeur;
+                decimal remisePourcentage = request.RemisePourcentage;
+                var (montantHTBrut, montantRemise, montantHTNet, montantTTC) =
+                    CalculerMontantsAvecRemise(montantHT, remiseValeur, remisePourcentage, tauxTVA);
+                //  decimal montantTTC = montantHT * (1 + tauxTVA / 100);
 
                 // 3. Créer le devis
                 using var devisCmd = new SqlCommand(@"
                     INSERT INTO Devis (
                         Numero, ClientId, Titre, Description, Statut, 
                         MontantHT, TauxTVA, MontantTTC,
+                        RemiseValeur, RemisePourcentage,
                         DateCreation, DateValidite, DateModification, 
                         Conditions, Notes, UtilisateurCreation,
                         Chantier, Contact, QualiteMateriel, TypeVitrage
@@ -224,6 +266,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     VALUES (
                         @Numero, @ClientId, @Titre, @Description, @Statut,
                         @MontantHT, @TauxTVA, @MontantTTC,
+                        @RemiseValeur, @RemisePourcentage,
                         @DateCreation, @DateValidite, @DateModification,
                         @Conditions, @Notes, @UtilisateurCreation,
                         @Chantier, @Contact, @QualiteMateriel, @TypeVitrage
@@ -235,9 +278,11 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 devisCmd.Parameters.AddWithValue("@Titre", request.Titre);
                 devisCmd.Parameters.AddWithValue("@Description", request.Description ?? (object)DBNull.Value);
                 devisCmd.Parameters.AddWithValue("@Statut", "Brouillon");
-                devisCmd.Parameters.AddWithValue("@MontantHT", montantHT);
+                devisCmd.Parameters.AddWithValue("@MontantHT", montantHTNet);
                 devisCmd.Parameters.AddWithValue("@TauxTVA", tauxTVA);
                 devisCmd.Parameters.AddWithValue("@MontantTTC", montantTTC);
+                devisCmd.Parameters.AddWithValue("@RemiseValeur", remiseValeur);
+                devisCmd.Parameters.AddWithValue("@RemisePourcentage", remisePourcentage);
                 devisCmd.Parameters.AddWithValue("@DateCreation", DateTime.UtcNow);
                 devisCmd.Parameters.AddWithValue("@DateValidite", request.DateValidite ?? (object)DBNull.Value);
                 devisCmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
@@ -256,6 +301,18 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 {
                     await CreateSectionsAsync(conn, transaction, devisId, request.Sections);
                 }
+                using var updateMontantsCmd = new SqlCommand(@"
+                UPDATE Devis
+                SET 
+                    MontantHT = @MontantHT,
+                    MontantTTC = @MontantTTC,
+                    DateModification = GETDATE()
+                WHERE Id = @DevisId", conn, transaction);
+
+                updateMontantsCmd.Parameters.AddWithValue("@DevisId", devisId);
+                updateMontantsCmd.Parameters.AddWithValue("@MontantHT", montantHTNet);
+                updateMontantsCmd.Parameters.AddWithValue("@MontantTTC", montantTTC);
+                await updateMontantsCmd.ExecuteNonQueryAsync();
 
                 await transaction.CommitAsync();
                 return devisId;
@@ -266,6 +323,82 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 throw;
             }
         }
+
+
+        // =====================================================
+        // ✅ NOUVELLE MÉTHODE: APPLIQUER UNE REMISE
+        // =====================================================
+
+        public async Task<bool> AppliquerRemiseAsync(int devisId, decimal? remiseValeur, decimal? remisePourcentage)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                // 1. Récupérer le devis actuel
+                using var getCmd = new SqlCommand(@"
+                    SELECT MontantHT, TauxTVA, RemiseValeur, RemisePourcentage
+                    FROM Devis 
+                    WHERE Id = @Id", conn, transaction);
+                getCmd.Parameters.AddWithValue("@Id", devisId);
+
+                decimal montantHTActuel, tauxTVA, remiseValeurActuelle, remisePourcentageActuel;
+
+                using (var reader = await getCmd.ExecuteReaderAsync())
+                {
+                    if (!await reader.ReadAsync())
+                        return false;
+
+                    montantHTActuel = reader.GetDecimal(0);
+                    tauxTVA = reader.GetDecimal(1);
+                    remiseValeurActuelle = reader.GetDecimal(2);
+                    remisePourcentageActuel = reader.GetDecimal(3);
+                }
+
+                // 2. Calculer le montant HT brut (avant toute remise)
+                // MontantHT actuel = HT brut - remises actuelles
+                // Donc HT brut = MontantHT actuel + remises actuelles
+                decimal montantRemiseActuelle = remiseValeurActuelle + (montantHTActuel * remisePourcentageActuel / (100 - remisePourcentageActuel));
+                decimal montantHTBrut = montantHTActuel + montantRemiseActuelle;
+
+                // 3. Appliquer les nouvelles remises
+                decimal nouvelleRemiseValeur = remiseValeur ?? remiseValeurActuelle;
+                decimal nouvelleRemisePourcentage = remisePourcentage ?? remisePourcentageActuel;
+
+                var (_, montantRemise, montantHTNet, montantTTC) =
+                    CalculerMontantsAvecRemise(montantHTBrut, nouvelleRemiseValeur, nouvelleRemisePourcentage, tauxTVA);
+
+                // 4. Mettre à jour le devis
+                using var updateCmd = new SqlCommand(@"
+                    UPDATE Devis
+                    SET 
+                        RemiseValeur = @RemiseValeur,
+                        RemisePourcentage = @RemisePourcentage,
+                        MontantHT = @MontantHT,
+                        MontantTTC = @MontantTTC,
+                        DateModification = @DateModification
+                    WHERE Id = @Id", conn, transaction);
+
+                updateCmd.Parameters.AddWithValue("@Id", devisId);
+                updateCmd.Parameters.AddWithValue("@RemiseValeur", nouvelleRemiseValeur);
+                updateCmd.Parameters.AddWithValue("@RemisePourcentage", nouvelleRemisePourcentage);
+                updateCmd.Parameters.AddWithValue("@MontantHT", montantHTNet);
+                updateCmd.Parameters.AddWithValue("@MontantTTC", montantTTC);
+                updateCmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
+
+                await updateCmd.ExecuteNonQueryAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
 
         // =====================================================
         // MÉTHODES DE MISE À JOUR
@@ -292,7 +425,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                         Chantier = @Chantier,
                         Contact = @Contact,
                         QualiteMateriel = @QualiteMateriel,
-                        TypeVitrage = @TypeVitrage
+                        TypeVitrage = @TypeVitrage,
+                        RemiseValeur = @RemiseValeur,
+                        RemisePourcentage = @RemisePourcentage
                     WHERE Id = @Id", conn, transaction);
 
                 updateCmd.Parameters.AddWithValue("@Id", devisId);
@@ -307,8 +442,20 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 updateCmd.Parameters.AddWithValue("@Contact", request.Contact ?? (object)DBNull.Value);
                 updateCmd.Parameters.AddWithValue("@QualiteMateriel", request.QualiteMateriel ?? (object)DBNull.Value);
                 updateCmd.Parameters.AddWithValue("@TypeVitrage", request.TypeVitrage ?? (object)DBNull.Value);
-
+                updateCmd.Parameters.AddWithValue("@RemiseValeur", request.RemiseValeur);
+                updateCmd.Parameters.AddWithValue("@RemisePourcentage", request.RemisePourcentage);
                 await updateCmd.ExecuteNonQueryAsync();
+
+                // ✅ 2. CORRECTION: Supprimer d'abord les LIGNES, puis les SECTIONS
+
+                // 2a. Supprimer toutes les lignes du devis
+                using var deleteLignesCmd = new SqlCommand(
+                    "DELETE FROM LignesDevis WHERE DevisId = @DevisId",
+                    conn,
+                    transaction
+                );
+                deleteLignesCmd.Parameters.AddWithValue("@DevisId", devisId);
+                await deleteLignesCmd.ExecuteNonQueryAsync();
 
                 // 2. Supprimer toutes les sections existantes (cascade supprime aussi les lignes)
                 using var deleteSectionsCmd = new SqlCommand(
@@ -323,6 +470,42 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 }
 
                 // 4. Le trigger trg_UpdateDevisMontants calculera automatiquement les nouveaux montants
+                // ✅ 4. Recalculer les montants avec remises (comme dans CreateAsync)
+                // Calculer le montant HT brut
+                decimal montantHTBrut = 0;
+                if (request.Sections != null)
+                {
+                    foreach (var section in request.Sections)
+                    {
+                        if (section.Lignes != null)
+                        {
+                            montantHTBrut += section.Lignes.Sum(l => l.Quantite * l.PrixUnitaireHT);
+                        }
+                    }
+                }
+
+                // Appliquer les remises
+                decimal tauxTVA = 18.00m;
+                decimal remiseValeur = request.RemiseValeur;
+                decimal remisePourcentage = request.RemisePourcentage;
+
+                var (_, montantRemise, montantHTNet, montantTTC) =
+                    CalculerMontantsAvecRemise(montantHTBrut, remiseValeur, remisePourcentage, tauxTVA);
+
+                // Mettre à jour les montants
+                using var updateMontantsCmd = new SqlCommand(@"
+                UPDATE Devis
+                SET 
+                    MontantHT = @MontantHT,
+                    MontantTTC = @MontantTTC,
+                    DateModification = GETDATE()
+                WHERE Id = @DevisId", conn, transaction);
+
+                updateMontantsCmd.Parameters.AddWithValue("@DevisId", devisId);
+                updateMontantsCmd.Parameters.AddWithValue("@MontantHT", montantHTNet);
+                updateMontantsCmd.Parameters.AddWithValue("@MontantTTC", montantTTC);
+
+                await updateMontantsCmd.ExecuteNonQueryAsync();
 
                 await transaction.CommitAsync();
             }
@@ -345,10 +528,13 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
             try
             {
+                using var SoftDeletecmd = new SqlCommand(@"
+                    UPDATE Devis SET 
+                        Actif = 0 
+                    WHERE Id = @Id", conn, transaction);
                 // Les contraintes CASCADE supprimeront automatiquement les sections et lignes
-                using var deleteCmd = new SqlCommand("DELETE FROM Devis WHERE Id = @Id", conn, transaction);
-                deleteCmd.Parameters.AddWithValue("@Id", id);
-                await deleteCmd.ExecuteNonQueryAsync();
+                SoftDeletecmd.Parameters.AddWithValue("@Id", id);
+                await SoftDeletecmd.ExecuteNonQueryAsync();
 
                 await transaction.CommitAsync();
             }
@@ -501,7 +687,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     SUM(CASE WHEN Statut = 'Expire' THEN 1 ELSE 0 END) AS Expire,
                     ISNULL(SUM(MontantTTC), 0) AS MontantTotal,
                     ISNULL(SUM(CASE WHEN Statut = 'Valide' THEN MontantTTC ELSE 0 END), 0) AS MontantValide
-                    FROM  Devis", conn);
+                    FROM  Devis
+                    WHERE Actif = 1", conn);
 
             await conn.OpenAsync();
             using var reader = await cmd.ExecuteReaderAsync();

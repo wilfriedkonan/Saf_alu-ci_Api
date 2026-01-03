@@ -4613,6 +4613,14 @@
             "type": "string",
             "nullable": true
           },
+          "remiseValeur": {
+            "type": "number",
+            "format": "double"
+          },
+          "remisePourcentage": {
+            "type": "number",
+            "format": "double"
+          },
           "chantier": {
             "type": "string",
             "nullable": true
@@ -5842,6 +5850,14 @@
           "notes": {
             "type": "string",
             "nullable": true
+          },
+          "remiseValeur": {
+            "type": "number",
+            "format": "double"
+          },
+          "remisePourcentage": {
+            "type": "number",
+            "format": "double"
           },
           "chantier": {
             "type": "string",

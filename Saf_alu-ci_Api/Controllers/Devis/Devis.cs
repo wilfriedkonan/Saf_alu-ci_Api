@@ -27,6 +27,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? Contact { get; set; }
         public string? QualiteMateriel { get; set; }
         public string? TypeVitrage { get; set; }
+        public Boolean Actif { get; set; } = true;
 
         // Navigation properties
         public virtual Client? Client { get; set; }
@@ -133,7 +134,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public DateTime? DateValidite { get; set; }
         public string? Conditions { get; set; }
         public string? Notes { get; set; }
-
+        public decimal RemiseValeur { get; set; }
+        public decimal RemisePourcentage { get; set; }
         // Nouveaux champs
         public string? Chantier { get; set; }
         public string? Contact { get; set; }
@@ -176,6 +178,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string Numero { get; set; }
         public string Titre { get; set; }
         public string Statut { get; set; }
+        public decimal RemiseValeur { get; set; }
+        public decimal RemisePourcentage { get; set; }
         public decimal MontantTTC { get; set; }
         public DateTime DateCreation { get; set; }
         public DateTime? DateValidite { get; set; }
@@ -209,6 +213,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string Statut { get; set; }
         public decimal MontantHT { get; set; }
         public decimal TauxTVA { get; set; }
+        public decimal RemiseValeur { get; set; }
+        public decimal RemisePourcentage { get; set; }
+
         public decimal MontantTTC { get; set; }
         public DateTime DateCreation { get; set; }
         public DateTime? DateValidite { get; set; }
@@ -222,6 +229,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? Contact { get; set; }
         public string? QualiteMateriel { get; set; }
         public string? TypeVitrage { get; set; }
+        public Boolean Actif { get; set; } = true;
+
 
         public ClientInfo? Client { get; set; }
         public List<DevisSectionResponse>? Sections { get; set; }
