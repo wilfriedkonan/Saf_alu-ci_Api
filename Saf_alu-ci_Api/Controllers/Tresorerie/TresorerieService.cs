@@ -24,7 +24,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         public async Task<List<Compte>> GetAllComptesAsync()
         {
             var comptes = new List<Compte>();
-
+            decimal soldeActuel = 0;
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("SELECT * FROM Comptes WHERE Actif = 1 ORDER BY TypeCompte, Nom", conn);
 
@@ -34,6 +34,28 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             while (await reader.ReadAsync())
             {
                 comptes.Add(MapToCompte(reader));
+            }
+            foreach (var item in comptes)
+            {
+
+
+                var lstMvt = GetMouvementsAsync(item.Id);
+                if (lstMvt != null)
+                {
+                    foreach (var items in lstMvt.Result)
+                    {
+                        if (items.TypeMouvement == "Entree")
+                        {
+                            soldeActuel += items.Montant;
+                        }
+                        else if (items.TypeMouvement == "Sortie")
+                        {
+                            soldeActuel -= items.Montant;
+                        }
+                    }
+                }
+
+                item.SoldeActuel = soldeActuel;
             }
 
             return comptes;
