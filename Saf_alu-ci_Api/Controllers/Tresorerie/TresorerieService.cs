@@ -24,7 +24,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         public async Task<List<Compte>> GetAllComptesAsync()
         {
             var comptes = new List<Compte>();
-            decimal soldeActuel = 0;
+
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand("SELECT * FROM Comptes WHERE Actif = 1 ORDER BY TypeCompte, Nom", conn);
 
@@ -37,7 +37,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             }
             foreach (var item in comptes)
             {
-
+                decimal soldeActuel = 0;
 
                 var lstMvt = GetMouvementsAsync(item.Id);
                 if (lstMvt != null)
