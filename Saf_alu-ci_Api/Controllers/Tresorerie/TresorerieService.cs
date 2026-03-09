@@ -143,18 +143,21 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             string? typeMouvement = null,
             string? categorie = null,
             DateTime? dateDebut = null,
-            DateTime? dateFin = null)
+            DateTime? dateFin = null,
+            int page = 1,
+            int pageSize = 50
+        )
         {
             var mouvements = new List<MouvementFinancier>();
 
             using var conn = new SqlConnection(_connectionString);
 
             var sql = @"
-                SELECT mf.*, c.Nom as CompteNom, cd.Nom as CompteDestinationNom
-                FROM MouvementsFinanciers mf
-                LEFT JOIN Comptes c ON mf.CompteId = c.Id
-                LEFT JOIN Comptes cd ON mf.CompteDestinationId = cd.Id
-                WHERE 1=1";
+        SELECT mf.*, c.Nom as CompteNom, cd.Nom as CompteDestinationNom
+        FROM MouvementsFinanciers mf
+        LEFT JOIN Comptes c ON mf.CompteId = c.Id
+        LEFT JOIN Comptes cd ON mf.CompteDestinationId = cd.Id
+        WHERE 1=1";
 
             var parameters = new List<SqlParameter>();
 
@@ -183,21 +186,27 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 parameters.Add(new SqlParameter("@CompteId", compteId.Value));
             }
 
-            // Filtrage par type de mouvement
+            // Filtrage par type
             if (!string.IsNullOrEmpty(typeMouvement))
             {
                 sql += " AND mf.TypeMouvement = @TypeMouvement";
                 parameters.Add(new SqlParameter("@TypeMouvement", typeMouvement));
             }
 
-            // Filtrage par catégorie
+            // Filtrage catégorie
             if (!string.IsNullOrEmpty(categorie))
             {
                 sql += " AND mf.Categorie LIKE @Categorie";
                 parameters.Add(new SqlParameter("@Categorie", $"%{categorie}%"));
             }
 
-            sql += " ORDER BY mf.DateMouvement DESC, mf.DateSaisie DESC";
+            // ORDER obligatoire pour OFFSET
+            sql += @" 
+        ORDER BY mf.DateMouvement DESC, mf.DateSaisie DESC
+        OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+
+            parameters.Add(new SqlParameter("@Offset", (page - 1) * pageSize));
+            parameters.Add(new SqlParameter("@PageSize", pageSize));
 
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddRange(parameters.ToArray());

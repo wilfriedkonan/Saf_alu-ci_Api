@@ -226,29 +226,27 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             {
                 var debutAnnee = new DateTime(DateTime.Now.Year, 1, 1);
                 var finAnnee = new DateTime(DateTime.Now.Year, 12, 31);
-                var mouvements = await _tresorerieService.GetMouvementsAsync(compteId, nbJours, typeMouvement, categorie, dateDebut, dateFin);
+                var mouvements = await _tresorerieService.GetMouvementsAsync(compteId, nbJours, typeMouvement, categorie, dateDebut, dateFin, page, pageSize);
                 var mouvementAN = await _tresorerieService.GetMouvementsAsync(compteId, nbJours, typeMouvement, categorie, debutAnnee, finAnnee);
 
                 // Pagination
                 var totalMouvements = mouvements.Count;
-                var mouvementsPagines = mouvements.Skip((page - 1) * pageSize)
-                                                  .Take(pageSize)
-                                                  .Select(m => new
-                                                  {
-                                                      m.Id,
-                                                      m.TypeMouvement,
-                                                      m.Categorie,
-                                                      m.Libelle,
-                                                      m.Description,
-                                                      m.Montant,
-                                                      m.DateMouvement,
-                                                      m.DateSaisie,
-                                                      m.ModePaiement,
-                                                      m.Reference,
-                                                      Compte = new { m.CompteId, m.Compte?.Nom }, // TODO: Navigation property
-                                                      CompteDestination = m.CompteDestinationId.HasValue ? new { m.CompteDestinationId, Nom = "Nom compte dest" } : null,
-                                                      Couleur = GetCouleurTypeMouvement(m.TypeMouvement),
-                                                  });
+                var mouvementsPagines = mouvements.Select(m => new
+                {
+                    m.Id,
+                    m.TypeMouvement,
+                    m.Categorie,
+                    m.Libelle,
+                    m.Description,
+                    m.Montant,
+                    m.DateMouvement,
+                    m.DateSaisie,
+                    m.ModePaiement,
+                    m.Reference,
+                    Compte = new { m.CompteId, m.Compte?.Nom }, // TODO: Navigation property
+                    CompteDestination = m.CompteDestinationId.HasValue ? new { m.CompteDestinationId, Nom = "Nom compte dest" } : null,
+                    Couleur = GetCouleurTypeMouvement(m.TypeMouvement),
+                });
 
                 return Ok(new
                 {
