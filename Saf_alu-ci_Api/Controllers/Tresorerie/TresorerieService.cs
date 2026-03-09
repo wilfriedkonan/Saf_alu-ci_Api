@@ -145,11 +145,12 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             DateTime? dateDebut = null,
             DateTime? dateFin = null,
             int page = 1,
-            int pageSize = 50
+            int pageSize = 1000
         )
         {
-            var mouvements = new List<MouvementFinancier>();
 
+            var mouvements = new List<MouvementFinancier>();
+            pageSize = mouvements.Count > 0 ? mouvements.Count : pageSize;
             using var conn = new SqlConnection(_connectionString);
 
             var sql = @"

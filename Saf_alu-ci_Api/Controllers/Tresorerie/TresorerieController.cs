@@ -220,7 +220,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             [FromQuery] DateTime? dateFin,
             [FromQuery] int nbJours = 30,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 50)
+            [FromQuery] int pageSize = 1000)
         {
             try
             {
