@@ -78,8 +78,7 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Factures\\FactureService.cs",
               "ViewState": "AgIAAMUBAAAAAAAAAMBcwO0BAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-05T13:02:51.574Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-05T13:02:51.574Z"
             },
             {
               "$type": "Document",
@@ -113,7 +112,7 @@
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\appsettings.json",
               "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\appsettings.json",
               "RelativeToolTip": "Saf_alu-ci_Api\\appsettings.json",
-              "ViewState": "AgIAAAUAAAAAAAAAAAAuwBIAAAAaAAAAAAAAAA==",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAuwBgAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2026-01-20T19:45:01.374Z",
               "EditorCaption": ""
@@ -140,8 +139,7 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
               "ViewState": "AgIAAM4DAAAAAAAAAAAUwOADAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-14T12:29:34.397Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-14T12:29:34.397Z"
             },
             {
               "$type": "Document",
@@ -153,8 +151,7 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
               "ViewState": "AgIAADwAAAAAAAAAAAAYwB4AAABaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-14T12:29:34.377Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-14T12:29:34.377Z"
             },
             {
               "$type": "Document",
@@ -190,8 +187,7 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Utilisateurs\\UtilisateursController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAIBZwA0AAAA8AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-20T19:06:18.703Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-20T19:06:18.703Z"
             },
             {
               "$type": "Document",
@@ -203,8 +199,7 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAHsAAAAiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-16T11:31:14.821Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-16T11:31:14.821Z"
             }
           ]
         }
