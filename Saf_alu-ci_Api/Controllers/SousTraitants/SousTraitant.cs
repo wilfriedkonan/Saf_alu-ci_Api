@@ -35,6 +35,14 @@
         public bool Actif { get; set; } = true;
     }
 
+    public class CreatSpecialiteResquest
+    {
+        public string Nom { get; set; }
+        public string? Description { get; set; }
+        public string? Couleur { get; set; } = "#059669";
+        public bool Actif { get; set; } = true;
+    }
+
     public class SousTraitantSpecialite
     {
         public int SousTraitantId { get; set; }

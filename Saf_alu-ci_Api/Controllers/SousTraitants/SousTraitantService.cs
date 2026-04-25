@@ -188,7 +188,31 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 throw;
             }
         }
+        public async Task<int> CreateSpecialiteAsync(Specialite specialite)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
 
+            try
+            {
+                // Créer le sous-traitant
+                using var cmd = new SqlCommand(@"
+                    INSERT INTO Specialites (Nom, Description, Couleur, Actif)
+                    VALUES (@Nom, @Description, @Couleur, @Actif);
+                    SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
+
+                AddSpecialiteParameters(cmd, specialite);
+                var specialiteId = (int)await cmd.ExecuteScalarAsync();
+                await transaction.CommitAsync();
+                return specialiteId;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
         public async Task UpdateAsync(SousTraitant sousTraitant)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -406,7 +430,13 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
             cmd.Parameters.AddWithValue("@Actif", sousTraitant.Actif);
             cmd.Parameters.AddWithValue("@UtilisateurCreation", sousTraitant.UtilisateurCreation ?? (object)DBNull.Value);
         }
-
+        private void AddSpecialiteParameters(SqlCommand cmd, Specialite specialite)
+        {
+            cmd.Parameters.AddWithValue("@Nom", specialite.Nom);
+            cmd.Parameters.AddWithValue("@Description", specialite.Description ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Couleur", specialite.Couleur ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Actif", specialite.Actif);
+        }
         private SousTraitant MapToSousTraitant(SqlDataReader reader)
         {
             return new SousTraitant

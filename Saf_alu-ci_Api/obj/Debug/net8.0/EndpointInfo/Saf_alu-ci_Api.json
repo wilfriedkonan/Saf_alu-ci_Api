@@ -3083,6 +3083,37 @@
         }
       }
     },
+    "/api/SousTraitants/CreatSpecialite": {
+      "post": {
+        "tags": [
+          "SousTraitants"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatSpecialiteResquest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatSpecialiteResquest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatSpecialiteResquest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/SousTraitants/{id}/evaluations": {
       "post": {
         "tags": [
@@ -3451,6 +3482,67 @@
     },
     "/api/Tresorerie/mouvements/{id}": {
       "get": {
+        "tags": [
+          "Tresorerie"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Tresorerie"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMouvementRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMouvementRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMouvementRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
         "tags": [
           "Tresorerie"
         ],
@@ -4312,6 +4404,27 @@
             "minLength": 0,
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatSpecialiteResquest": {
+        "type": "object",
+        "properties": {
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "couleur": {
+            "type": "string",
+            "nullable": true
+          },
+          "actif": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -5970,6 +6083,75 @@
         "type": "object",
         "properties": {
           "value": {
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateMouvementRequest": {
+        "required": [
+          "dateMouvement",
+          "libelle",
+          "montant"
+        ],
+        "type": "object",
+        "properties": {
+          "categorie": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "factureId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "projetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "sousTraitantId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "etapeProjetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "libelle": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "montant": {
+            "minimum": 0.01,
+            "type": "number",
+            "format": "double"
+          },
+          "dateMouvement": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modePaiement": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "reference": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
             "nullable": true
           }
         },

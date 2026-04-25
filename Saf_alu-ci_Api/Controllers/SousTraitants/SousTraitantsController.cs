@@ -214,6 +214,35 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
             }
         }
 
+        [HttpPost ("CreatSpecialite")]
+        public async Task<IActionResult> Create([FromBody] CreatSpecialiteResquest model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var specialite = new Specialite
+                {
+                    Nom = model.Nom,
+                    Description = model.Description,
+                    
+                };
+                var IdSpecialite = await _sousTraitantService.CreateSpecialiteAsync(specialite);
+                specialite.Id = IdSpecialite;
+                return CreatedAtAction(nameof(Get), new { id = IdSpecialite }, new
+                {
+                    message = "Spécialité créé avec succès",
+                    id = IdSpecialite,
+                    nom = specialite.Nom
+                });
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
         /// <summary>
         /// Crée un nouveau sous-traitant
         /// </summary>

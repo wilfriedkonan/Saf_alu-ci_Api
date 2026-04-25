@@ -1007,7 +1007,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             var query = @"
         SELECT SUM(Montant)
         FROM MouvementsFinanciers
-        WHERE EtapeProjetId = @IdEtape
+        WHERE Actif = 1 AND EtapeProjetId = @IdEtape
           AND TypeMouvement = 'Sortie'";
 
             using var cmd = new SqlCommand(query, conn);

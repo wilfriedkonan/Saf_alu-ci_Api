@@ -17,7 +17,6 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         {
             _tresorerieService = tresorerieService;
         }
-
         // =============================================
         // ENDPOINTS COMPTES
         // =============================================
@@ -324,7 +323,8 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     ModePaiement = model.ModePaiement,
                     Reference = model.Reference,
                     CompteDestinationId = model.CompteDestinationId,
-                    UtilisateurCreation = utilisateurId
+                    UtilisateurCreation = utilisateurId,
+                    Actif = true,
                 };
 
                 var mouvementId = await _tresorerieService.CreateMouvementAsync(mouvement);
@@ -349,6 +349,81 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             }
         }
 
+
+        /// <summary>
+        /// Met à jour un mouvement financier existant.
+        /// TypeMouvement et CompteId ne sont pas modifiables
+        /// pour préserver la cohérence des soldes.
+        /// </summary>
+        [HttpPut("mouvements/{id}")]
+        public async Task<IActionResult> UpdateMouvement(int id, [FromBody] UpdateMouvementRequest model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                // Vérifier que le mouvement existe et est actif
+                var existing = await _tresorerieService.GetMouvementByIdAsync(id);
+                if (existing == null)
+                    return NotFound(new { message = "Mouvement non trouvé ou déjà supprimé" });
+
+                var utilisateurId = GetCurrentUserId();
+                var updated = await _tresorerieService.UpdateMouvementAsync(id, model, utilisateurId);
+
+                if (!updated)
+                    return NotFound(new { message = "Mouvement non trouvé ou déjà supprimé" });
+
+                return Ok(new
+                {
+                    message = "Mouvement modifié avec succès",
+                    id,
+                    libelle = model.Libelle,
+                    montant = model.Montant,
+                    dateMouvement = model.DateMouvement,
+                    modifiePar = utilisateurId,
+                    dateModification = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur serveur", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Supprime logiquement un mouvement financier (Actif = 0).
+        /// Trace l'utilisateur et la date de suppression.
+        /// </summary>
+        [HttpDelete("mouvements/{id}")]
+        public async Task<IActionResult> DeleteMouvement(int id)
+        {
+            try
+            {
+                // Vérifier que le mouvement existe et est actif
+                var existing = await _tresorerieService.GetMouvementByIdAsync(id);
+                if (existing == null)
+                    return NotFound(new { message = "Mouvement non trouvé ou déjà supprimé" });
+
+                var utilisateurId = GetCurrentUserId();
+                var deleted = await _tresorerieService.DeleteMouvementAsync(id, utilisateurId);
+
+                if (!deleted)
+                    return NotFound(new { message = "Mouvement non trouvé ou déjà supprimé" });
+
+                return Ok(new
+                {
+                    message = "Mouvement supprimé avec succès",
+                    id,
+                    supprimePar = utilisateurId,
+                    dateSuppression = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur serveur", error = ex.Message });
+            }
+        }
 
         /// <summary>
         /// Effectue un virement entre comptes

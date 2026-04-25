@@ -16,7 +16,6 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         {
             _connectionString = connectionString;
         }
-
         // =============================================
         // GESTION DES COMPTES
         // =============================================
@@ -154,11 +153,11 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var conn = new SqlConnection(_connectionString);
 
             var sql = @"
-        SELECT mf.*, c.Nom as CompteNom, cd.Nom as CompteDestinationNom
-        FROM MouvementsFinanciers mf
-        LEFT JOIN Comptes c ON mf.CompteId = c.Id
-        LEFT JOIN Comptes cd ON mf.CompteDestinationId = cd.Id
-        WHERE 1=1";
+            SELECT mf.*, c.Nom as CompteNom, cd.Nom as CompteDestinationNom
+            FROM MouvementsFinanciers mf
+            LEFT JOIN Comptes c ON mf.CompteId = c.Id
+            LEFT JOIN Comptes cd ON mf.CompteDestinationId = cd.Id
+            WHERE mf.Actif = 1";
 
             var parameters = new List<SqlParameter>();
 
@@ -232,6 +231,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         FROM MouvementsFinanciers mf
         WHERE mf.ProjetId = @Id 
           AND mf.TypeMouvement = 'Sortie'
+          AND mf.Actif =1
     ", conn);
 
             cmd.Parameters.AddWithValue("@Id", id);
@@ -255,6 +255,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         FROM MouvementsFinanciers mf
         WHERE mf.EtapeProjetId = @Id 
           AND mf.TypeMouvement = 'Sortie'
+          AND mf.Actif =1
     ", conn);
 
             cmd.Parameters.AddWithValue("@Id", id);
@@ -297,7 +298,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             LEFT JOIN Factures f ON mf.FactureId = f.Id
             LEFT JOIN Projets p ON mf.ProjetId = p.Id
             LEFT JOIN Utilisateurs u ON mf.UtilisateurCreation = u.Id
-            WHERE mf.Id = @Id", conn);
+            WHERE mf.Id = @Id AND mf.Actif =1", conn);
 
             cmd.Parameters.AddWithValue("@Id", id);
 
@@ -330,10 +331,10 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var cmd = new SqlCommand(@"
                 INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, FactureId, ProjetId, SousTraitantId, EtapeProjetId,
                                                Libelle, Description, Montant, DateMouvement, DateSaisie, ModePaiement,
-                                               Reference, CompteDestinationId, UtilisateurCreation)
+                                               Reference, CompteDestinationId, UtilisateurCreation,Actif)
                 VALUES (@CompteId, @TypeMouvement, @Categorie, @FactureId, @ProjetId, @SousTraitantId, @EtapeProjetId,
                        @Libelle, @Description, @Montant, @DateMouvement, @DateSaisie, @ModePaiement,
-                       @Reference, @CompteDestinationId, @UtilisateurCreation);
+                       @Reference, @CompteDestinationId, @UtilisateurCreation,@Actif);
                 SELECT CAST(SCOPE_IDENTITY() as int)", conn);
 
             AddMouvementParameters(cmd, mouvement);
@@ -341,6 +342,85 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             await conn.OpenAsync();
             return (int)await cmd.ExecuteScalarAsync();
         }
+
+        // ── MODIFICATION D'UN MOUVEMENT ────────────────────────────────────
+
+        /// <summary>
+        /// Met à jour les champs éditables d'un mouvement existant.
+        /// TypeMouvement et CompteId sont intentionnellement exclus
+        /// pour préserver la cohérence des soldes.
+        /// Retourne false si le mouvement est introuvable ou supprimé (Actif = 0).
+        /// </summary>
+        public async Task<bool> UpdateMouvementAsync(int id, UpdateMouvementRequest req, int utilisateurId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+                UPDATE MouvementsFinanciers SET
+                    Categorie                       = @Categorie,
+                    FactureId                       = @FactureId,
+                    ProjetId                        = @ProjetId,
+                    SousTraitantId                  = @SousTraitantId,
+                    EtapeProjetId                   = @EtapeProjetId,
+                    Libelle                         = @Libelle,
+                    Description                     = @Description,
+                    Montant                         = @Montant,
+                    DateMouvement                   = @DateMouvement,
+                    ModePaiement                    = @ModePaiement,
+                    Reference                       = @Reference,
+                    DernierUtilisateurModification  = @DernierUtilisateurModification,
+                    DateDerniereModification        = @DateDerniereModification
+                WHERE Id = @Id AND Actif = 1", conn);
+
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@Categorie", req.Categorie ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@FactureId", req.FactureId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ProjetId", req.ProjetId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@SousTraitantId", req.SousTraitantId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@EtapeProjetId", req.EtapeProjetId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Libelle", req.Libelle);
+            cmd.Parameters.AddWithValue("@Description", req.Description ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Montant", req.Montant);
+            cmd.Parameters.AddWithValue("@DateMouvement", req.DateMouvement);
+            cmd.Parameters.AddWithValue("@ModePaiement", req.ModePaiement ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Reference", req.Reference ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@DernierUtilisateurModification", utilisateurId);
+            cmd.Parameters.AddWithValue("@DateDerniereModification", DateTime.UtcNow);
+
+            await conn.OpenAsync();
+            var rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+            // 0 ligne = Id inexistant ou déjà supprimé (Actif = 0)
+            return rowsAffected > 0;
+        }
+
+        // ── SUPPRESSION LOGIQUE D'UN MOUVEMENT ────────────────────────────
+
+        /// <summary>
+        /// Soft-delete : positionne Actif = 0 sur le mouvement.
+        /// Trace l'utilisateur et la date via DernierUtilisateurModification / DateDerniereModification.
+        /// Retourne false si le mouvement est introuvable ou déjà supprimé.
+        /// </summary>
+        public async Task<bool> DeleteMouvementAsync(int id, int utilisateurId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+                UPDATE MouvementsFinanciers SET
+                    Actif                           = 0,
+                    DernierUtilisateurModification  = @DernierUtilisateurModification,
+                    DateDerniereModification        = @DateDerniereModification
+                WHERE Id = @Id AND Actif = 1", conn);
+
+            cmd.Parameters.AddWithValue("@Id", id);
+            cmd.Parameters.AddWithValue("@DernierUtilisateurModification", utilisateurId);
+            cmd.Parameters.AddWithValue("@DateDerniereModification", DateTime.UtcNow);
+
+            await conn.OpenAsync();
+            var rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+            return rowsAffected > 0;
+        }
+
+        // ──────────────────────────────────────────────────────────────────
 
         public async Task<bool> CreateVirementAsync(VirementRequest virement, int utilisateurId)
         {
@@ -489,14 +569,14 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var entreesCmd = new SqlCommand(@"
                 SELECT ISNULL(SUM(Montant), 0) 
                 FROM MouvementsFinanciers 
-                WHERE TypeMouvement = 'Entree' AND DateMouvement >= @DebutMois", conn);
+                WHERE Actif = 1 AND TypeMouvement = 'Entree' AND DateMouvement >= @DebutMois", conn);
             entreesCmd.Parameters.AddWithValue("@DebutMois", debutMois);
             stats.EntreesMois = (decimal)await entreesCmd.ExecuteScalarAsync();
 
             using var sortiesCmd = new SqlCommand(@"
                 SELECT ISNULL(SUM(Montant), 0) 
                 FROM MouvementsFinanciers 
-                WHERE TypeMouvement = 'Sortie' AND DateMouvement >= @DebutMois", conn);
+                WHERE Actif = 1 AND  TypeMouvement = 'Sortie' AND DateMouvement >= @DebutMois", conn);
             sortiesCmd.Parameters.AddWithValue("@DebutMois", debutMois);
             stats.SortiesMois = (decimal)await sortiesCmd.ExecuteScalarAsync();
 
@@ -508,14 +588,14 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var entreesAnneeCmd = new SqlCommand(@"
                 SELECT ISNULL(SUM(Montant), 0) 
                 FROM MouvementsFinanciers 
-                WHERE TypeMouvement = 'Entree' AND DateMouvement >= @DebutAnnee", conn);
+                WHERE Actif = 1 AND  TypeMouvement = 'Entree' AND DateMouvement >= @DebutAnnee", conn);
             entreesAnneeCmd.Parameters.AddWithValue("@DebutAnnee", debutAnnee);
             stats.EntreesAnnee = (decimal)await entreesAnneeCmd.ExecuteScalarAsync();
 
             using var sortiesAnneeCmd = new SqlCommand(@"
                 SELECT ISNULL(SUM(Montant), 0) 
                 FROM MouvementsFinanciers 
-                WHERE TypeMouvement = 'Sortie' AND DateMouvement >= @DebutAnnee", conn);
+                WHERE Actif = 1 AND  TypeMouvement = 'Sortie' AND DateMouvement >= @DebutAnnee", conn);
             sortiesAnneeCmd.Parameters.AddWithValue("@DebutAnnee", debutAnnee);
             stats.SortiesAnnee = (decimal)await sortiesAnneeCmd.ExecuteScalarAsync();
 
@@ -572,7 +652,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     SUM(CASE WHEN TypeMouvement = 'Sortie' THEN Montant ELSE 0 END) as TotalSorties,
                     COUNT(DISTINCT CompteId) as ComptesActifs
                 FROM MouvementsFinanciers 
-                WHERE DateMouvement >= DATEADD(DAY, -7, GETDATE())", conn);
+                WHERE Actif = 1 AND  DateMouvement >= DATEADD(DAY, -7, GETDATE())", conn);
 
             using var activiteReader = await activiteCmd.ExecuteReaderAsync();
             if (await activiteReader.ReadAsync())
@@ -594,7 +674,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     COUNT(*) as NbMouvements,
                     SUM(Montant) as TotalMontant
                 FROM MouvementsFinanciers 
-                WHERE DateMouvement >= DATEADD(DAY, -30, GETDATE())
+                WHERE Actif = 1 AND  DateMouvement >= DATEADD(DAY, -30, GETDATE())
                 GROUP BY Categorie
                 ORDER BY SUM(Montant) DESC", conn);
 
@@ -623,7 +703,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var cmd = new SqlCommand(@"
                 SELECT DISTINCT Categorie 
                 FROM MouvementsFinanciers 
-                WHERE Categorie IS NOT NULL AND Categorie != ''
+                WHERE Actif = 1 AND Categorie IS NOT NULL AND Categorie != ''
                 ORDER BY Categorie", conn);
 
             await conn.OpenAsync();
@@ -673,7 +753,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     TypeMouvement,
                     SUM(Montant) as Total
                 FROM MouvementsFinanciers 
-                WHERE DateMouvement >= DATEADD(MONTH, -12, GETDATE())
+                WHERE Actif = 1 AND  DateMouvement >= DATEADD(MONTH, -12, GETDATE())
                     AND TypeMouvement IN ('Entree', 'Sortie')
                 GROUP BY FORMAT(DateMouvement, 'yyyy-MM'), TypeMouvement
                 ORDER BY Mois", conn);
@@ -734,7 +814,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         WITH Mois AS (
             SELECT DISTINCT FORMAT(DateMouvement, 'yyyy-MM') as Mois
             FROM MouvementsFinanciers
-            WHERE DateMouvement >= DATEADD(MONTH, -6, GETDATE())
+            WHERE Actif = 1 AND  DateMouvement >= DATEADD(MONTH, -6, GETDATE())
                 AND DateMouvement <= GETDATE()
             UNION
             -- Ajouter les mois manquants s'il n'y a pas de mouvements
@@ -748,7 +828,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 TypeMouvement,
                 SUM(Montant) as Total
             FROM MouvementsFinanciers 
-            WHERE DateMouvement >= DATEADD(MONTH, -6, GETDATE())
+            WHERE Actif = 1 AND  DateMouvement >= DATEADD(MONTH, -6, GETDATE())
                 AND DateMouvement <= GETDATE()
                 AND TypeMouvement IN ('Entree', 'Sortie')
             GROUP BY FORMAT(DateMouvement, 'yyyy-MM'), TypeMouvement
@@ -811,7 +891,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     SUM(Montant) as Total,
                     COUNT(*) as NbMouvements
                 FROM MouvementsFinanciers 
-                WHERE DateMouvement >= DATEADD(MONTH, -3, GETDATE())
+                WHERE Actif = 1 AND  DateMouvement >= DATEADD(MONTH, -3, GETDATE())
                     AND TypeMouvement IN ('Entree', 'Sortie')
                 GROUP BY Categorie
                 ORDER BY Total DESC", conn);
@@ -846,7 +926,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                                     WHEN TypeMouvement = 'Sortie' THEN -Montant 
                                     ELSE 0 END)) OVER (ORDER BY CAST(DateMouvement AS DATE)) as SoldeCumule
                     FROM MouvementsFinanciers 
-                    WHERE DateMouvement >= DATEADD(DAY, -30, GETDATE())
+                    WHERE Actif = 1 AND  DateMouvement >= DATEADD(DAY, -30, GETDATE())
                     GROUP BY CAST(DateMouvement AS DATE)
                 )
                 SELECT 
@@ -874,7 +954,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var cmd = new SqlCommand(@"
                 SELECT ISNULL(SUM(Montant), 0)
                 FROM MouvementsFinanciers
-                WHERE FactureId = @FactureId
+                WHERE Actif = 1 AND  FactureId = @FactureId
                 AND TypeMouvement = 'Entree'
                 ", conn);
 
@@ -897,7 +977,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                         MONTH(DateMouvement) as Mois,
                         SUM(CASE WHEN TypeMouvement = 'Entree' THEN Montant ELSE -Montant END) as FluxNet
                     FROM MouvementsFinanciers 
-                    WHERE YEAR(DateMouvement) = YEAR(GETDATE())
+                    WHERE Actif = 1 AND  YEAR(DateMouvement) = YEAR(GETDATE())
                         AND TypeMouvement IN ('Entree', 'Sortie')
                     GROUP BY MONTH(DateMouvement)
                 )
@@ -918,7 +998,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 SELECT 
                     COUNT(*) * 1.0 / NULLIF(DATEDIFF(DAY, MIN(DateMouvement), MAX(DateMouvement)), 0) as MoyenneParJour
                 FROM MouvementsFinanciers 
-                WHERE DateMouvement >= DATEADD(DAY, -30, GETDATE())", conn);
+                WHERE Actif = 1 AND  DateMouvement >= DATEADD(DAY, -30, GETDATE())", conn);
             var moyenneResult = await moyenneCmd.ExecuteScalarAsync();
             indicateurs.MoyenneMouvementsParJour = moyenneResult != null && moyenneResult != DBNull.Value ? Convert.ToDecimal(moyenneResult) : 0;
 
@@ -940,7 +1020,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 SELECT TOP 1 c.Nom
                 FROM MouvementsFinanciers mf
                 JOIN Comptes c ON mf.CompteId = c.Id
-                WHERE mf.DateMouvement >= DATEADD(DAY, -30, GETDATE())
+                WHERE mf.Actif = 1 AND  mf.DateMouvement >= DATEADD(DAY, -30, GETDATE())
                 GROUP BY c.Nom
                 ORDER BY COUNT(*) DESC", conn);
             var compteResult = await compteCmd.ExecuteScalarAsync();
@@ -950,7 +1030,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var nbMouvCmd = new SqlCommand(@"
                 SELECT COUNT(*) 
                 FROM MouvementsFinanciers 
-                WHERE MONTH(DateMouvement) = MONTH(GETDATE()) AND YEAR(DateMouvement) = YEAR(GETDATE())", conn);
+                WHERE Actif = 1 AND  MONTH(DateMouvement) = MONTH(GETDATE()) AND YEAR(DateMouvement) = YEAR(GETDATE())", conn);
             indicateurs.NombreMouvementsMois = (int)await nbMouvCmd.ExecuteScalarAsync();
 
             return indicateurs;
@@ -986,6 +1066,8 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             cmd.Parameters.AddWithValue("@Reference", mouvement.Reference ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@CompteDestinationId", mouvement.CompteDestinationId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@UtilisateurCreation", mouvement.UtilisateurCreation);
+            cmd.Parameters.AddWithValue("@Actif", mouvement.Actif);
+
         }
 
         private Compte MapToCompte(SqlDataReader reader)
@@ -1036,6 +1118,15 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 Reference = reader.IsDBNull("Reference") ? null : reader.GetString("Reference"),
                 CompteDestinationId = reader.IsDBNull("CompteDestinationId") ? null : reader.GetInt32("CompteDestinationId"),
                 UtilisateurCreation = reader.GetInt32("UtilisateurCreation"),
+
+                // Traçabilité modification / soft-delete
+                DernierUtilisateurModification = ColumnExists(reader, "DernierUtilisateurModification") && !reader.IsDBNull("DernierUtilisateurModification")
+                    ? reader.GetInt32("DernierUtilisateurModification")
+                    : null,
+                DateDerniereModification = ColumnExists(reader, "DateDerniereModification") && !reader.IsDBNull("DateDerniereModification")
+                    ? reader.GetDateTime("DateDerniereModification")
+                    : null,
+                Actif = ColumnExists(reader, "Actif") ? reader.GetBoolean("Actif") : true,
 
                 Compte = ColumnExists(reader, "CompteNom") && !reader.IsDBNull("CompteNom")
                     ? new Compte { Nom = reader.GetString("CompteNom") }

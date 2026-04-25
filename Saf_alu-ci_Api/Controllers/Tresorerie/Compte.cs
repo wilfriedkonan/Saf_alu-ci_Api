@@ -33,6 +33,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         public virtual List<MouvementFinancier>? Mouvements { get; set; }
         public virtual List<MouvementFinancier>? MouvementsDestination { get; set; }
     }
+
     public class MouvementFinancier
     {
         public int Id { get; set; }
@@ -50,6 +51,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         public int? ProjetId { get; set; }
         public int? SousTraitantId { get; set; }
         public int? EtapeProjetId { get; set; }
+
         [Required]
         [StringLength(200)]
         public string Libelle { get; set; }
@@ -73,6 +75,12 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         public int? CompteDestinationId { get; set; }
 
         public int UtilisateurCreation { get; set; }
+
+        // ── Traçabilité modification / soft-delete ──────────────────────
+        public int? DernierUtilisateurModification { get; set; }
+        public DateTime? DateDerniereModification { get; set; }
+        public bool Actif { get; set; } = true;
+        // ────────────────────────────────────────────────────────────────
 
         // Navigation properties (optionnelles)
         public virtual Compte? Compte { get; set; }
@@ -158,6 +166,51 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         // Pour les virements uniquement
         public int? CompteDestinationId { get; set; }
     }
+
+    // =============================================
+    // DTO POUR MODIFICATION D'UN MOUVEMENT
+    // =============================================
+
+    /// <summary>
+    /// Champs modifiables d'un mouvement existant.
+    /// Le TypeMouvement et le CompteId ne sont pas modifiables
+    /// pour préserver la cohérence des soldes.
+    /// </summary>
+    public class UpdateMouvementRequest
+    {
+        [StringLength(50, ErrorMessage = "La catégorie ne peut pas dépasser 50 caractères")]
+        public string? Categorie { get; set; }
+
+        // Relations optionnelles
+        public int? FactureId { get; set; }
+        public int? ProjetId { get; set; }
+        public int? SousTraitantId { get; set; }
+        public int? EtapeProjetId { get; set; }
+
+        [Required(ErrorMessage = "Le libellé est obligatoire")]
+        [StringLength(200, ErrorMessage = "Le libellé ne peut pas dépasser 200 caractères")]
+        public string Libelle { get; set; }
+
+        [StringLength(500, ErrorMessage = "La description ne peut pas dépasser 500 caractères")]
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Le montant est obligatoire")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Le montant doit être supérieur à 0")]
+        public decimal Montant { get; set; }
+
+        [Required(ErrorMessage = "La date du mouvement est obligatoire")]
+        public DateTime DateMouvement { get; set; }
+
+        [StringLength(50)]
+        public string? ModePaiement { get; set; }
+
+        [StringLength(100)]
+        public string? Reference { get; set; }
+    }
+
+    // =============================================
+    // DTOs POUR VIREMENT ET CORRECTION
+    // =============================================
 
     public class VirementRequest
     {
