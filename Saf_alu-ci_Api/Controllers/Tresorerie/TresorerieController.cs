@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using Saf_alu_ci_Api.Controllers.Utilisateurs;
 using System.Globalization;
 using System.Security.Claims;
 
