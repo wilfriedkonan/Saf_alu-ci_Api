@@ -214,7 +214,7 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
             }
         }
 
-        [HttpPost ("CreatSpecialite")]
+        [HttpPost("CreatSpecialite")]
         public async Task<IActionResult> Create([FromBody] CreatSpecialiteResquest model)
         {
             try
@@ -226,7 +226,7 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 {
                     Nom = model.Nom,
                     Description = model.Description,
-                    
+
                 };
                 var IdSpecialite = await _sousTraitantService.CreateSpecialiteAsync(specialite);
                 specialite.Id = IdSpecialite;
@@ -336,13 +336,12 @@ namespace Saf_alu_ci_Api.Controllers.SousTraitants
                 existing.DateModification = DateTime.UtcNow;
 
                 // Mapper les spécialités avec niveaux d'expertise
-                if (model.Specialites != null && model.Specialites.Any())
+                if (model.SpecialiteIds != null && model.SpecialiteIds.Any())
                 {
-                    existing.Specialites = model.Specialites.Select(s => new SousTraitantSpecialite
+                    existing.Specialites = model.SpecialiteIds.Select(id => new SousTraitantSpecialite
                     {
                         SousTraitantId = existing.Id,
-                        SpecialiteId = s.SpecialiteId,
-                        NiveauExpertise = s.NiveauExpertise
+                        SpecialiteId = id,
                     }).ToList();
                 }
 
