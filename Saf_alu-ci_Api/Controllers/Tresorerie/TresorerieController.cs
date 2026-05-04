@@ -985,6 +985,50 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             }
         }
 
+        /// <summary>
+        /// GET /api/tresorerie/paiements-sous-traitants
+        /// Retourne la liste des paiements (sorties) groupés par sous-traitant et par étape de projet.
+        /// </summary>
+        /// <param name="sousTraitantId">Filtrer sur un sous-traitant précis (optionnel)</param>
+        /// <param name="projetId">Filtrer sur un projet précis (optionnel)</param>
+        /// <param name="dateDebut">Filtrer à partir d'une date (optionnel)</param>
+        /// <param name="dateFin">Filtrer jusqu'à une date (optionnel)</param>
+        [HttpGet("paiements-sous-traitants")]
+        public async Task<IActionResult> GetPaiementsSousTraitants(
+            [FromQuery] int? sousTraitantId = null,
+            [FromQuery] int? projetId = null,
+            [FromQuery] DateTime? dateDebut = null,
+            [FromQuery] DateTime? dateFin = null)
+        {
+            try
+            {
+                var data = await _tresorerieService.GetPaiementsSousTraitantsAsync(
+                    sousTraitantId, projetId, dateDebut, dateFin);
+
+                return Ok(new
+                {
+                    resume = new
+                    {
+                        NombreSousTraitants = data.Count,
+                        TotalGlobalPaye = data.Sum(st => st.TotalPaye),
+                        NombrePaiementsTotal = data.Sum(st => st.NombrePaiements),
+                        FiltresAppliques = new
+                        {
+                            SousTraitantId = sousTraitantId,
+                            ProjetId = projetId,
+                            DateDebut = dateDebut,
+                            DateFin = dateFin
+                        }
+                    },
+                    sousTraitants = data
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur serveur", error = ex.Message });
+            }
+        }
+
         // =============================================
         // MÉTHODES PRIVÉES UTILITAIRES
         // =============================================

@@ -1859,6 +1859,85 @@
   },
   {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "GetSousTraitantsEtape",
+    "RelativePath": "api/Projets/etapes/{etapeId}/sous-traitants",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "etapeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "AssignSousTraitantEtape",
+    "RelativePath": "api/Projets/etapes/{etapeId}/sous-traitants",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "etapeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Projets.AssignSousTraitantEtapeRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "UpdateSousTraitantsEtape",
+    "RelativePath": "api/Projets/etapes/{etapeId}/sous-traitants",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "etapeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Saf_alu_ci_Api.Controllers.Projets.UpdateEtapeSousTraitantsRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
+    "Method": "RemoveSousTraitantEtape",
+    "RelativePath": "api/Projets/etapes/{etapeId}/sous-traitants/{sousTraitantId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "etapeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "sousTraitantId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Projets.ProjetsController",
     "Method": "GetStatistiques",
     "RelativePath": "api/Projets/statistiques",
     "HttpMethod": "GET",
@@ -2416,6 +2495,37 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Tresorerie.TresorerieController",
+    "Method": "GetPaiementsSousTraitants",
+    "RelativePath": "api/Tresorerie/paiements-sous-traitants",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "sousTraitantId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "projetId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "dateDebut",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "dateFin",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

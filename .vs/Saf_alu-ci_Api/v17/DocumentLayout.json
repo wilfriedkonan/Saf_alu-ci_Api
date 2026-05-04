@@ -7,8 +7,28 @@
       "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\soustraitants\\soustraitantscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\projets\\projetservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\projets\\projetservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\projets\\projetscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\projets\\projetscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\tresorerie\\tresoreriecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\tresorerie\\tresoreriecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\tresorerie\\compte.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\tresorerie\\compte.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\tresorerie\\tresorerieservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\tresorerie\\tresorerieservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\projets\\projet.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\projets\\projet.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -40,23 +60,85 @@
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\SousTraitants\\SousTraitantsController.cs",
               "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\SousTraitants\\SousTraitantsController.cs",
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\SousTraitants\\SousTraitantsController.cs",
-              "ViewState": "AgIAADABAAAAAAAAAAAnwFIBAAAQAAAAAAAAAA==",
+              "ViewState": "AgIAAJkBAAAAAAAAAAAAAJwBAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-30T11:43:27.021Z",
+              "WhenOpened": "2026-05-03T19:12:44.429Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "TresorerieController.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
               "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAAwB8AAAA7AAAAAAAAAA==",
+              "ViewState": "AgIAAE4DAAAAAAAAAAAuwAUEAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-29T12:33:42.805Z",
+              "WhenOpened": "2026-05-03T17:36:54.401Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "TresorerieService.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
+              "ViewState": "AgIAAKgDAAAAAAAAAAAqwMwDAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-03T17:32:57.338Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Compte.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\Compte.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\Compte.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\Compte.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\Compte.cs",
+              "ViewState": "AgIAADABAAAAAAAAAAA0wGEBAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-03T17:31:29.157Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ProjetsController.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Projets\\ProjetsController.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Projets\\ProjetsController.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Projets\\ProjetsController.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Projets\\ProjetsController.cs",
+              "ViewState": "AgIAANIAAAAAAAAAAAAAAOQAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-30T14:51:25.958Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ProjetService.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Projets\\ProjetService.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Projets\\ProjetService.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Projets\\ProjetService.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Projets\\ProjetService.cs",
+              "ViewState": "AgIAACkEAAAAAAAAAAAuwHoEAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-30T15:21:39.516Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Projet.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Projets\\Projet.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Projets\\Projet.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Projets\\Projet.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Projets\\Projet.cs",
+              "ViewState": "AgIAAFYBAAAAAAAAAIAxwGYBAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-30T15:16:30.465Z"
             }
           ]
         }

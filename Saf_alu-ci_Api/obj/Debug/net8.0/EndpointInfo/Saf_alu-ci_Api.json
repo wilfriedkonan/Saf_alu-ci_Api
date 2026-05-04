@@ -2815,6 +2815,141 @@
         }
       }
     },
+    "/api/Projets/etapes/{etapeId}/sous-traitants": {
+      "get": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "etapeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "etapeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignSousTraitantEtapeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignSousTraitantEtapeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignSousTraitantEtapeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "etapeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEtapeSousTraitantsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEtapeSousTraitantsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEtapeSousTraitantsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Projets/etapes/{etapeId}/sous-traitants/{sousTraitantId}": {
+      "delete": {
+        "tags": [
+          "Projets"
+        ],
+        "parameters": [
+          {
+            "name": "etapeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "sousTraitantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Projets/statistiques": {
       "get": {
         "tags": [
@@ -3913,6 +4048,52 @@
         }
       }
     },
+    "/api/Tresorerie/paiements-sous-traitants": {
+      "get": {
+        "tags": [
+          "Tresorerie"
+        ],
+        "parameters": [
+          {
+            "name": "sousTraitantId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "projetId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "dateDebut",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "dateFin",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/utilisateurs/inviter": {
       "post": {
         "tags": [
@@ -4223,6 +4404,43 @@
         "type": "object",
         "properties": {
           "motif": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AssignSousTraitantEtapeRequest": {
+        "type": "object",
+        "properties": {
+          "sousTraitantId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "montant": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "dateDebut": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "dateFinPrevue": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "statut": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
             "type": "string",
             "nullable": true
           }
@@ -4883,6 +5101,14 @@
           "idSousTraitant": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "sousTraitantIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
             "nullable": true
           },
           "linkedDqeLotId": {
@@ -6063,17 +6289,33 @@
             "format": "int32",
             "nullable": true
           },
-          "idSousTraitant": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
           "estActif": {
             "type": "boolean",
             "nullable": true
           },
           "typeResponsable": {
             "type": "string",
+            "nullable": true
+          },
+          "sousTraitantIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateEtapeSousTraitantsRequest": {
+        "type": "object",
+        "properties": {
+          "sousTraitants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignSousTraitantEtapeRequest"
+            },
             "nullable": true
           }
         },

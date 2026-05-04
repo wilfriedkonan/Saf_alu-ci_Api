@@ -198,7 +198,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public virtual Utilisateur? Responsable { get; set; }
         public List<MouvementFinancier>? DepenseProjet { get; set; }
 
-
+        public virtual List<EtapeSousTraitant>? SousTraitants { get; set; }
     }
 
     /// <summary>
@@ -251,6 +251,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public int? IdSousTraitant { get; set; }
         public ResponsableDTO? Responsable { get; set; }
         public SousTraitantDTO? SousTraitant { get; set; }
+        public List<SousTraitantEtapeDTO>? SousTraitants { get; set; }
 
         // Traçabilité DQE
         public int? LinkedDqeLotId { get; set; }
@@ -318,7 +319,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public int? ResponsableId { get; set; }
         public string TypeResponsable { get; set; } = "Interne";
         public int? IdSousTraitant { get; set; }
-
+        public List<int>? SousTraitantIds { get; set; }
         // Traçabilité DQE
         public int? LinkedDqeLotId { get; set; }
         public string? LinkedDqeLotCode { get; set; }
@@ -331,6 +332,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
 
         public string? Statut { get; set; }
         public bool EstActif { get; set; } = true;
+
     }
 
     /// <summary>
@@ -351,9 +353,10 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public DateTime? DateFinPrevue { get; set; }
         public DateTime? DateFinReelle { get; set; }
         public int? ResponsableId { get; set; }
-        public int? IdSousTraitant { get; set; }
+        //public int? IdSousTraitant { get; set; }
         public bool? EstActif { get; set; }
         public string? TypeResponsable { get; set; }
+        public List<int>? SousTraitantIds { get; set; }
     }
 
     // DTOs pour les entités liées
@@ -719,5 +722,68 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public decimal CoutTotal { get; set; }
         public decimal EcartBudgetTotal { get; set; }
         public decimal EcartBudgetPourcentage { get; set; }
+    }
+
+    /// <summary>
+    /// Enregistrement de la table de jonction EtapesSousTraitants
+    /// </summary>
+    public class EtapeSousTraitant
+    {
+        public int Id { get; set; }
+        public int EtapeProjetId { get; set; }
+        public int SousTraitantId { get; set; }
+        public string? Role { get; set; }
+        public decimal? Montant { get; set; }
+        public DateTime? DateDebut { get; set; }
+        public DateTime? DateFinPrevue { get; set; }
+        public string Statut { get; set; } = "EnAttente"; // EnAttente, EnCours, Termine
+        public string? Notes { get; set; }
+        public DateTime DateCreation { get; set; } = DateTime.UtcNow;
+        public DateTime DateModification { get; set; } = DateTime.UtcNow;
+
+        // Navigation
+        public virtual SousTraitant? SousTraitant { get; set; }
+    }
+
+    /// <summary>
+    /// DTO de lecture d'un sous-traitant lié à une étape
+    /// </summary>
+    public class SousTraitantEtapeDTO
+    {
+        public int Id { get; set; }           // Id dans EtapesSousTraitants
+        public int SousTraitantId { get; set; }
+        public string Nom { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? Telephone { get; set; }
+        public decimal NoteMoyenne { get; set; }
+        public string? Role { get; set; }
+        public decimal? Montant { get; set; }
+        public DateTime? DateDebut { get; set; }
+        public DateTime? DateFinPrevue { get; set; }
+        public string Statut { get; set; } = "EnAttente";
+        public string? Notes { get; set; }
+    }
+
+    /// <summary>
+    /// Request pour assigner/modifier un sous-traitant sur une étape
+    /// </summary>
+    public class AssignSousTraitantEtapeRequest
+    {
+        public int SousTraitantId { get; set; }
+        public string? Role { get; set; }
+        public decimal? Montant { get; set; }
+        public DateTime? DateDebut { get; set; }
+        public DateTime? DateFinPrevue { get; set; }
+        public string Statut { get; set; } = "EnAttente";
+        public string? Notes { get; set; }
+    }
+
+    /// <summary>
+    /// Request pour remplacer en bloc les sous-traitants d'une étape
+    /// </summary>
+    public class UpdateEtapeSousTraitantsRequest
+    {
+        /// <summary>Liste complète des sous-traitants à affecter (remplace l'existant)</summary>
+        public List<AssignSousTraitantEtapeRequest> SousTraitants { get; set; } = new();
     }
 }

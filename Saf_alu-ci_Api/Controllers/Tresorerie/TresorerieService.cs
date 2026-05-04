@@ -966,6 +966,149 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             return Convert.ToDecimal(result);
         }
 
+
+        public async Task<List<PaiementsSousTraitantDTO>> GetPaiementsSousTraitantsAsync(
+                int? sousTraitantId = null,
+                int? projetId = null,
+                DateTime? dateDebut = null,
+                DateTime? dateFin = null)
+        {
+            // Ligne de transport interne (non exposée dans les DTOs publics)
+            var rows = new List<(
+                int SousTraitantId,
+                string SousTraitantNom,
+                string? SousTraitantEmail,
+                string? SousTraitantTelephone,
+                int MouvementId,
+                string Libelle,
+                string? Description,
+                decimal Montant,
+                DateTime DateMouvement,
+                string? ModePaiement,
+                string? Reference,
+                string? Categorie,
+                int? EtapeProjetId,
+                string EtapeNom,
+                int? ProjetId,
+                string? ProjetNom,
+                string CompteNom
+            )>();
+
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            using var cmd = new SqlCommand(@"
+        SELECT
+            mf.Id           AS MouvementId,
+            mf.Libelle,
+            mf.Description,
+            mf.Montant,
+            mf.DateMouvement,
+            mf.ModePaiement,
+            mf.Reference,
+            mf.Categorie,
+            mf.EtapeProjetId,
+            mf.ProjetId,
+            st.Id           AS SousTraitantId,
+            st.Nom          AS SousTraitantNom,
+            st.Email        AS SousTraitantEmail,
+            st.Telephone    AS SousTraitantTelephone,
+            ISNULL(ep.Nom, 'Sans étape') AS EtapeNom,
+            p.Nom           AS ProjetNom,
+            c.Nom           AS CompteNom
+        FROM MouvementsFinanciers mf
+        INNER JOIN SousTraitants  st ON mf.SousTraitantId = st.Id
+        INNER JOIN Projets        p  ON mf.ProjetId       = p.Id  AND p.Actif = 1
+        LEFT  JOIN EtapesProjets  ep ON mf.EtapeProjetId  = ep.Id AND ep.EstActif = 1
+        INNER JOIN Comptes        c  ON mf.CompteId       = c.Id  AND c.Actif = 1
+        WHERE mf.TypeMouvement = 'Sortie'
+          AND mf.Actif = 1
+          AND (@SousTraitantId IS NULL OR mf.SousTraitantId = @SousTraitantId)
+          AND (@ProjetId       IS NULL OR mf.ProjetId       = @ProjetId)
+          AND (@DateDebut      IS NULL OR mf.DateMouvement >= @DateDebut)
+          AND (@DateFin        IS NULL OR mf.DateMouvement <= @DateFin)
+        ORDER BY st.Nom, ep.Nom, mf.DateMouvement DESC", conn);
+
+            cmd.Parameters.AddWithValue("@SousTraitantId", sousTraitantId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ProjetId", projetId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@DateDebut", dateDebut ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@DateFin", dateFin ?? (object)DBNull.Value);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                rows.Add((
+                    SousTraitantId: reader.GetInt32("SousTraitantId"),
+                    SousTraitantNom: reader.GetString("SousTraitantNom"),
+                    SousTraitantEmail: reader.IsDBNull("SousTraitantEmail") ? null : reader.GetString("SousTraitantEmail"),
+                    SousTraitantTelephone: reader.IsDBNull("SousTraitantTelephone") ? null : reader.GetString("SousTraitantTelephone"),
+                    MouvementId: reader.GetInt32("MouvementId"),
+                    Libelle: reader.GetString("Libelle"),
+                    Description: reader.IsDBNull("Description") ? null : reader.GetString("Description"),
+                    Montant: reader.GetDecimal("Montant"),
+                    DateMouvement: reader.GetDateTime("DateMouvement"),
+                    ModePaiement: reader.IsDBNull("ModePaiement") ? null : reader.GetString("ModePaiement"),
+                    Reference: reader.IsDBNull("Reference") ? null : reader.GetString("Reference"),
+                    Categorie: reader.IsDBNull("Categorie") ? null : reader.GetString("Categorie"),
+                    EtapeProjetId: reader.IsDBNull("EtapeProjetId") ? (int?)null : reader.GetInt32("EtapeProjetId"),
+                    EtapeNom: reader.GetString("EtapeNom"),
+                    ProjetId: reader.IsDBNull("ProjetId") ? (int?)null : reader.GetInt32("ProjetId"),
+                    ProjetNom: reader.IsDBNull("ProjetNom") ? null : reader.GetString("ProjetNom"),
+                    CompteNom: reader.GetString("CompteNom")
+                ));
+            }
+
+            // ── Groupement en mémoire : ST → Étapes → Paiements ───────────────
+
+            var result = rows
+                .GroupBy(r => new { r.SousTraitantId, r.SousTraitantNom, r.SousTraitantEmail, r.SousTraitantTelephone })
+                .Select(stGroup => new PaiementsSousTraitantDTO
+                {
+                    SousTraitantId = stGroup.Key.SousTraitantId,
+                    SousTraitantNom = stGroup.Key.SousTraitantNom,
+                    SousTraitantEmail = stGroup.Key.SousTraitantEmail,
+                    SousTraitantTelephone = stGroup.Key.SousTraitantTelephone,
+                    TotalPaye = stGroup.Sum(r => r.Montant),
+                    NombrePaiements = stGroup.Count(),
+                    DateDernierPaiement = stGroup.Max(r => r.DateMouvement),
+
+                    PaiementsParEtape = stGroup
+                        .GroupBy(r => new { r.EtapeProjetId, r.EtapeNom, r.ProjetId, r.ProjetNom })
+                        .Select(etapeGroup => new PaiementsParEtapeDTO
+                        {
+                            EtapeId = etapeGroup.Key.EtapeProjetId,
+                            EtapeNom = etapeGroup.Key.EtapeNom,
+                            ProjetId = etapeGroup.Key.ProjetId,
+                            ProjetNom = etapeGroup.Key.ProjetNom,
+                            TotalPaye = etapeGroup.Sum(r => r.Montant),
+                            NombrePaiements = etapeGroup.Count(),
+                            DateDernierPaiement = etapeGroup.Max(r => r.DateMouvement),
+
+                            Paiements = etapeGroup.Select(r => new DetailPaiementSousTraitantDTO
+                            {
+                                Id = r.MouvementId,
+                                Libelle = r.Libelle,
+                                Description = r.Description,
+                                Montant = r.Montant,
+                                DateMouvement = r.DateMouvement,
+                                ModePaiement = r.ModePaiement,
+                                Reference = r.Reference,
+                                Categorie = r.Categorie,
+                                EtapeProjetId = r.EtapeProjetId,
+                                EtapeNom = r.EtapeNom,
+                                ProjetId = r.ProjetId,
+                                ProjetNom = r.ProjetNom,
+                                CompteNom = r.CompteNom
+                            }).ToList()
+                        })
+                        .OrderBy(e => e.EtapeNom)
+                        .ToList()
+                })
+                .OrderBy(st => st.SousTraitantNom)
+                .ToList();
+
+            return result;
+        }
         private async Task<TresorerieIndicateurs> GetIndicateursAsync(SqlConnection conn)
         {
             var indicateurs = new TresorerieIndicateurs();

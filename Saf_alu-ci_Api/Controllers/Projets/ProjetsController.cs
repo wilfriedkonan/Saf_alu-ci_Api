@@ -678,6 +678,143 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             if (projet.PourcentageAvancement < 100) return "EnCours";
             return "Terminé";
         }
+
+        // ============================================================
+        // SOUS-TRAITANTS D'UNE ÉTAPE
+        // ============================================================
+
+        /// <summary>
+        /// GET /api/projets/etapes/{etapeId}/sous-traitants
+        /// Liste les sous-traitants affectés à une étape
+        /// </summary>
+        [HttpGet("etapes/{etapeId}/sous-traitants")]
+        public async Task<IActionResult> GetSousTraitantsEtape(int etapeId)
+        {
+            try
+            {
+                var liste = await _projetService.GetSousTraitantsByEtapeAsync(etapeId);
+
+                var result = liste.Select(x => new SousTraitantEtapeDTO
+                {
+                    Id = x.Id,
+                    SousTraitantId = x.SousTraitantId,
+                    Nom = x.SousTraitant?.Nom ?? string.Empty,
+                    Email = x.SousTraitant?.Email,
+                    Telephone = x.SousTraitant?.Telephone,
+                    NoteMoyenne = x.SousTraitant?.NoteMoyenne ?? 0,
+                    Role = x.Role,
+                    Montant = x.Montant,
+                    DateDebut = x.DateDebut,
+                    DateFinPrevue = x.DateFinPrevue,
+                    Statut = x.Statut,
+                    Notes = x.Notes
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// POST /api/projets/etapes/{etapeId}/sous-traitants
+        /// Assigne (ou met à jour) un sous-traitant sur une étape
+        /// </summary>
+        [HttpPost("etapes/{etapeId}/sous-traitants")]
+        public async Task<IActionResult> AssignSousTraitantEtape(
+            int etapeId, [FromBody] AssignSousTraitantEtapeRequest request)
+        {
+            try
+            {
+                if (request.SousTraitantId <= 0)
+                    return BadRequest("SousTraitantId invalide");
+
+                var result = await _projetService.AssignSousTraitantToEtapeAsync(etapeId, request);
+
+                return Ok(new SousTraitantEtapeDTO
+                {
+                    Id = result.Id,
+                    SousTraitantId = result.SousTraitantId,
+                    Nom = result.SousTraitant?.Nom ?? string.Empty,
+                    Email = result.SousTraitant?.Email,
+                    Telephone = result.SousTraitant?.Telephone,
+                    NoteMoyenne = result.SousTraitant?.NoteMoyenne ?? 0,
+                    Role = result.Role,
+                    Montant = result.Montant,
+                    DateDebut = result.DateDebut,
+                    DateFinPrevue = result.DateFinPrevue,
+                    Statut = result.Statut,
+                    Notes = result.Notes
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// PUT /api/projets/etapes/{etapeId}/sous-traitants
+        /// Remplace en bloc tous les sous-traitants d'une étape
+        /// </summary>
+        [HttpPut("etapes/{etapeId}/sous-traitants")]
+        public async Task<IActionResult> UpdateSousTraitantsEtape(
+            int etapeId, [FromBody] UpdateEtapeSousTraitantsRequest request)
+        {
+            try
+            {
+                await _projetService.UpdateEtapeSousTraitantsAsync(etapeId, request);
+
+                var liste = await _projetService.GetSousTraitantsByEtapeAsync(etapeId);
+
+                var result = liste.Select(x => new SousTraitantEtapeDTO
+                {
+                    Id = x.Id,
+                    SousTraitantId = x.SousTraitantId,
+                    Nom = x.SousTraitant?.Nom ?? string.Empty,
+                    Email = x.SousTraitant?.Email,
+                    Telephone = x.SousTraitant?.Telephone,
+                    NoteMoyenne = x.SousTraitant?.NoteMoyenne ?? 0,
+                    Role = x.Role,
+                    Montant = x.Montant,
+                    DateDebut = x.DateDebut,
+                    DateFinPrevue = x.DateFinPrevue,
+                    Statut = x.Statut,
+                    Notes = x.Notes
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// DELETE /api/projets/etapes/{etapeId}/sous-traitants/{sousTraitantId}
+        /// Retire un sous-traitant d'une étape
+        /// </summary>
+        [HttpDelete("etapes/{etapeId}/sous-traitants/{sousTraitantId}")]
+        public async Task<IActionResult> RemoveSousTraitantEtape(int etapeId, int sousTraitantId)
+        {
+            try
+            {
+                var deleted = await _projetService.RemoveSousTraitantFromEtapeAsync(etapeId, sousTraitantId);
+
+                if (!deleted)
+                    return NotFound("Association sous-traitant / étape introuvable");
+
+                return Ok(new { message = "Sous-traitant retiré de l'étape avec succès" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erreur serveur : {ex.Message}");
+            }
+        }
+
         [HttpGet("statistiques")]
         public async Task<IActionResult> GetStatistiques()
         {

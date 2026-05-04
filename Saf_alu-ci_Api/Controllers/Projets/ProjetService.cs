@@ -426,20 +426,42 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 throw;
             }
         }
-        private async Task UpdateEtapesAsync(SqlConnection conn, SqlTransaction transaction, int projetId, List<UpdateEtapeProjetRequest> etapes)
+        private async Task UpdateEtapesAsync(
+            SqlConnection conn, SqlTransaction transaction,
+            int projetId, List<UpdateEtapeProjetRequest> etapes)
         {
             foreach (var etape in etapes)
             {
+                // ============================================
+                // Résoudre IdSousTraitant et TypeResponsable
+                // en priorité depuis SousTraitantIds (nouveau)
+                // puis depuis IdSousTraitant (legacy)
+                // ============================================
+                int? idSousTraitantResolu = null;
+                string typeResponsableResolu = "Interne";
+
+                if (etape.SousTraitantIds != null && etape.SousTraitantIds.Any())
+                {
+                    // Nouveau champ multi-ST : le premier devient le "principal"
+                    idSousTraitantResolu = etape.SousTraitantIds[0];
+                    typeResponsableResolu = "SousTraitant";
+                }
+                //else if (etape.IdSousTraitant.HasValue)
+                //{
+                //    // Rétrocompatibilité : un seul ST envoyé
+                //    idSousTraitantResolu = etape.IdSousTraitant.Value;
+                //    typeResponsableResolu = "SousTraitant";
+                //}
+                // sinon : Interne, idSousTraitantResolu reste null
+
                 if (etape.Id.HasValue)
                 {
-                    // ========================================
+                    // ============================================
                     // MISE À JOUR D'UNE ÉTAPE EXISTANTE
-                    // ========================================
+                    // ============================================
 
                     var setClause = new List<string>();
                     var cmd = new SqlCommand { Connection = conn, Transaction = transaction };
-
-                    // ✅ CORRECTION: Mettre à jour les autres champs SEULEMENT si l'étape est active
 
                     if (etape.EstActif != false)
                     {
@@ -498,37 +520,39 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                         }
                     }
 
-                    // ✅ CORRECTION: Gestion correcte du soft delete via estActif
+                    // Soft delete
                     if (etape.EstActif == false)
                     {
-                        setClause.Add("estActif = @estActif");
-                        cmd.Parameters.AddWithValue("@estActif", etape.EstActif);
+                        setClause.Add("EstActif = @EstActif");
+                        cmd.Parameters.AddWithValue("@EstActif", false);
                     }
 
-                    // ✅ MISE À JOUR DE IdSousTraitant
-                    if (etape.IdSousTraitant.HasValue)
+                    // 🆕 IdSousTraitant résolu + TypeResponsable
+                    // On l'applique seulement si SousTraitantIds OU IdSousTraitant a été fourni
+                    // (null explicite = pas de champ envoyé → on ne touche pas à la colonne legacy)
+                    if (etape.SousTraitantIds != null)
                     {
                         setClause.Add("IdSousTraitant = @IdSousTraitant");
-                        cmd.Parameters.AddWithValue("@IdSousTraitant", etape.IdSousTraitant.Value);
+                        cmd.Parameters.AddWithValue(
+                            "@IdSousTraitant",
+                            idSousTraitantResolu.HasValue ? (object)idSousTraitantResolu.Value : DBNull.Value);
 
-                        // Si un sous-traitant est assigné, changer TypeResponsable
-                        setClause.Add("TypeResponsable = @TypeResponsable");
-                        cmd.Parameters.AddWithValue("@TypeResponsable", "SousTraitant");
+                        // Ne pas écraser TypeResponsable si déjà ajouté via etape.TypeResponsable
+                        if (!setClause.Contains("TypeResponsable = @TypeResponsable"))
+                        {
+                            setClause.Add("TypeResponsable = @TypeResponsable");
+                            cmd.Parameters.AddWithValue("@TypeResponsable", typeResponsableResolu);
+                        }
                     }
-                    else
-                    {
-                        // Pas de sous-traitant, remettre à Interne
-                        setClause.Add("IdSousTraitant = @IdSousTraitant");
-                        cmd.Parameters.AddWithValue("@IdSousTraitant", DBNull.Value);
 
-                        setClause.Add("TypeResponsable = @TypeResponsable");
-                        cmd.Parameters.AddWithValue("@TypeResponsable", "Interne");
-                    }
+                    // Toujours mettre à jour DateModification
+                    setClause.Add("DateModification = @DateModification");
+                    cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
 
                     if (setClause.Any())
                     {
                         cmd.CommandText = $@"
-                    UPDATE EtapesProjets 
+                    UPDATE EtapesProjets
                     SET {string.Join(", ", setClause)}
                     WHERE Id = @EtapeId AND ProjetId = @ProjetId";
 
@@ -537,25 +561,35 @@ namespace Saf_alu_ci_Api.Controllers.Projets
 
                         await cmd.ExecuteNonQueryAsync();
                     }
+
+                    // 🆕 Synchroniser EtapesSousTraitants si SousTraitantIds est fourni
+                    if (etape.SousTraitantIds != null)
+                    {
+                        await SyncEtapeSousTraitantsAsync(conn, transaction, etape.Id.Value, etape.SousTraitantIds);
+                    }
                 }
                 else
                 {
-                    // ========================================
+                    // ============================================
                     // CRÉATION D'UNE NOUVELLE ÉTAPE
-                    // ========================================
+                    // ============================================
 
                     var cmd = new SqlCommand(@"
                 INSERT INTO EtapesProjets (
-                    ProjetId, Nom, Description, DateDebut, DateFinPrevue, 
-                    BudgetPrevu, CoutReel, Statut, ResponsableId, TypeResponsable, 
-                    Ordre, PourcentageAvancement, EstActif
+                    ProjetId, Nom, Description, DateDebut, DateFinPrevue,
+                    BudgetPrevu, CoutReel, Statut, ResponsableId, TypeResponsable,
+                    IdSousTraitant, Ordre, PourcentageAvancement, EstActif,
+                    DateCreation, DateModification
                 )
                 VALUES (
-                    @ProjetId, @Nom, @Description, @DateDebut, @DateFinPrevue, 
-                    @BudgetPrevu, @CoutReel, @Statut, @ResponsableId, @TypeResponsable, 
-                    (SELECT ISNULL(MAX(Ordre), 0) + 1 FROM EtapesProjets WHERE ProjetId = @ProjetId), 
-                    0, @EstActif
-                )",
+                    @ProjetId, @Nom, @Description, @DateDebut, @DateFinPrevue,
+                    @BudgetPrevu, @CoutReel, @Statut, @ResponsableId, @TypeResponsable,
+                    @IdSousTraitant,
+                    (SELECT ISNULL(MAX(Ordre), 0) + 1 FROM EtapesProjets WHERE ProjetId = @ProjetId),
+                    0, @EstActif,
+                    @DateCreation, @DateModification
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS INT)",
                         conn, transaction);
 
                     cmd.Parameters.AddWithValue("@ProjetId", projetId);
@@ -567,12 +601,55 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     cmd.Parameters.AddWithValue("@CoutReel", etape.CoutReel ?? 0);
                     cmd.Parameters.AddWithValue("@Statut", etape.Statut ?? "NonCommence");
                     cmd.Parameters.AddWithValue("@ResponsableId", etape.ResponsableId ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@TypeResponsable", etape.IdSousTraitant.HasValue ? "SousTraitant" : "Interne");
-                    cmd.Parameters.AddWithValue("@EstActif", etape.EstActif);
-                    cmd.Parameters.AddWithValue("@IdSousTraitant", etape.IdSousTraitant ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@TypeResponsable", typeResponsableResolu);
+                    cmd.Parameters.AddWithValue("@IdSousTraitant",
+                        idSousTraitantResolu.HasValue ? (object)idSousTraitantResolu.Value : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@EstActif", etape.EstActif ?? true);
+                    cmd.Parameters.AddWithValue("@DateCreation", DateTime.UtcNow);
+                    cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
 
-                    await cmd.ExecuteNonQueryAsync();
+                    // 🆕 Récupérer l'Id de la nouvelle étape (nécessaire pour la table junction)
+                    var newEtapeId = (int)await cmd.ExecuteScalarAsync();
+
+                    // 🆕 Insérer les sous-traitants dans EtapesSousTraitants
+                    if (etape.SousTraitantIds != null && etape.SousTraitantIds.Any())
+                    {
+                        await SyncEtapeSousTraitantsAsync(conn, transaction, newEtapeId, etape.SousTraitantIds);
+                    }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Remplace en bloc les sous-traitants d'une étape dans EtapesSousTraitants.
+        /// Appelée à chaque mise à jour ou création d'une étape portant une liste SousTraitantIds.
+        /// </summary>
+        private async Task SyncEtapeSousTraitantsAsync(
+            SqlConnection conn, SqlTransaction transaction,
+            int etapeId, List<int> sousTraitantIds)
+        {
+            // 1. Supprimer les anciennes liaisons
+            using (var deleteCmd = new SqlCommand(
+                "DELETE FROM EtapesSousTraitants WHERE EtapeProjetId = @EtapeId",
+                conn, transaction))
+            {
+                deleteCmd.Parameters.AddWithValue("@EtapeId", etapeId);
+                await deleteCmd.ExecuteNonQueryAsync();
+            }
+
+            // 2. Insérer la nouvelle liste (en ignorant les doublons éventuels)
+            foreach (var stId in sousTraitantIds.Distinct())
+            {
+                using var insertCmd = new SqlCommand(@"
+            INSERT INTO EtapesSousTraitants (EtapeProjetId, SousTraitantId, Statut, DateCreation, DateModification)
+            VALUES (@EtapeId, @SousTraitantId, 'EnAttente', @Now, @Now)",
+                    conn, transaction);
+
+                insertCmd.Parameters.AddWithValue("@EtapeId", etapeId);
+                insertCmd.Parameters.AddWithValue("@SousTraitantId", stId);
+                insertCmd.Parameters.AddWithValue("@Now", DateTime.UtcNow);
+
+                await insertCmd.ExecuteNonQueryAsync();
             }
         }
         private async Task<Projet?> GetByIdForUpdateAsync(SqlConnection conn, SqlTransaction transaction, int id)
@@ -886,13 +963,15 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         {
             for (int i = 0; i < etapes.Count; i++)
             {
+                // --- Insertion étape (inchangé) ---
                 using var cmd = new SqlCommand(@"
-                    INSERT INTO EtapesProjets (ProjetId, Nom, Description, Ordre, DateDebut, DateFinPrevue, Statut,
-                                             PourcentageAvancement, BudgetPrevu, CoutReel, ResponsableId, TypeResponsable,
-                                             LinkedDqeLotId, LinkedDqeLotCode, LinkedDqeLotName, LinkedDqeReference,IdSousTraitant)
-                    VALUES (@ProjetId, @Nom, @Description, @Ordre, @DateDebut, @DateFinPrevue, @Statut,
-                           @PourcentageAvancement, @BudgetPrevu, @CoutReel, @ResponsableId, @TypeResponsable,
-                           @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName, @LinkedDqeReference,@IdSousTraitant)", conn, transaction);
+            INSERT INTO EtapesProjets (ProjetId, Nom, Description, Ordre, DateDebut, DateFinPrevue, Statut,
+                                     PourcentageAvancement, BudgetPrevu, CoutReel, ResponsableId, TypeResponsable,
+                                     LinkedDqeLotId, LinkedDqeLotCode, LinkedDqeLotName, LinkedDqeReference, IdSousTraitant)
+            VALUES (@ProjetId, @Nom, @Description, @Ordre, @DateDebut, @DateFinPrevue, @Statut,
+                   @PourcentageAvancement, @BudgetPrevu, @CoutReel, @ResponsableId, @TypeResponsable,
+                   @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName, @LinkedDqeReference, @IdSousTraitant);
+            SELECT CAST(SCOPE_IDENTITY() AS INT)", conn, transaction);
 
                 cmd.Parameters.AddWithValue("@ProjetId", projetId);
                 cmd.Parameters.AddWithValue("@Nom", etapes[i].Nom);
@@ -907,39 +986,43 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 cmd.Parameters.AddWithValue("@ResponsableId", etapes[i].ResponsableId ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@TypeResponsable", etapes[i].TypeResponsable);
                 cmd.Parameters.AddWithValue("@IdSousTraitant", etapes[i].IdSousTraitant ?? (object)DBNull.Value);
-
-                // NOUVEAUX PARAMÈTRES LOT DQE
                 cmd.Parameters.AddWithValue("@LinkedDqeLotId", etapes[i].LinkedDqeLotId ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@LinkedDqeLotCode", etapes[i].LinkedDqeLotCode ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@LinkedDqeLotName", etapes[i].LinkedDqeLotName ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@LinkedDqeReference", etapes[i].LinkedDqeReference ?? (object)DBNull.Value);
 
-                await cmd.ExecuteNonQueryAsync();
+                // Récupérer l'Id généré (nécessaire pour insérer les sous-traitants)
+                var newEtapeId = (int)await cmd.ExecuteScalarAsync();
+
+                // 🆕 Insérer les sous-traitants associés
+                if (etapes[i].SousTraitants != null && etapes[i].SousTraitants!.Any())
+                {
+                    await InsertEtapeSousTraitantsAsync(conn, transaction, newEtapeId, etapes[i].SousTraitants!);
+                }
             }
         }
-
         private async Task<List<EtapeProjet>> GetEtapesProjetAsync(SqlConnection conn, int projetId)
         {
             var etapes = new List<EtapeProjet>();
 
+            // 1️⃣ Charger les étapes
             using var cmd = new SqlCommand(@"
         SELECT ep.*, 
-               u.Prenom as ResponsablePrenom, 
-               u.Nom as ResponsableNom,
-               st.Id as SousTraitantId,
-               st.Nom as SousTraitantNom,
-               st.Email as SousTraitantEmail,
-               st.Telephone as SousTraitantTelephone,
-               st.NoteMoyenne as SousTraitantNote
+               u.Prenom  AS ResponsablePrenom, 
+               u.Nom     AS ResponsableNom,
+               st.Id     AS SousTraitantId,
+               st.Nom    AS SousTraitantNom,
+               st.Email  AS SousTraitantEmail,
+               st.Telephone AS SousTraitantTelephone,
+               st.NoteMoyenne AS SousTraitantNote
         FROM EtapesProjets ep
-        LEFT JOIN Utilisateurs u ON ep.ResponsableId = u.Id AND ep.TypeResponsable = 'Interne'
+        LEFT JOIN Utilisateurs u  ON ep.ResponsableId  = u.Id  AND ep.TypeResponsable = 'Interne'
         LEFT JOIN SousTraitants st ON ep.IdSousTraitant = st.Id
-        WHERE ep.ProjetId = @ProjetId And ep.EstActif=1
-        ORDER BY ep.Id", conn);
+        WHERE ep.ProjetId = @ProjetId AND ep.EstActif = 1
+        ORDER BY ep.Ordre, ep.Id", conn);
 
             cmd.Parameters.AddWithValue("@ProjetId", projetId);
 
-            // 1️⃣ Lire toutes les étapes
             using (var reader = await cmd.ExecuteReaderAsync())
             {
                 while (await reader.ReadAsync())
@@ -952,6 +1035,8 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                         Description = reader.IsDBNull("Description") ? null : reader.GetString("Description"),
                         Ordre = reader.GetInt32("Ordre"),
                         Niveau = reader.IsDBNull("Niveau") ? 0 : reader.GetInt32("Niveau"),
+                        TypeEtape = reader.IsDBNull("TypeEtape") ? "Lot" : reader.GetString("TypeEtape"),
+                        EtapeParentId = reader.IsDBNull("EtapeParentId") ? null : reader.GetInt32("EtapeParentId"),
                         DateDebut = reader.IsDBNull("DateDebut") ? null : reader.GetDateTime("DateDebut"),
                         DateFinPrevue = reader.IsDBNull("DateFinPrevue") ? null : reader.GetDateTime("DateFinPrevue"),
                         DateFinReelle = reader.IsDBNull("DateFinReelle") ? null : reader.GetDateTime("DateFinReelle"),
@@ -967,9 +1052,12 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                         LinkedDqeLotId = reader.IsDBNull("LinkedDqeLotId") ? null : reader.GetInt32("LinkedDqeLotId"),
                         LinkedDqeLotCode = reader.IsDBNull("LinkedDqeLotCode") ? null : reader.GetString("LinkedDqeLotCode"),
                         LinkedDqeLotName = reader.IsDBNull("LinkedDqeLotName") ? null : reader.GetString("LinkedDqeLotName"),
-                        LinkedDqeReference = reader.IsDBNull("LinkedDqeReference") ? null : reader.GetString("LinkedDqeReference")
+                        LinkedDqeReference = reader.IsDBNull("LinkedDqeReference") ? null : reader.GetString("LinkedDqeReference"),
+                        // Initialiser la liste (sera remplie après)
+                        SousTraitants = new List<EtapeSousTraitant>()
                     };
 
+                    // Navigation legacy (IdSousTraitant)
                     if (!reader.IsDBNull("SousTraitantId"))
                     {
                         etape.SousTraitant = new SousTraitant
@@ -981,22 +1069,63 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                             NoteMoyenne = reader.IsDBNull("SousTraitantNote") ? 0 : reader.GetDecimal("SousTraitantNote")
                         };
                     }
-                    // ajout calcule depense 
-
-                    if (etape.Depense > 0)
-                    {
-                        Console.WriteLine("Ici");
-                    }
 
                     etapes.Add(etape);
                 }
             }
 
-            // 2️⃣ Maintenant que le reader est fermé → calculer les dépenses
+            // 2️⃣ Charger TOUS les sous-traitants liés en une seule requête (évite N+1)
+            if (etapes.Any())
+            {
+                var etapeIds = string.Join(",", etapes.Select(e => e.Id));
+                using var stCmd = new SqlCommand($@"
+            SELECT est.Id, est.EtapeProjetId, est.SousTraitantId,
+                   est.Role, est.Montant, est.DateDebut, est.DateFinPrevue,
+                   est.Statut, est.Notes,
+                   st.Nom    AS StNom,
+                   st.Email  AS StEmail,
+                   st.Telephone AS StTelephone,
+                   st.NoteMoyenne AS StNote
+            FROM EtapesSousTraitants est
+            INNER JOIN SousTraitants st ON est.SousTraitantId = st.Id
+            WHERE est.EtapeProjetId IN ({etapeIds})
+            ORDER BY est.EtapeProjetId, est.Id", conn);
+
+                var etapeDict = etapes.ToDictionary(e => e.Id);
+
+                using var stReader = await stCmd.ExecuteReaderAsync();
+                while (await stReader.ReadAsync())
+                {
+                    var etapeId = stReader.GetInt32("EtapeProjetId");
+                    if (!etapeDict.TryGetValue(etapeId, out var etape)) continue;
+
+                    etape.SousTraitants!.Add(new EtapeSousTraitant
+                    {
+                        Id = stReader.GetInt32("Id"),
+                        EtapeProjetId = etapeId,
+                        SousTraitantId = stReader.GetInt32("SousTraitantId"),
+                        Role = stReader.IsDBNull("Role") ? null : stReader.GetString("Role"),
+                        Montant = stReader.IsDBNull("Montant") ? null : stReader.GetDecimal("Montant"),
+                        DateDebut = stReader.IsDBNull("DateDebut") ? null : stReader.GetDateTime("DateDebut"),
+                        DateFinPrevue = stReader.IsDBNull("DateFinPrevue") ? null : stReader.GetDateTime("DateFinPrevue"),
+                        Statut = stReader.GetString("Statut"),
+                        Notes = stReader.IsDBNull("Notes") ? null : stReader.GetString("Notes"),
+                        SousTraitant = new SousTraitant
+                        {
+                            Id = stReader.GetInt32("SousTraitantId"),
+                            Nom = stReader.GetString("StNom"),
+                            Email = stReader.IsDBNull("StEmail") ? null : stReader.GetString("StEmail"),
+                            Telephone = stReader.IsDBNull("StTelephone") ? null : stReader.GetString("StTelephone"),
+                            NoteMoyenne = stReader.IsDBNull("StNote") ? 0 : stReader.GetDecimal("StNote")
+                        }
+                    });
+                }
+            }
+
+            // 3️⃣ Recalculer les dépenses depuis MouvementsFinanciers
             foreach (var etape in etapes)
             {
                 etape.Depense = await GetTotalSortiesByEtapeAsync(conn, etape.Id);
-
             }
 
             return etapes;
@@ -1198,9 +1327,9 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         /// Ajoute les étapes d'un DQE à un projet existant
         /// </summary>
         public async Task<bool> AddDQEStagesToExistingProjectAsync(
-     int projetId,
-     List<EtapeProjet> nouvellesEtapes,
-     decimal budgetDQE)
+         int projetId,
+         List<EtapeProjet> nouvellesEtapes,
+         decimal budgetDQE)
         {
             using var conn = new SqlConnection(_connectionString);
             await conn.OpenAsync();
@@ -1211,9 +1340,9 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 // 1. Récupérer le nombre d'étapes existantes pour ajuster l'ordre
                 int ordreMax = 0;
                 using (var cmd = new SqlCommand(@"
-            SELECT ISNULL(MAX(Ordre), 0) 
-            FROM EtapesProjets 
-            WHERE ProjetId = @ProjetId", conn, transaction))
+                SELECT ISNULL(MAX(Ordre), 0) 
+                FROM EtapesProjets 
+                WHERE ProjetId = @ProjetId", conn, transaction))
                 {
                     cmd.Parameters.AddWithValue("@ProjetId", projetId);
                     ordreMax = (int)await cmd.ExecuteScalarAsync();
@@ -1226,33 +1355,33 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     etape.Ordre = ordreMax;
 
                     using var cmd = new SqlCommand(@"
-                INSERT INTO EtapesProjets (
-                    ProjetId, Nom, Description, Ordre,
-                    EtapeParentId, Niveau, TypeEtape,
-                    DateDebut, DateFinPrevue,
-                    Statut, PourcentageAvancement,
-                    BudgetPrevu, CoutReel, Depense,
-                    Unite, QuantitePrevue, PrixUnitairePrevu,
-                    ResponsableId, TypeResponsable, IdSousTraitant,
-                    LinkedDqeLotId, LinkedDqeLotCode, LinkedDqeLotName,
-                    LinkedDqeItemId, LinkedDqeItemCode,
-                    LinkedDqeChapterId, LinkedDqeChapterCode,
-                    LinkedDqeReference,
-                    EstActif, DateCreation, DateModification
-                ) VALUES (
-                    @ProjetId, @Nom, @Description, @Ordre,
-                    @EtapeParentId, @Niveau, @TypeEtape,
-                    @DateDebut, @DateFinPrevue,
-                    @Statut, @PourcentageAvancement,
-                    @BudgetPrevu, @CoutReel, @Depense,
-                    @Unite, @QuantitePrevue, @PrixUnitairePrevu,
-                    @ResponsableId, @TypeResponsable, @IdSousTraitant,
-                    @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName,
-                    @LinkedDqeItemId, @LinkedDqeItemCode,
-                    @LinkedDqeChapterId, @LinkedDqeChapterCode,
-                    @LinkedDqeReference,
-                    @EstActif, @DateCreation, @DateModification
-                )", conn, transaction);
+                    INSERT INTO EtapesProjets (
+                        ProjetId, Nom, Description, Ordre,
+                        EtapeParentId, Niveau, TypeEtape,
+                        DateDebut, DateFinPrevue,
+                        Statut, PourcentageAvancement,
+                        BudgetPrevu, CoutReel, Depense,
+                        Unite, QuantitePrevue, PrixUnitairePrevu,
+                        ResponsableId, TypeResponsable, IdSousTraitant,
+                        LinkedDqeLotId, LinkedDqeLotCode, LinkedDqeLotName,
+                        LinkedDqeItemId, LinkedDqeItemCode,
+                        LinkedDqeChapterId, LinkedDqeChapterCode,
+                        LinkedDqeReference,
+                        EstActif, DateCreation, DateModification
+                    ) VALUES (
+                        @ProjetId, @Nom, @Description, @Ordre,
+                        @EtapeParentId, @Niveau, @TypeEtape,
+                        @DateDebut, @DateFinPrevue,
+                        @Statut, @PourcentageAvancement,
+                        @BudgetPrevu, @CoutReel, @Depense,
+                        @Unite, @QuantitePrevue, @PrixUnitairePrevu,
+                        @ResponsableId, @TypeResponsable, @IdSousTraitant,
+                        @LinkedDqeLotId, @LinkedDqeLotCode, @LinkedDqeLotName,
+                        @LinkedDqeItemId, @LinkedDqeItemCode,
+                        @LinkedDqeChapterId, @LinkedDqeChapterCode,
+                        @LinkedDqeReference,
+                        @EstActif, @DateCreation, @DateModification
+                    )", conn, transaction);
 
                     // Paramètres obligatoires
                     cmd.Parameters.AddWithValue("@ProjetId", projetId);
@@ -1314,10 +1443,10 @@ namespace Saf_alu_ci_Api.Controllers.Projets
 
                 // 3. Mettre à jour le budget du projet
                 using (var cmd = new SqlCommand(@"
-            UPDATE Projets 
-            SET BudgetRevise = BudgetRevise + @BudgetDQE,
-                DateModification = @DateModification
-            WHERE Id = @ProjetId", conn, transaction))
+                UPDATE Projets 
+                SET BudgetRevise = BudgetRevise + @BudgetDQE,
+                    DateModification = @DateModification
+                WHERE Id = @ProjetId", conn, transaction))
                 {
                     cmd.Parameters.AddWithValue("@ProjetId", projetId);
                     cmd.Parameters.AddWithValue("@BudgetDQE", budgetDQE);
@@ -1335,6 +1464,189 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 throw new Exception($"Erreur lors de l'ajout des étapes DQE au projet: {ex.Message}", ex);
             }
         }
+        // ============================================================
+        // GESTION DES SOUS-TRAITANTS D'UNE ÉTAPE
+        // ============================================================
 
+        /// <summary>
+        /// Récupère les sous-traitants affectés à une étape
+        /// </summary>
+        public async Task<List<EtapeSousTraitant>> GetSousTraitantsByEtapeAsync(int etapeId)
+        {
+            var liste = new List<EtapeSousTraitant>();
+
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+        SELECT est.*, 
+               st.Nom AS StNom, st.Email AS StEmail,
+               st.Telephone AS StTelephone, st.NoteMoyenne AS StNote
+        FROM EtapesSousTraitants est
+        INNER JOIN SousTraitants st ON est.SousTraitantId = st.Id
+        WHERE est.EtapeProjetId = @EtapeId
+        ORDER BY est.Id", conn);
+
+            cmd.Parameters.AddWithValue("@EtapeId", etapeId);
+            await conn.OpenAsync();
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                liste.Add(MapToEtapeSousTraitant(reader));
+            }
+
+            return liste;
+        }
+
+        /// <summary>
+        /// Assigne un sous-traitant à une étape (ou met à jour si déjà assigné)
+        /// </summary>
+        public async Task<EtapeSousTraitant> AssignSousTraitantToEtapeAsync(int etapeId, AssignSousTraitantEtapeRequest request)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            // MERGE : insert si absent, update si déjà présent
+            using var cmd = new SqlCommand(@"
+        MERGE EtapesSousTraitants AS target
+        USING (SELECT @EtapeProjetId AS EtapeProjetId, @SousTraitantId AS SousTraitantId) AS source
+            ON target.EtapeProjetId = source.EtapeProjetId 
+           AND target.SousTraitantId = source.SousTraitantId
+        WHEN MATCHED THEN
+            UPDATE SET Role = @Role, Montant = @Montant, DateDebut = @DateDebut,
+                       DateFinPrevue = @DateFinPrevue, Statut = @Statut, Notes = @Notes,
+                       DateModification = GETUTCDATE()
+        WHEN NOT MATCHED THEN
+            INSERT (EtapeProjetId, SousTraitantId, Role, Montant, DateDebut, DateFinPrevue, Statut, Notes)
+            VALUES (@EtapeProjetId, @SousTraitantId, @Role, @Montant, @DateDebut, @DateFinPrevue, @Statut, @Notes)
+        OUTPUT inserted.Id;", conn);
+
+            cmd.Parameters.AddWithValue("@EtapeProjetId", etapeId);
+            cmd.Parameters.AddWithValue("@SousTraitantId", request.SousTraitantId);
+            cmd.Parameters.AddWithValue("@Role", request.Role ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Montant", request.Montant ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@DateDebut", request.DateDebut ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@DateFinPrevue", request.DateFinPrevue ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Statut", request.Statut);
+            cmd.Parameters.AddWithValue("@Notes", request.Notes ?? (object)DBNull.Value);
+
+            await cmd.ExecuteNonQueryAsync();
+
+            // Retourner l'enregistrement complet
+            var result = await GetSousTraitantsByEtapeAsync(etapeId);
+            return result.First(x => x.SousTraitantId == request.SousTraitantId);
+        }
+
+        /// <summary>
+        /// Retire un sous-traitant d'une étape
+        /// </summary>
+        public async Task<bool> RemoveSousTraitantFromEtapeAsync(int etapeId, int sousTraitantId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand(@"
+        DELETE FROM EtapesSousTraitants
+        WHERE EtapeProjetId = @EtapeId AND SousTraitantId = @SousTraitantId", conn);
+
+            cmd.Parameters.AddWithValue("@EtapeId", etapeId);
+            cmd.Parameters.AddWithValue("@SousTraitantId", sousTraitantId);
+
+            await conn.OpenAsync();
+            var rows = await cmd.ExecuteNonQueryAsync();
+            return rows > 0;
+        }
+
+        /// <summary>
+        /// Remplace en bloc tous les sous-traitants d'une étape
+        /// </summary>
+        public async Task UpdateEtapeSousTraitantsAsync(int etapeId, UpdateEtapeSousTraitantsRequest request)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                // Supprimer tous les liens existants
+                using (var deleteCmd = new SqlCommand(
+                    "DELETE FROM EtapesSousTraitants WHERE EtapeProjetId = @EtapeId", conn, transaction))
+                {
+                    deleteCmd.Parameters.AddWithValue("@EtapeId", etapeId);
+                    await deleteCmd.ExecuteNonQueryAsync();
+                }
+
+                // Ré-insérer la nouvelle liste
+                await InsertEtapeSousTraitantsAsync(conn, transaction, etapeId,
+                    request.SousTraitants.Select(r => new EtapeSousTraitant
+                    {
+                        SousTraitantId = r.SousTraitantId,
+                        Role = r.Role,
+                        Montant = r.Montant,
+                        DateDebut = r.DateDebut,
+                        DateFinPrevue = r.DateFinPrevue,
+                        Statut = r.Statut,
+                        Notes = r.Notes
+                    }).ToList());
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        // ---- Méthodes privées helpers ----
+
+        private async Task InsertEtapeSousTraitantsAsync(
+            SqlConnection conn, SqlTransaction transaction,
+            int etapeId, List<EtapeSousTraitant> sousTraitants)
+        {
+            foreach (var st in sousTraitants)
+            {
+                using var cmd = new SqlCommand(@"
+            INSERT INTO EtapesSousTraitants 
+                (EtapeProjetId, SousTraitantId, Role, Montant, DateDebut, DateFinPrevue, Statut, Notes)
+            VALUES 
+                (@EtapeId, @SousTraitantId, @Role, @Montant, @DateDebut, @DateFinPrevue, @Statut, @Notes)",
+                    conn, transaction);
+
+                cmd.Parameters.AddWithValue("@EtapeId", etapeId);
+                cmd.Parameters.AddWithValue("@SousTraitantId", st.SousTraitantId);
+                cmd.Parameters.AddWithValue("@Role", st.Role ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Montant", st.Montant ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DateDebut", st.DateDebut ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DateFinPrevue", st.DateFinPrevue ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Statut", st.Statut);
+                cmd.Parameters.AddWithValue("@Notes", st.Notes ?? (object)DBNull.Value);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+
+        private EtapeSousTraitant MapToEtapeSousTraitant(SqlDataReader reader)
+        {
+            return new EtapeSousTraitant
+            {
+                Id = reader.GetInt32("Id"),
+                EtapeProjetId = reader.GetInt32("EtapeProjetId"),
+                SousTraitantId = reader.GetInt32("SousTraitantId"),
+                Role = reader.IsDBNull("Role") ? null : reader.GetString("Role"),
+                Montant = reader.IsDBNull("Montant") ? null : reader.GetDecimal("Montant"),
+                DateDebut = reader.IsDBNull("DateDebut") ? null : reader.GetDateTime("DateDebut"),
+                DateFinPrevue = reader.IsDBNull("DateFinPrevue") ? null : reader.GetDateTime("DateFinPrevue"),
+                Statut = reader.GetString("Statut"),
+                Notes = reader.IsDBNull("Notes") ? null : reader.GetString("Notes"),
+                DateCreation = reader.GetDateTime("DateCreation"),
+                DateModification = reader.GetDateTime("DateModification"),
+                SousTraitant = new SousTraitant
+                {
+                    Id = reader.GetInt32("SousTraitantId"),
+                    Nom = reader.GetString("StNom"),
+                    Email = reader.IsDBNull("StEmail") ? null : reader.GetString("StEmail"),
+                    Telephone = reader.IsDBNull("StTelephone") ? null : reader.GetString("StTelephone"),
+                    NoteMoyenne = reader.IsDBNull("StNote") ? 0 : reader.GetDecimal("StNote")
+                }
+            };
+        }
     }
 }

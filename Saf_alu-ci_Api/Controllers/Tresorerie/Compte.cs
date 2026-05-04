@@ -309,6 +309,51 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
     }
 
     // =============================================
+    // DTOs PAIEMENTS PAR SOUS-TRAITANT
+    // =============================================
+
+    public class DetailPaiementSousTraitantDTO
+    {
+        public int Id { get; set; }
+        public string Libelle { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public decimal Montant { get; set; }
+        public DateTime DateMouvement { get; set; }
+        public string? ModePaiement { get; set; }
+        public string? Reference { get; set; }
+        public string? Categorie { get; set; }
+        public int? EtapeProjetId { get; set; }
+        public string EtapeNom { get; set; } = "Sans étape";
+        public int? ProjetId { get; set; }
+        public string? ProjetNom { get; set; }
+        public string CompteNom { get; set; } = string.Empty;
+    }
+
+    public class PaiementsParEtapeDTO
+    {
+        public int? EtapeId { get; set; }
+        public string EtapeNom { get; set; } = "Sans étape";
+        public int? ProjetId { get; set; }
+        public string? ProjetNom { get; set; }
+        public decimal TotalPaye { get; set; }
+        public int NombrePaiements { get; set; }
+        public DateTime? DateDernierPaiement { get; set; }
+        public List<DetailPaiementSousTraitantDTO> Paiements { get; set; } = new();
+    }
+
+    public class PaiementsSousTraitantDTO
+    {
+        public int SousTraitantId { get; set; }
+        public string SousTraitantNom { get; set; } = string.Empty;
+        public string? SousTraitantEmail { get; set; }
+        public string? SousTraitantTelephone { get; set; }
+        public decimal TotalPaye { get; set; }
+        public int NombrePaiements { get; set; }
+        public DateTime? DateDernierPaiement { get; set; }
+        public List<PaiementsParEtapeDTO> PaiementsParEtape { get; set; } = new();
+    }
+
+    // =============================================
     // ENUMS ET CONSTANTES
     // =============================================
     public static class TypesCompte
