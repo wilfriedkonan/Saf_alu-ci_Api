@@ -349,7 +349,7 @@ namespace Saf_alu_ci_Api.Controllers.DevisFournisseur
                     Otp = d.Otp,           // OTP visible UNE SEULE FOIS ici
                     d.DateExpiration,
                     d.MessageWhatsApp,
-                    LienDevis = $"{baseUrl}/devis-fournisseur/{d.Token}",
+                    LienDevis = $"{baseUrl}/public/{d.Token}",
                 });
 
                 return Ok(new
