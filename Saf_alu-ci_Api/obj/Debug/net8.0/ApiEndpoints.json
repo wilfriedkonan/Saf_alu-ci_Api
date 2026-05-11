@@ -561,6 +561,390 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "GetAll",
+    "RelativePath": "api/devis-fournisseur",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "statut",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "typeDevis",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "Create",
+    "RelativePath": "api/devis-fournisseur",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.CreateDevisFournisseurRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "GetById",
+    "RelativePath": "api/devis-fournisseur/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "Update",
+    "RelativePath": "api/devis-fournisseur/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.UpdateDevisFournisseurRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "Cloturer",
+    "RelativePath": "api/devis-fournisseur/{id}/cloturer",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "GetComparaison",
+    "RelativePath": "api/devis-fournisseur/{id}/comparaison",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "EnvoyerDemandes",
+    "RelativePath": "api/devis-fournisseur/{id}/demandes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.EnvoyerDemandesRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "AnnulerDemande",
+    "RelativePath": "api/devis-fournisseur/{id}/demandes/{demandeId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "demandeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "CreateLigne",
+    "RelativePath": "api/devis-fournisseur/{id}/lignes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.CreateLigneRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "UpdateLigne",
+    "RelativePath": "api/devis-fournisseur/{id}/lignes/{ligneId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "ligneId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.UpdateLigneRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "DeleteLigne",
+    "RelativePath": "api/devis-fournisseur/{id}/lignes/{ligneId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "ligneId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "CreateSection",
+    "RelativePath": "api/devis-fournisseur/{id}/sections",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.CreateSectionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "UpdateSection",
+    "RelativePath": "api/devis-fournisseur/{id}/sections/{sectionId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "sectionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.UpdateSectionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "DeleteSection",
+    "RelativePath": "api/devis-fournisseur/{id}/sections/{sectionId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "sectionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "SelectionnerFournisseur",
+    "RelativePath": "api/devis-fournisseur/{id}/selectionner-fournisseur",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.SelectionnerFournisseurRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurController",
+    "Method": "SelectionnerLignes",
+    "RelativePath": "api/devis-fournisseur/{id}/selectionner-lignes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.SelectionnerLignesRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurPublicController",
+    "Method": "GetDevisPublic",
+    "RelativePath": "api/devis-fournisseur/public/{token}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurPublicController",
+    "Method": "Soumettre",
+    "RelativePath": "api/devis-fournisseur/public/{token}/soumettre",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.SoumettreReponsesRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.DevisFournisseurPublicController",
+    "Method": "ValiderOtp",
+    "RelativePath": "api/devis-fournisseur/public/{token}/valider-otp",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.ValiderOtpRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Devis.DevisController",
     "Method": "Get",
     "RelativePath": "api/Devis/{id}",
@@ -1223,6 +1607,91 @@
         "Name": "annee",
         "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.FournisseursController",
+    "Method": "GetAll",
+    "RelativePath": "api/Fournisseurs",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.FournisseursController",
+    "Method": "Create",
+    "RelativePath": "api/Fournisseurs",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.CreateFournisseurRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.FournisseursController",
+    "Method": "GetById",
+    "RelativePath": "api/Fournisseurs/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.FournisseursController",
+    "Method": "Update",
+    "RelativePath": "api/Fournisseurs/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "Saf_alu_ci_Api.Controllers.DevisFournisseur.UpdateFournisseurRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.DevisFournisseur.FournisseursController",
+    "Method": "Delete",
+    "RelativePath": "api/Fournisseurs/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -2787,6 +3256,260 @@
       {
         "Name": "model",
         "Type": "Saf_alu_ci_Api.Controllers.Utilisateurs.RegisterRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "GetComptes",
+    "RelativePath": "api/WhatsApp/comptes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "service",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "CreateCompte",
+    "RelativePath": "api/WhatsApp/comptes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.WhatsApp.CreateWhatsAppCompteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "GetCompte",
+    "RelativePath": "api/WhatsApp/comptes/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "UpdateCompte",
+    "RelativePath": "api/WhatsApp/comptes/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.WhatsApp.UpdateWhatsAppCompteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "DeleteCompte",
+    "RelativePath": "api/WhatsApp/comptes/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "SetConnexion",
+    "RelativePath": "api/WhatsApp/comptes/{id}/connexion",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.WhatsApp.ConnexionWhatsAppRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "GetMessagesPredefinis",
+    "RelativePath": "api/WhatsApp/messages-predefinis",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "typeCode",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "CreateMessagePredefini",
+    "RelativePath": "api/WhatsApp/messages-predefinis",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.WhatsApp.CreateWhatsAppMessagePredefiniRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "GetMessagePredefini",
+    "RelativePath": "api/WhatsApp/messages-predefinis/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "UpdateMessagePredefini",
+    "RelativePath": "api/WhatsApp/messages-predefinis/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.WhatsApp.UpdateWhatsAppMessagePredefiniRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "DeleteMessagePredefini",
+    "RelativePath": "api/WhatsApp/messages-predefinis/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "PrevisualiserMessage",
+    "RelativePath": "api/WhatsApp/messages-predefinis/{id}/previsualiser",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.WhatsApp.PrevisualiserMessageRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "GetMessagesPredefinisByType",
+    "RelativePath": "api/WhatsApp/messages-predefinis/type/{code}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "code",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "GetMessagesTypes",
+    "RelativePath": "api/WhatsApp/messages-types",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.WhatsApp.WhatsAppController",
+    "Method": "GetMessageType",
+    "RelativePath": "api/WhatsApp/messages-types/{code}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "code",
+        "Type": "System.String",
         "IsRequired": true
       }
     ],

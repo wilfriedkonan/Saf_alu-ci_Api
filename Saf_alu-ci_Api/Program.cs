@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using Saf_alu_ci_Api.Controllers.Clients;
 using Saf_alu_ci_Api.Controllers.Dashboard;
 using Saf_alu_ci_Api.Controllers.Devis;
+using Saf_alu_ci_Api.Controllers.DevisFournisseur;
 using Saf_alu_ci_Api.Controllers.Dqe;
 using Saf_alu_ci_Api.Controllers.Factures;
 using Saf_alu_ci_Api.Controllers.ObjectifFinancier;
@@ -12,6 +13,7 @@ using Saf_alu_ci_Api.Controllers.Projets;
 using Saf_alu_ci_Api.Controllers.SousTraitants;
 using Saf_alu_ci_Api.Controllers.Tresorerie;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
+using Saf_alu_ci_Api.Controllers.WhatsApp;
 using Saf_alu_ci_Api.Services.Jw;
 using Saf_alu_ci_Api.Services.messagerie;
 using System.Globalization;
@@ -59,7 +61,6 @@ builder.Services.AddScoped<ParametresSystemeService>(sp =>
     var utilisateurService = sp.GetRequiredService<UtilisateurService>();
     return new ParametresSystemeService(connectionString, utilisateurService);
 });
-
 builder.Services.AddScoped<UtilisateurInvitationService>(sp =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -68,11 +69,13 @@ builder.Services.AddScoped<UtilisateurInvitationService>(sp =>
     var configuration = sp.GetRequiredService<IConfiguration>();
     return new UtilisateurInvitationService(connectionString, smtpService, configuration);
 });
-
 builder.Services.AddScoped<ResetPasswordService>();
 builder.Services.AddHttpClient<BrevoSmsService>();
 builder.Services.AddHttpClient<BrevoWhatsAppService>();
-
+builder.Services.AddScoped<WhatsAppService>(sp =>
+    new WhatsAppService(connectionString));
+builder.Services.AddScoped<DevisFournisseurService>(sp =>
+    new DevisFournisseurService(connectionString));
 
 
 // Services utilitaires
