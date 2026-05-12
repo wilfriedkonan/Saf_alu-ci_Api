@@ -1091,9 +1091,11 @@ namespace Saf_alu_ci_Api.Controllers.DevisFournisseur
             UtilisateurCreation = r.GetInt32("UtilisateurCreation"),
         };
 
-        private static DevisFournisseurHeader MapToDevisHeader(SqlDataReader r) => new()
+        private static DevisFournisseurHeader MapToDevisHeader(SqlDataReader r) 
         {
-            Id = r.GetInt32("Id"),
+            var header = new DevisFournisseurHeader
+            {
+                Id = r.GetInt32("Id"),
             Reference = r.GetString("Reference"),
             TypeDevis = r.GetString("TypeDevis"),
             Titre = r.GetString("Titre"),
@@ -1106,7 +1108,15 @@ namespace Saf_alu_ci_Api.Controllers.DevisFournisseur
             DateModification = r.GetDateTime("DateModification"),
             UtilisateurCreation = r.GetInt32("UtilisateurCreation"),
             UtilisateurModification = r.GetInt32("UtilisateurModification"),
-        };
+
+            };
+
+            // 🆕 Lire les agrégats — présents uniquement dans GetDevisListAsync
+            try { header.NbDemandes = r.GetInt32("NbDemandes"); } catch { }
+            try { header.NbReponses = r.GetInt32("NbReponses"); } catch { }
+
+            return header;
+        }
 
         private static DevisFournisseurSection MapToSection(SqlDataReader r) => new()
         {

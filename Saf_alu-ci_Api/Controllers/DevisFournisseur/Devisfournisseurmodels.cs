@@ -44,7 +44,8 @@ namespace Saf_alu_ci_Api.Controllers.DevisFournisseur
         public DateTime DateModification { get; set; }
         public int UtilisateurCreation { get; set; }
         public int UtilisateurModification { get; set; }
-
+        public int NbDemandes { get; set; }
+        public int NbReponses { get; set; }
         // Navigation
         public List<DevisFournisseurSection> Sections { get; set; } = new();
         public List<DevisFournisseurLigne> Lignes { get; set; } = new();
