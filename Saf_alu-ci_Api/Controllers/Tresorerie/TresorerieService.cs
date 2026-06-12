@@ -167,11 +167,11 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 sql += " AND mf.DateMouvement >= @DateDebut";
                 parameters.Add(new SqlParameter("@DateDebut", dateDebut.Value));
             }
-            else
-            {
-                sql += " AND mf.DateMouvement >= DATEADD(DAY, -@NbJours, GETDATE())";
-                parameters.Add(new SqlParameter("@NbJours", nbJours));
-            }
+            //else
+            //{
+            //    sql += " AND mf.DateMouvement >= DATEADD(DAY, -@NbJours, GETDATE())";
+            //    parameters.Add(new SqlParameter("@NbJours", nbJours));
+            //}
 
             if (dateFin.HasValue)
             {
