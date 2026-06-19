@@ -252,6 +252,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                         {
                             // Devis Classique: DESIGNATION, QTE, P.UNITAIRE, P.TOTAL
                             columns.RelativeColumn(5);     // DESIGNATION (plus large)
+                            columns.ConstantColumn(50);    //UNITÉ
                             columns.ConstantColumn(40);    // QTE
                             columns.ConstantColumn(80);    // P.UNITAIRE
                             columns.ConstantColumn(80);    // P.TOTAL
@@ -269,6 +270,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     });
 
                     // ✅ HEADER CONDITIONNEL
+                    // HEADER CONDITIONNEL
                     table.Header(header =>
                     {
                         header.Cell().Background(Colors.Grey.Medium).Padding(5)
@@ -282,14 +284,21 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                                 .AlignCenter().Text("H").FontColor(Colors.White).Bold().FontSize(9);
                         }
 
+                       
+
                         header.Cell().Background(Colors.Grey.Medium).Padding(5)
                             .AlignCenter().Text("QTE").FontColor(Colors.White).Bold().FontSize(9);
+                        // 🆕 Colonne UNITE uniquement pour le classique
+                        if (isClassique)
+                        {
+                            header.Cell().Background(Colors.Grey.Medium).Padding(5)
+                                .AlignCenter().Text("UNITE").FontColor(Colors.White).Bold().FontSize(9);
+                        }
                         header.Cell().Background(Colors.Grey.Medium).Padding(5)
                             .AlignRight().Text("P.UNITAIRE").FontColor(Colors.White).Bold().FontSize(9);
                         header.Cell().Background(Colors.Grey.Medium).Padding(5)
                             .AlignRight().Text("P.TOTAL").FontColor(Colors.White).Bold().FontSize(9);
                     });
-
                     // ✅ LIGNES
                     if (devis.Sections != null && devis.Sections.Any())
                     {
@@ -298,7 +307,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                             // Titre de section (sauf si "Devis Classique")
                             if (!isClassique || section.Nom != "Devis Classique")
                             {
-                                int colspan = isClassique ? 4 : 6;
+                                int colspan = isClassique ? 5 : 6;
                                 table.Cell().ColumnSpan((uint)colspan).Background(Colors.Grey.Lighten3)
                                     .Padding(5).Text(section.Nom).FontSize(9).Bold().FontColor(Colors.Blue.Darken2);
                             }
@@ -335,6 +344,14 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                                     // QTE
                                     table.Cell().Padding(4).AlignCenter()
                                         .Text(FormatMontant(ligne.Quantite)).FontSize(8);
+
+                                    //UNITE (classique uniquement)
+                                    if (isClassique)
+                                    {
+                                        table.Cell().Padding(4).AlignCenter()
+                                            .Text(!string.IsNullOrEmpty(ligne.Unite) ? ligne.Unite : "—")
+                                            .FontSize(8);
+                                    }
 
                                     // P.UNITAIRE
                                     table.Cell().Padding(4).AlignRight()
@@ -470,7 +487,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                         text.Span(" | ")
                             .FontSize(8)
                             .FontColor(Colors.Grey.Medium);
-                        text.Span("Email infos@safalu-ci.com - 27 22 23 29 64 / 08 BP 2932 Abidjan 08")
+                        text.Span("Email infos@safalu-ci.com - 01 01 02 00 81 / 08 BP 2932 Abidjan 08")
                             .FontSize(8)
                             .FontColor(Colors.Grey.Darken1);
                     });

@@ -3,16 +3,36 @@
   "WorkspaceRootPath": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\devis\\devispdfservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\devis\\devispdfservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\devis\\devis.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\devis\\devis.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\devis\\devisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\devis\\devisservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\devis\\deviscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\devis\\deviscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\tresorerie\\compte.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\tresorerie\\compte.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\tresorerie\\tresoreriecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\tresorerie\\tresoreriecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\tresorerie\\tresorerieservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\tresorerie\\tresorerieservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\tresorerie\\compte.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\tresorerie\\compte.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\devisfournisseur\\devisfournisseurservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -25,10 +45,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\controllers\\devisfournisseur\\devisfournisseurcontrollers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\controllers\\devisfournisseur\\devisfournisseurcontrollers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|c:\\users\\kan_w\\source\\repos\\saf_alu-ci_api\\saf_alu-ci_api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{6A8B5082-87A1-472A-B6F0-EB8C74B454B6}|Saf_alu-ci_Api\\Saf_alu-ci_Api.csproj|solutionrelative:saf_alu-ci_api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -59,32 +75,83 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "TresorerieService.cs",
-              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
-              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
-              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
-              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
-              "ViewState": "AgIAABwBAAAAAAAAAAAAADkBAAAIAAAAAAAAAA==",
+              "Title": "Devis.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\Devis.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Devis\\Devis.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\Devis.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\Devis.cs",
+              "ViewState": "AgIAAAQBAAAAAAAAAAA4wAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-06-12T11:42:17.308Z",
+              "WhenOpened": "2026-06-19T22:50:29.995Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "DevisPDFService.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisPDFService.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisPDFService.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisPDFService.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisPDFService.cs",
+              "ViewState": "AgIAALwAAAAAAAAAAAAwwAkAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-19T22:33:33.43Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "DevisController.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisController.cs",
+              "ViewState": "AgIAAGQAAAAAAAAAAAAAAHYAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-19T22:03:37.011Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DevisService.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Devis\\DevisService.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAA8wBoAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-19T22:03:37.032Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "TresorerieService.cs",
+              "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
+              "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
+              "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
+              "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADkBAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-06-12T11:42:17.308Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "TresorerieController.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
               "ToolTip": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
               "RelativeToolTip": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\TresorerieController.cs",
-              "ViewState": "AgIAAPMCAAAAAAAAAAAlwCsBAAAdAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACsBAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-06-10T16:36:40.682Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 5,
               "Title": "Compte.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\Tresorerie\\Compte.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\Tresorerie\\Compte.cs",
@@ -96,7 +163,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 4,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\appsettings.json",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\appsettings.json",
@@ -104,11 +171,12 @@
               "RelativeToolTip": "Saf_alu-ci_Api\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-05-11T13:26:23.602Z"
+              "WhenOpened": "2026-05-11T13:26:23.602Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 10,
               "Title": "Devisfournisseurcontrollers.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\DevisFournisseur\\Devisfournisseurcontrollers.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\DevisFournisseur\\Devisfournisseurcontrollers.cs",
@@ -121,7 +189,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 8,
               "Title": "Devisfournisseurservice.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\DevisFournisseur\\Devisfournisseurservice.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\DevisFournisseur\\Devisfournisseurservice.cs",
@@ -133,7 +201,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 9,
               "Title": "Devisfournisseurmodels.cs",
               "DocumentMoniker": "C:\\Users\\kan_w\\source\\repos\\Saf_alu-ci_Api\\Saf_alu-ci_Api\\Controllers\\DevisFournisseur\\Devisfournisseurmodels.cs",
               "RelativeDocumentMoniker": "Saf_alu-ci_Api\\Controllers\\DevisFournisseur\\Devisfournisseurmodels.cs",
