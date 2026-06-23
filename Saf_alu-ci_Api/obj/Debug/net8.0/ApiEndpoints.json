@@ -3516,6 +3516,218 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "GetAllInstances",
+    "RelativePath": "api/WhatsAppProxy/instances",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "CreateInstance",
+    "RelativePath": "api/WhatsAppProxy/instances",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "data",
+        "Type": "System.Object",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "DeleteInstance",
+    "RelativePath": "api/WhatsAppProxy/instances/{instanceName}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "instanceName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "Logout",
+    "RelativePath": "api/WhatsAppProxy/instances/{instanceName}/logout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "instanceName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "GetQrCode",
+    "RelativePath": "api/WhatsAppProxy/instances/{instanceName}/qrcode",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "instanceName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "Restart",
+    "RelativePath": "api/WhatsAppProxy/instances/{instanceName}/restart",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "instanceName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "GetStatus",
+    "RelativePath": "api/WhatsAppProxy/instances/{instanceName}/status",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "instanceName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "SendAudio",
+    "RelativePath": "api/WhatsAppProxy/messages/audio",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "data",
+        "Type": "System.Object",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "SendButtons",
+    "RelativePath": "api/WhatsAppProxy/messages/buttons",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "data",
+        "Type": "System.Object",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "SendDocument",
+    "RelativePath": "api/WhatsAppProxy/messages/document",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "data",
+        "Type": "System.Object",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "SendImage",
+    "RelativePath": "api/WhatsAppProxy/messages/image",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "data",
+        "Type": "System.Object",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "SendText",
+    "RelativePath": "api/WhatsAppProxy/messages/text",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "data",
+        "Type": "System.Object",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "SendWebhook",
+    "RelativePath": "api/WhatsAppProxy/webhook",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "data",
+        "Type": "System.Object",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Whatsapp.WhatsAppProxyController",
+    "Method": "WebhookPing",
+    "RelativePath": "api/WhatsAppProxy/webhook/ping",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Saf_alu_ci_Api.Controllers.WeatherForecastController",
     "Method": "Get",
     "RelativePath": "WeatherForecast",
