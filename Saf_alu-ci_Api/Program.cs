@@ -117,14 +117,19 @@ builder.Services.AddSwaggerGen(c =>
 // Configuration CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins(
+                "https://app.safalu-ci.com",
+                "http://app.safalu-ci.com",
+                "http://localhost:3000",  // Pour développement local
+                "https://localhost:3000"
+            )
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
 });
 
 // Configuration JWT - CORRIGÉE pour correspondre à appsettings.json
@@ -159,6 +164,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
