@@ -122,14 +122,30 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
         public async Task<bool> VerifierSoldeSuffisantAsync(int compteId, decimal montant)
         {
-            using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand("SELECT SoldeActuel FROM Comptes WHERE Id = @Id AND Actif = 1", conn);
-            cmd.Parameters.AddWithValue("@Id", compteId);
+            //using var conn = new SqlConnection(_connectionString);
+            //using var cmd = new SqlCommand("SELECT SoldeActuel FROM Comptes WHERE Id = @Id AND Actif = 1", conn);
+            //cmd.Parameters.AddWithValue("@Id", compteId);
 
-            await conn.OpenAsync();
-            var solde = await cmd.ExecuteScalarAsync();
+            //await conn.OpenAsync();
+            //var solde = await cmd.ExecuteScalarAsync();
 
-            return solde != null && (decimal)solde >= montant;
+            decimal soldeActuel = 0;
+            var lstMvt = GetMouvementsAsync(compteId);
+            if (lstMvt != null)
+            {
+                foreach (var items in lstMvt.Result)
+                {
+                    if (items.TypeMouvement == "Entree")
+                    {
+                        soldeActuel += items.Montant;
+                    }
+                    else if (items.TypeMouvement == "Sortie")
+                    {
+                        soldeActuel -= items.Montant;
+                    }
+                }
+            }
+            return soldeActuel != null && (decimal)soldeActuel >= montant;
         }
 
         // =============================================
