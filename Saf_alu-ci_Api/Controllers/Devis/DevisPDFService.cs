@@ -242,7 +242,18 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             decimal montantHTBrut = hasRemise ? CalculerMontantHTBrut(devis) : devis.MontantHT;
 
             container.PaddingTop(15).Column(column =>
-            {
+            {  
+                //  TITRE DU DEVIS — dans l'espace entre l'en-tête et la grille
+                if (!string.IsNullOrEmpty(devis.Titre))
+                {
+                    column.Item()
+                        .PaddingBottom(8)
+                        .AlignCenter()
+                        .Text(devis.Titre.ToUpper())
+                        .FontSize(11)
+                        .Bold()
+                        .FontColor(Colors.Black);
+                }
                 column.Item().Table(table =>
                 {
                     // ✅ COLONNES CONDITIONNELLES
@@ -448,6 +459,27 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     }
                 });
 
+                if (!string.IsNullOrEmpty(devis.Conditions))
+                {
+                    column.Item().PaddingTop(20).Column(condCol =>
+                    {
+                        condCol.Item()
+                            .BorderBottom(1)
+                            .BorderColor(Colors.Grey.Lighten1)
+                            .PaddingBottom(4)
+                            .Text("CONDITIONS COMMERCIALES")
+                            .FontSize(9)
+                            .Bold()
+                            .FontColor(Colors.Red.Darken1);
+
+                        condCol.Item().PaddingTop(5)
+                            .Text(devis.Conditions)
+                            .FontSize(8)
+                            .FontColor(Colors.Grey.Darken2);
+                    });
+                }
+
+                // Signatures (inchangé)
                 column.Item().PaddingTop(40).Row(row =>
                 {
                     row.RelativeItem().Column(col =>
