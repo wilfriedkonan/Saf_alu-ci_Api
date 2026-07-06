@@ -6581,6 +6581,42 @@
             "type": "string",
             "nullable": true
           },
+          "sousSections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDevisSousSectionRequest"
+            },
+            "nullable": true
+          },
+          "lignes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateLigneDevisRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDevisSousSectionRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "nom": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "ordre": {
+            "type": "integer",
+            "format": "int32"
+          },
           "lignes": {
             "type": "array",
             "items": {
@@ -6935,6 +6971,10 @@
             "type": "string",
             "nullable": true
           },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
           "longueur": {
             "type": "number",
             "format": "double",
@@ -6956,6 +6996,11 @@
           "prixUnitaireHT": {
             "type": "number",
             "format": "double"
+          },
+          "sousSectionId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false

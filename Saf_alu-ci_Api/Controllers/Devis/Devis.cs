@@ -9,7 +9,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public int ClientId { get; set; }
         public string Titre { get; set; }
         public string? Description { get; set; }
-        public string Statut { get; set; } = "Brouillon"; // Brouillon, Envoye, EnNegociation, Valide, Refuse, Expire
+        public string Statut { get; set; } = "Brouillon";
         public decimal MontantHT { get; set; }
         public decimal TauxTVA { get; set; } = 20.00m;
         public decimal MontantTTC { get; set; }
@@ -28,103 +28,77 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? QualiteMateriel { get; set; }
         public string? TypeVitrage { get; set; }
         public Boolean Actif { get; set; } = true;
+        public string? TypeDevis { get; set; }
 
-        // Navigation properties
         public virtual Client? Client { get; set; }
         public virtual List<LigneDevis>? Lignes { get; set; }
-        //public virtual List<DevisSection>? Sections { get; set; }
+
     }
 
     public class DevisSection
     {
         public int Id { get; set; }
         public int DevisId { get; set; }
-
-        /// <summary>
-        /// Nom de la section (ex: "Restauration", "Office", "Bureau")
-        /// </summary>
         public string Nom { get; set; }
-
-        /// <summary>
-        /// Ordre d'affichage de la section
-        /// </summary>
         public int Ordre { get; set; }
-
-        /// <summary>
-        /// Description optionnelle de la section
-        /// </summary>
         public string? Description { get; set; }
-
         public DateTime DateCreation { get; set; } = DateTime.UtcNow;
 
-        // Navigation property
+        public virtual List<DevisSousSection>? SousSections { get; set; }
         public virtual List<LigneDevis>? Lignes { get; set; }
     }
+
+    // =====================================================
+    // 🆕 SOUS-SECTION
+    // =====================================================
+    public class DevisSousSection
+    {
+        public int Id { get; set; }
+        public int SectionId { get; set; }
+        public int DevisId { get; set; }
+
+        /// <summary>Code saisi manuellement (ex: SS-01, A1)</summary>
+        public string? Code { get; set; }
+
+        public string Nom { get; set; }
+        public string? Description { get; set; }
+        public int Ordre { get; set; }
+        public DateTime DateCreation { get; set; } = DateTime.UtcNow;
+
+        public virtual List<LigneDevis>? Lignes { get; set; }
+    }
+
     public class LigneDevis
     {
         public int Id { get; set; }
         public int DevisId { get; set; }
-
-        /// <summary>
-        /// Section parente (ex: Restauration, Office)
-        /// </summary>
         public int? SectionId { get; set; }
 
-        /// <summary>
-        /// Ordre d'affichage dans la section
-        /// </summary>
+        /// <summary>🆕 Sous-section parente (nullable — ligne rattachée à la section si null)</summary>
+        public int? SousSectionId { get; set; }
+
         public int Ordre { get; set; }
-
-        /// <summary>
-        /// Type d'élément (ex: "Fenetre coulissante", "Soufflet", "Fixe et imposte")
-        /// </summary>
         public string? TypeElement { get; set; }
-
-        /// <summary>
-        /// Désignation de la ligne
-        /// </summary>
         public string Designation { get; set; }
-
-        /// <summary>
-        /// Description additionnelle
-        /// </summary>
         public string? Description { get; set; }
 
-        // ===== DIMENSIONS =====
-        /// <summary>
-        /// Longueur en cm
-        /// </summary>
+        /// <summary>🆕 Code de la ligne, saisi manuellement</summary>
+        public string? Code { get; set; }
+
         public decimal? Longueur { get; set; }
-
-        /// <summary>
-        /// Hauteur en cm
-        /// </summary>
         public decimal? Hauteur { get; set; }
-
-        /// <summary>
-        /// Quantité
-        /// </summary>
         public decimal Quantite { get; set; } = 1;
-
-        /// <summary>
-        /// Unité (U, m², ml, etc.)
-        /// </summary>
         public string Unite { get; set; } = "U";
-
-        /// <summary>
-        /// Prix unitaire HT
-        /// </summary>
         public decimal PrixUnitaireHT { get; set; }
-
-        /// <summary>
-        /// Total HT calculé automatiquement
-        /// </summary>
         public decimal TotalHT => Quantite * PrixUnitaireHT;
 
-        // Navigation property
         public virtual DevisSection? Section { get; set; }
+        public virtual DevisSousSection? SousSection { get; set; }
     }
 
+    // =====================================================
+    // DTOs CRÉATION / MISE À JOUR
+    // =====================================================
 
     public class CreateDevisRequest
     {
@@ -136,26 +110,45 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? Notes { get; set; }
         public decimal RemiseValeur { get; set; }
         public decimal RemisePourcentage { get; set; }
-        // Nouveaux champs
         public string? Chantier { get; set; }
         public string? Contact { get; set; }
         public string? QualiteMateriel { get; set; }
         public string? TypeVitrage { get; set; }
-
-        /// <summary>
-        /// Sections avec leurs lignes
-        /// </summary>
         public List<CreateDevisSectionRequest>? Sections { get; set; }
+        public string? TypeDevis { get; set; }
     }
-
-
 
     public class CreateDevisSectionRequest
     {
         public string Nom { get; set; }
         public int Ordre { get; set; }
         public string? Description { get; set; }
+
+        /// <summary>🆕 Sous-sections optionnelles</summary>
+        public List<CreateDevisSousSectionRequest>? SousSections { get; set; }
+
+        /// <summary>Lignes directement rattachées à la section (SousSectionId = null)</summary>
         public List<CreateLigneDevisRequest>? Lignes { get; set; }
+    }
+
+    // =====================================================
+    // 🆕 DTO SOUS-SECTION
+    // =====================================================
+    public class CreateDevisSousSectionRequest
+    {
+        public string? Code { get; set; }
+        public string Nom { get; set; }
+        public string? Description { get; set; }
+        public int Ordre { get; set; }
+        public List<CreateLigneDevisRequest>? Lignes { get; set; }
+    }
+
+    public class UpdateDevisSousSectionRequest
+    {
+        public string? Code { get; set; }
+        public string Nom { get; set; }
+        public string? Description { get; set; }
+        public int Ordre { get; set; }
     }
 
     public class CreateLigneDevisRequest
@@ -163,14 +156,25 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? TypeElement { get; set; }
         public string Designation { get; set; }
         public string? Description { get; set; }
+
+        /// <summary>🆕 Code de la ligne</summary>
+        public string? Code { get; set; }
+
         public decimal? Longueur { get; set; }
         public decimal? Hauteur { get; set; }
         public decimal Quantite { get; set; } = 1;
         public string Unite { get; set; } = "U";
         public decimal PrixUnitaireHT { get; set; }
+
+        /// <summary>🆕 Si renseigné, la ligne est rattachée à une sous-section</summary>
+        public int? SousSectionId { get; set; }
     }
 
     public class UpdateDevisRequest : CreateDevisRequest { }
+
+    // =====================================================
+    // DTOs LECTURE
+    // =====================================================
 
     public class DevisListItem
     {
@@ -188,9 +192,6 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public int UtilisateurCreation { get; set; }
     }
 
-    /// <summary>
-    /// Info client simplifiée
-    /// </summary>
     public class ClientInfo
     {
         public int Id { get; set; }
@@ -200,9 +201,6 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? Adresse { get; set; }
     }
 
-    /// <summary>
-    /// Response complète d'un devis avec toutes les sections et lignes
-    /// </summary>
     public class DevisCompletResponse
     {
         public int Id { get; set; }
@@ -215,7 +213,6 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public decimal TauxTVA { get; set; }
         public decimal RemiseValeur { get; set; }
         public decimal RemisePourcentage { get; set; }
-
         public decimal MontantTTC { get; set; }
         public DateTime DateCreation { get; set; }
         public DateTime? DateValidite { get; set; }
@@ -223,39 +220,47 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public DateTime? DateValidation { get; set; }
         public string? Conditions { get; set; }
         public string? Notes { get; set; }
-
-        // Nouveaux champs
         public string? Chantier { get; set; }
         public string? Contact { get; set; }
         public string? QualiteMateriel { get; set; }
         public string? TypeVitrage { get; set; }
         public Boolean Actif { get; set; } = true;
 
-
         public ClientInfo? Client { get; set; }
         public List<DevisSectionResponse>? Sections { get; set; }
+        public string? TypeDevis { get; set; }
     }
 
-    /// <summary>
-    /// Response pour une section de devis
-    /// </summary>
     public class DevisSectionResponse
     {
         public int Id { get; set; }
         public string Nom { get; set; }
         public int Ordre { get; set; }
         public string? Description { get; set; }
-        public List<LigneDevisResponse>? Lignes { get; set; }
-
-        /// <summary>
-        /// Total HT de la section
-        /// </summary>
         public decimal TotalSectionHT { get; set; }
+
+        /// <summary>🆕 Sous-sections de cette section</summary>
+        public List<DevisSousSectionResponse> SousSections { get; set; } = new();
+
+        /// <summary>Lignes directement sur la section (sans sous-section)</summary>
+        public List<LigneDevisResponse>? Lignes { get; set; }
     }
 
-    /// <summary>
-    /// Response pour une ligne de devis
-    /// </summary>
+    // =====================================================
+    // 🆕 RÉPONSE SOUS-SECTION
+    // =====================================================
+    public class DevisSousSectionResponse
+    {
+        public int Id { get; set; }
+        public int SectionId { get; set; }
+        public string? Code { get; set; }
+        public string Nom { get; set; }
+        public string? Description { get; set; }
+        public int Ordre { get; set; }
+        public decimal TotalSousSectionHT { get; set; }
+        public List<LigneDevisResponse> Lignes { get; set; } = new();
+    }
+
     public class LigneDevisResponse
     {
         public int Id { get; set; }
@@ -263,6 +268,13 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? TypeElement { get; set; }
         public string Designation { get; set; }
         public string? Description { get; set; }
+
+        /// <summary>🆕</summary>
+        public string? Code { get; set; }
+
+        /// <summary>🆕 Null si la ligne est directement sur la section</summary>
+        public int? SousSectionId { get; set; }
+
         public decimal? Longueur { get; set; }
         public decimal? Hauteur { get; set; }
         public decimal Quantite { get; set; }
@@ -272,7 +284,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
     }
 
     // =====================================================
-    // AUTRES DTOs
+    // AUTRES DTOs (inchangés)
     // =====================================================
 
     public class ApiResponse<T>

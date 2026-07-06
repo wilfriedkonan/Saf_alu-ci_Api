@@ -12,6 +12,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
     {
         private readonly DevisService _devisService;
         private readonly DevisPDFService _pdfService;
+
         public DevisController(DevisService devisService, DevisPDFService pdfService)
         {
             _devisService = devisService;
@@ -36,7 +37,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         }
 
         /// <summary>
-        /// Récupérer un devis complet par son ID (avec sections et lignes)
+        /// Récupérer un devis complet par son ID
+        /// Retourne les sections avec leurs sous-sections (si présentes) et leurs lignes
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
@@ -56,7 +58,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         }
 
         /// <summary>
-        /// Créer un nouveau devis avec sections et lignes
+        /// Créer un nouveau devis avec sections et lignes.
+        /// Les sous-sections sont facultatives : chaque section peut avoir
+        /// des SousSections (avec leurs lignes) et/ou des Lignes directes.
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateDevisRequest model)
@@ -72,9 +76,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     });
                 }
 
-                // Récupérer l'utilisateur depuis le JWT
                 var utilisateurId = GetCurrentUserId();
-
                 var devisId = await _devisService.CreateAsync(model, utilisateurId);
 
                 return CreatedAtAction(nameof(Get), new { id = devisId }, new
@@ -90,7 +92,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         }
 
         /// <summary>
-        /// Mettre à jour un devis existant
+        /// Mettre à jour un devis existant.
+        /// L'ensemble sections/sous-sections/lignes est remplacé en bloc.
         /// </summary>
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateDevisRequest model)
@@ -110,11 +113,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 if (existing == null)
                     return NotFound(new { message = "Devis non trouvé" });
 
-                // Vérifier si le devis peut être modifié
                 if (existing.Statut == "Valide" || existing.Statut == "Envoye")
-                {
                     return BadRequest(new { message = "Ce devis ne peut plus être modifié" });
-                }
 
                 await _devisService.UpdateAsync(id, model);
                 return Ok(new { message = "Devis modifié avec succès" });
@@ -126,7 +126,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         }
 
         /// <summary>
-        /// Supprimer un devis
+        /// Supprimer un devis (soft delete)
         /// </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
@@ -137,11 +137,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 if (existing == null)
                     return NotFound(new { message = "Devis non trouvé" });
 
-                // Vérifier si le devis peut être supprimé
                 if (existing.Statut == "Valide")
-                {
                     return BadRequest(new { message = "Un devis validé ne peut pas être supprimé" });
-                }
 
                 await _devisService.DeleteAsync(id);
                 return Ok(new { message = "Devis supprimé avec succès" });
@@ -165,14 +162,9 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     return NotFound(new { message = "Devis non trouvé" });
 
                 if (existing.Statut != "Brouillon")
-                {
                     return BadRequest(new { message = "Seuls les devis en brouillon peuvent être envoyés" });
-                }
 
                 await _devisService.UpdateStatutAsync(id, "Envoye");
-
-                // TODO: Implémenter l'envoi d'email avec PDF
-
                 return Ok(new { message = "Devis envoyé avec succès" });
             }
             catch (Exception ex)
@@ -194,9 +186,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     return NotFound(new { message = "Devis non trouvé" });
 
                 if (existing.Statut != "Envoye" && existing.Statut != "EnNegociation")
-                {
                     return BadRequest(new { message = "Seuls les devis envoyés ou en négociation peuvent être validés" });
-                }
 
                 await _devisService.UpdateStatutAsync(id, "Valide");
                 return Ok(new { message = "Devis validé avec succès" });
@@ -220,9 +210,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     return NotFound(new { message = "Devis non trouvé" });
 
                 if (existing.Statut == "Valide")
-                {
                     return BadRequest(new { message = "Un devis validé ne peut pas être refusé" });
-                }
 
                 await _devisService.UpdateStatutAsync(id, "Refuse");
                 return Ok(new { message = "Devis refusé" });
@@ -234,7 +222,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         }
 
         /// <summary>
-        /// Dupliquer un devis existant
+        /// Dupliquer un devis existant — conserve les sous-sections si présentes
         /// </summary>
         [HttpPost("{id}/dupliquer")]
         public async Task<IActionResult> Dupliquer(int id)
@@ -247,35 +235,43 @@ namespace Saf_alu_ci_Api.Controllers.Devis
 
                 var utilisateurId = GetCurrentUserId();
 
-                // Créer une nouvelle demande basée sur le devis original
                 var duplicateRequest = new CreateDevisRequest
                 {
                     ClientId = original.ClientId,
                     Titre = $"Copie de {original.Titre}",
                     Description = original.Description,
-                    DateValidite = null, // Pas de date de validité pour la copie
+                    DateValidite = null,
                     Conditions = original.Conditions,
                     Notes = original.Notes,
                     Chantier = original.Chantier,
                     Contact = original.Contact,
                     QualiteMateriel = original.QualiteMateriel,
                     TypeVitrage = original.TypeVitrage,
+                    RemiseValeur = original.RemiseValeur,
+                    RemisePourcentage = original.RemisePourcentage,
+
                     Sections = original.Sections?.Select(s => new CreateDevisSectionRequest
                     {
                         Nom = s.Nom,
                         Ordre = s.Ordre,
                         Description = s.Description,
-                        Lignes = s.Lignes?.Select(l => new CreateLigneDevisRequest
-                        {
-                            TypeElement = l.TypeElement,
-                            Designation = l.Designation,
-                            Description = l.Description,
-                            Longueur = l.Longueur,
-                            Hauteur = l.Hauteur,
-                            Quantite = l.Quantite,
-                            Unite = l.Unite,
-                            PrixUnitaireHT = l.PrixUnitaireHT
-                        }).ToList()
+
+                        // Sous-sections (facultatives — null si la section n'en avait pas)
+                        SousSections = s.SousSections.Any()
+                            ? s.SousSections.Select(ss => new CreateDevisSousSectionRequest
+                            {
+                                Code = ss.Code,
+                                Nom = ss.Nom,
+                                Description = ss.Description,
+                                Ordre = ss.Ordre,
+                                Lignes = ss.Lignes.Select(MapLigneToRequest).ToList()
+                            }).ToList()
+                            : null,
+
+                        // Lignes directes sur la section
+                        Lignes = s.Lignes != null && s.Lignes.Any()
+                            ? s.Lignes.Select(MapLigneToRequest).ToList()
+                            : null
                     }).ToList()
                 };
 
@@ -294,7 +290,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         }
 
         /// <summary>
-        /// Exporter un devis en PDF
+        /// Exporter un devis en PDF — les sous-sections apparaissent dans le PDF si présentes
         /// </summary>
         [HttpGet("{id}/pdf")]
         public async Task<IActionResult> ExporterPDF(int id)
@@ -306,23 +302,13 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     return NotFound(new { message = "Devis non trouvé" });
 
                 var pdfBytes = _pdfService.GeneratePDF(devis);
-
-                return File(
-                    pdfBytes,
-                    "application/pdf",
-                    $"Devis_{devis.Numero}.pdf"
-                );
+                return File(pdfBytes, "application/pdf", $"Devis_{devis.Numero}.pdf");
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new
-                {
-                    message = "Erreur lors de la génération du PDF",
-                    error = ex.Message
-                });
+                return StatusCode(500, new { message = "Erreur lors de la génération du PDF", error = ex.Message });
             }
         }
-
 
         /// <summary>
         /// Rechercher des devis avec filtres et pagination
@@ -349,7 +335,6 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     Page = page,
                     Limit = limit
                 });
-
                 return Ok(result);
             }
             catch (Exception ex)
@@ -375,17 +360,28 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             }
         }
 
-        /// <summary>
-        /// Récupérer l'ID de l'utilisateur actuel depuis le JWT
-        /// </summary>
+        // =====================================================
+        // HELPERS PRIVÉS
+        // =====================================================
+
+        private static CreateLigneDevisRequest MapLigneToRequest(LigneDevisResponse l) =>
+            new CreateLigneDevisRequest
+            {
+                TypeElement = l.TypeElement,
+                Designation = l.Designation,
+                Description = l.Description,
+                Code = l.Code,
+                Longueur = l.Longueur,
+                Hauteur = l.Hauteur,
+                Quantite = l.Quantite,
+                Unite = l.Unite,
+                PrixUnitaireHT = l.PrixUnitaireHT
+            };
+
         private int GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out int userId))
-            {
-                return userId;
-            }
-            return 3; // Fallback - à améliorer
+            return int.TryParse(userIdClaim, out int userId) ? userId : 3;
         }
     }
 }
