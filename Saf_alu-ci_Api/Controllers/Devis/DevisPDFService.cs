@@ -535,7 +535,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 .Text(FormatMontant(ligne.TotalHT)).FontSize(8).Bold();
         }
 
-        // ─── PIED DE PAGE (inchangé) ─────────────────────────────────
+        //─── PIED DE PAGE(inchangé) ─────────────────────────────────
         void ComposeFooter(IContainer container)
         {
             container.Column(column =>
@@ -557,5 +557,27 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     .FontSize(8).FontColor(Colors.Grey.Darken1);
             });
         }
+
+        //void ComposeFooter(IContainer container)
+        //{
+        //    container.Column(column =>
+        //    {
+        //        column.Item().PaddingBottom(5).LineHorizontal(1.5f).LineColor(Colors.Red.Medium);
+
+        //        column.Item().AlignCenter().PaddingTop(5).Text(text =>
+        //        {
+        //            text.Span("Abidjan, Riviéra triangle pharmacie Y4")
+        //                .FontSize(8).FontColor(Colors.Grey.Darken1);
+        //            text.Span(" | ")
+        //                .FontSize(8).FontColor(Colors.Grey.Medium);
+        //            text.Span("07 08 21 46 25 / 05 96 21 55 39")
+        //                .FontSize(8).FontColor(Colors.Grey.Darken1);
+        //        });
+
+        //        column.Item().AlignCenter()
+        //            .Text("RC N°: CI ABJ-2019-A-16493 / CCN° 1945442Z centre des impôts Abidjan Cocody")
+        //            .FontSize(8).FontColor(Colors.Grey.Darken1);
+        //    });
+        //}
     }
 }
