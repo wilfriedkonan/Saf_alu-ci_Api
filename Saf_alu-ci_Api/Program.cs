@@ -11,6 +11,7 @@ using Saf_alu_ci_Api.Controllers.Factures;
 using Saf_alu_ci_Api.Controllers.ObjectifFinancier;
 using Saf_alu_ci_Api.Controllers.Projets;
 using Saf_alu_ci_Api.Controllers.SousTraitants;
+using Saf_alu_ci_Api.Controllers.Stock;
 using Saf_alu_ci_Api.Controllers.Tresorerie;
 using Saf_alu_ci_Api.Controllers.Utilisateurs;
 using Saf_alu_ci_Api.Controllers.WhatsApp;
@@ -42,6 +43,7 @@ builder.Services.AddScoped(provider => new TresorerieService(connectionString));
 builder.Services.AddScoped(provider => new ProjetService(connectionString));
 builder.Services.AddScoped(provider => new ObjectifFinacierService(connectionString));
 builder.Services.AddScoped(provider => new DQEService(connectionString));
+builder.Services.AddScoped(provider => new StockService(connectionString));
 builder.Services.AddScoped<DevisPDFService>();
 builder.Services.AddScoped<DQEExportService>();
 builder.Services.AddScoped<DetailDebourseSecService>(sp =>
