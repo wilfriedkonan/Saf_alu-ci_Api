@@ -17,69 +17,82 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             _connectionString = connectionString;
         }
 
-        public async Task<List<Projet>> GetAllAsync()
+        // SIGNATURE : ajouter userId et userRole
+        public async Task<List<Projet>> GetAllAsync(int? userId = null, string? userRole = null)
         {
             var projets = new List<Projet>();
 
+            // Rôles qui voient TOUS les projets
+            var rolesAdmin = new[] { "super_admin", "admin", "comptable" };
+            bool filtrerParChef = userId.HasValue
+                && !string.IsNullOrEmpty(userRole)
+                && !rolesAdmin.Contains(userRole);
+
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-        SELECT p.*, 
-               c.Nom as ClientNom, 
-               c.RaisonSociale as ClientRaisonSociale, 
-               c.Email as ClientEmail,
-               c.Telephone as ClientTelephone, 
-               c.Adresse as ClientAdresse, 
-               u.Prenom as ChefProjetPrenom, 
-               u.Nom as ChefProjetNom,
-               conv.Prenom as DqeConvertedByPrenom, 
-               conv.Nom as DqeConvertedByNom,
-               ISNULL((SELECT SUM(CoutReel) FROM EtapesProjets WHERE ProjetId = p.Id AND EstActif = 1), 0) as CoutReelCalcule
-        FROM Projets p
-        LEFT JOIN Clients c ON p.ClientId = c.Id
-        LEFT JOIN Utilisateurs u ON p.ChefProjetId = u.Id
-        LEFT JOIN Utilisateurs conv ON p.DqeConvertedById = conv.Id
-        WHERE p.Actif = 1
-        ORDER BY p.DateCreation DESC", conn);
+            SELECT p.*,
+                   c.Nom as ClientNom,
+                   c.RaisonSociale as ClientRaisonSociale,
+                   c.Email as ClientEmail,
+                   c.Telephone as ClientTelephone,
+                   c.Adresse as ClientAdresse,
+                   u.Prenom as ChefProjetPrenom,
+                   u.Nom as ChefProjetNom,
+                   conv.Prenom as DqeConvertedByPrenom,
+                   conv.Nom as DqeConvertedByNom,
+                   ISNULL((SELECT SUM(CoutReel) FROM EtapesProjets
+                           WHERE ProjetId = p.Id AND EstActif = 1), 0) as CoutReelCalcule
+            FROM Projets p
+            LEFT JOIN Clients c    ON p.ClientId          = c.Id
+            LEFT JOIN Utilisateurs u    ON p.ChefProjetId = u.Id
+            LEFT JOIN Utilisateurs conv ON p.DqeConvertedById = conv.Id
+            WHERE p.Actif = 1
+              AND (
+                  @FiltrerParChef = 0
+                  OR p.ChefProjetId = @UserId
+                  OR EXISTS (
+                      SELECT 1 FROM ProjetsChefsProjet pcp
+                      WHERE pcp.ProjetId = p.Id AND pcp.UtilisateurId = @UserId
+                  )
+              )
+            ORDER BY p.DateCreation DESC", conn);
+
+            cmd.Parameters.AddWithValue("@FiltrerParChef", filtrerParChef ? 1 : 0);
+            cmd.Parameters.AddWithValue("@UserId", userId ?? (object)DBNull.Value);
 
             await conn.OpenAsync();
             using var reader = await cmd.ExecuteReaderAsync();
 
-            // ✅ CORRECTION 1 : Lire tous les projets d'abord, PUIS charger les étapes
             while (await reader.ReadAsync())
             {
                 var projet = MapToProjet(reader);
                 projet.CoutReel = reader.GetDecimal("CoutReelCalcule");
                 projets.Add(projet);
             }
-
-            // ✅ CORRECTION 2 : Fermer le reader avant de charger les étapes
             reader.Close();
 
-            // ✅ CORRECTION 3 : Charger les étapes pour chaque projet
             foreach (var projet in projets)
             {
                 projet.Etapes = await GetEtapesProjetAsync(conn, projet.Id);
+                // 🆕 Charger les chefs
+                projet.ChefsProjet = await LoadChefsProjetAsync(conn, projet.Id);
 
-                // Calculer le pourcentage d'avancement et depense totale
                 if (projet.Etapes != null && projet.Etapes.Any())
                 {
                     var etapesActives = projet.Etapes.Where(e => e.EstActif).ToList();
-
                     if (etapesActives.Any())
                     {
                         var totalAvancement = etapesActives.Sum(x => x.PourcentageAvancement);
-                        var totalEtape = etapesActives.Where(x => x.LinkedDqeLotName == null).Count();
-                        projet.PourcentageAvancement = Convert.ToInt32(totalAvancement / totalEtape);
-
-                        var depenseTotal = etapesActives.Sum(x => x.Depense);
-                        projet.DepenseGlobale = Convert.ToDecimal(depenseTotal);
+                        var totalEtape = etapesActives.Count(x => x.LinkedDqeLotName == null);
+                        projet.PourcentageAvancement = totalEtape > 0
+                            ? Convert.ToInt32(totalAvancement / totalEtape) : 0;
+                        projet.DepenseGlobale = Convert.ToDecimal(etapesActives.Sum(x => x.Depense));
                     }
                 }
             }
 
             return projets;
         }
-
         public async Task<Projet?> GetByIdAsync(int id)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -105,7 +118,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
 
                 // Charger les étapes
                 projet.Etapes = await GetEtapesProjetAsync(conn, id);
-
+                projet.ChefsProjet = await LoadChefsProjetAsync(conn, projet.Id);
                 // Recalculer le CoutReel depuis les étapes pour garantir la cohérence
                 if (projet.Etapes != null && projet.Etapes.Any())
                 {
@@ -208,7 +221,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             return outputParam.Value.ToString();
         }
 
-        public async Task<int> CreateAsync(Projet projet)
+        public async Task<int> CreateAsync(Projet projet, List<int>? chefProjetIds = null)
         {
             using var conn = new SqlConnection(_connectionString);
             await conn.OpenAsync();
@@ -233,13 +246,13 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     INSERT INTO Projets (Numero, Nom, Description, ClientId,DevisId, Statut,
                                        DateDebut, DateFinPrevue, BudgetInitial, BudgetRevise, CoutReel, DepenseGlobale,
                                        AdresseChantier, CodePostalChantier, VilleChantier, PourcentageAvancement,
-                                       ChefProjetId, DateCreation, DateModification, UtilisateurCreation, Actif,
+                                       ChefProjetId, CompteId, DepotId, DateCreation, DateModification, UtilisateurCreation, Actif,
                                        LinkedDqeId, LinkedDqeReference, LinkedDqeName, LinkedDqeBudgetHT,
                                        IsFromDqeConversion, DqeConvertedAt, DqeConvertedById)
                     VALUES (@Numero, @Nom, @Description, @ClientId, @DevisId, @Statut,
                            @DateDebut, @DateFinPrevue, @BudgetInitial, @BudgetRevise, @CoutReel, @DepenseGlobale,
                            @AdresseChantier, @CodePostalChantier, @VilleChantier, @PourcentageAvancement,
-                           @ChefProjetId, @DateCreation, @DateModification, @UtilisateurCreation, @Actif,
+                           @ChefProjetId, @CompteId, @DepotId, @DateCreation, @DateModification, @UtilisateurCreation, @Actif,
                            @LinkedDqeId, @LinkedDqeReference, @LinkedDqeName, @LinkedDqeBudgetHT,
                            @IsFromDqeConversion, @DqeConvertedAt, @DqeConvertedById);
                     SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
@@ -252,6 +265,12 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 {
                     await CreateEtapesAsync(conn, transaction, projetId, projet.Etapes);
                 }
+                var chefIds = chefProjetIds ?? new List<int>();
+                if (!chefIds.Any() && projet.ChefProjetId.HasValue)
+                    chefIds = new List<int> { projet.ChefProjetId.Value };
+
+                if (chefIds.Any())
+                    await SyncChefsProjetAsync(conn, transaction, projetId, chefIds);
 
                 transaction.Commit();
                 return projetId;
@@ -376,6 +395,18 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     cmd.Parameters.AddWithValue("@ChefProjetId", request.ChefProjetId);
                 }
 
+                if (request.CompteId.HasValue)
+                {
+                    setClause.Add("CompteId = @CompteId");
+                    cmd.Parameters.AddWithValue("@CompteId", request.CompteId);
+                }
+
+                if (request.DepotId.HasValue)
+                {
+                    setClause.Add("DepotId = @DepotId");
+                    cmd.Parameters.AddWithValue("@DepotId", request.DepotId);
+                }
+
                 if (request.PourcentageAvancement.HasValue)
                 {
                     if (request.PourcentageAvancement.Value < 0 || request.PourcentageAvancement.Value > 100)
@@ -415,6 +446,20 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 if (request.Etapes != null && request.Etapes.Any())
                 {
                     await UpdateEtapesAsync(conn, transaction, id, request.Etapes);
+                }
+                if (request.ChefProjetIds != null)
+                {
+                    // Si ChefProjetId legacy fourni aussi, s'assurer qu'il est dans la liste
+                    var chefIds = request.ChefProjetIds.ToList();
+                    if (request.ChefProjetId.HasValue && !chefIds.Contains(request.ChefProjetId.Value))
+                        chefIds.Insert(0, request.ChefProjetId.Value);
+
+                    await SyncChefsProjetAsync(conn, transaction, id, chefIds);
+                }
+                else if (request.ChefProjetId.HasValue)
+                {
+                    // Rétrocompatibilité : si seulement ChefProjetId fourni, l'ajouter comme principal
+                    await SyncChefsProjetAsync(conn, transaction, id, new List<int> { request.ChefProjetId.Value });
                 }
 
                 transaction.Commit();
@@ -1206,6 +1251,8 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 VilleChantier = reader.IsDBNull("VilleChantier") ? null : reader.GetString("VilleChantier"),
                 PourcentageAvancement = reader.GetInt32("PourcentageAvancement"),
                 ChefProjetId = reader.IsDBNull("ChefProjetId") ? null : reader.GetInt32("ChefProjetId"),
+                CompteId = reader.IsDBNull("CompteId") ? null : reader.GetInt32("CompteId"),
+                DepotId = reader.IsDBNull("DepotId") ? null : reader.GetInt32("DepotId"),
                 DateCreation = reader.GetDateTime("DateCreation"),
                 DateModification = reader.GetDateTime("DateModification"),
                 UtilisateurCreation = reader.GetInt32("UtilisateurCreation"),
@@ -1648,5 +1695,77 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                 }
             };
         }
+
+        /// <summary>
+        /// Charge la liste des chefs d'un projet depuis la table de jonction.
+        /// </summary>
+        private async Task<List<ResponsableDTO>> LoadChefsProjetAsync(SqlConnection conn, int projetId)
+        {
+            var chefs = new List<ResponsableDTO>();
+            using var cmd = new SqlCommand(@"
+        SELECT u.Id, u.Prenom, u.Nom, pcp.EstChefPrincipal
+        FROM ProjetsChefsProjet pcp
+        INNER JOIN Utilisateurs u ON pcp.UtilisateurId = u.Id
+        WHERE pcp.ProjetId = @ProjetId
+        ORDER BY pcp.EstChefPrincipal DESC, u.Nom", conn);
+
+            cmd.Parameters.AddWithValue("@ProjetId", projetId);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                chefs.Add(new ResponsableDTO
+                {
+                    Id = reader.GetInt32("Id"),
+                    Prenom = reader.GetString("Prenom"),
+                    Nom = reader.GetString("Nom"),
+                });
+            }
+            return chefs;
+        }
+
+        /// <summary>
+        /// Remplace en bloc les chefs d'un projet.
+        /// Le premier de la liste devient EstChefPrincipal = 1.
+        /// Met également à jour ChefProjetId (legacy) avec le chef principal.
+        /// </summary>
+        private async Task SyncChefsProjetAsync(
+            SqlConnection conn, SqlTransaction transaction,
+            int projetId, List<int> chefIds)
+        {
+            // Supprimer les anciens liens
+            using (var del = new SqlCommand(
+                "DELETE FROM ProjetsChefsProjet WHERE ProjetId = @ProjetId",
+                conn, transaction))
+            {
+                del.Parameters.AddWithValue("@ProjetId", projetId);
+                await del.ExecuteNonQueryAsync();
+            }
+
+            // Insérer les nouveaux (distinct pour éviter les doublons si liste mal formée)
+            var distinctIds = chefIds.Distinct().ToList();
+            for (int i = 0; i < distinctIds.Count; i++)
+            {
+                using var ins = new SqlCommand(@"
+            INSERT INTO ProjetsChefsProjet (ProjetId, UtilisateurId, EstChefPrincipal, DateCreation)
+            VALUES (@ProjetId, @UtilisateurId, @EstChefPrincipal, GETUTCDATE())",
+                    conn, transaction);
+
+                ins.Parameters.AddWithValue("@ProjetId", projetId);
+                ins.Parameters.AddWithValue("@UtilisateurId", distinctIds[i]);
+                ins.Parameters.AddWithValue("@EstChefPrincipal", i == 0 ? 1 : 0);
+                await ins.ExecuteNonQueryAsync();
+            }
+
+            // Mettre à jour ChefProjetId (rétrocompatibilité) avec le chef principal
+            using var upd = new SqlCommand(@"
+        UPDATE Projets SET ChefProjetId = @ChefPrincipalId
+        WHERE Id = @ProjetId",
+                conn, transaction);
+
+            upd.Parameters.AddWithValue("@ChefPrincipalId", distinctIds.First());
+            upd.Parameters.AddWithValue("@ProjetId", projetId);
+            await upd.ExecuteNonQueryAsync();
+        }
     }
+
 }

@@ -1809,6 +1809,16 @@
   },
   {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
+    "Method": "DebugClaims",
+    "RelativePath": "api/Parametres/debug-claims",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Utilisateurs.ParametresController",
     "Method": "GetAllPermissions",
     "RelativePath": "api/Parametres/permissions",
     "HttpMethod": "GET",
@@ -3523,6 +3533,38 @@
         "Name": "typeMouvement",
         "Type": "System.String",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Stock.StockController",
+    "Method": "EnregistrerBordereauEntree",
+    "RelativePath": "api/Stock/mouvements/bordereau-entree",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.Stock.BordereauEntreeRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Stock.StockController",
+    "Method": "EnregistrerBordereauSortie",
+    "RelativePath": "api/Stock/mouvements/bordereau-sortie",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.Stock.BordereauSortieRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []

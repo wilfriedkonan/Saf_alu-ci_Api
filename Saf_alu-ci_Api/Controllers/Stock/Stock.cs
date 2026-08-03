@@ -1026,4 +1026,94 @@ namespace Saf_alu_ci_Api.Controllers.Stock
         public int DemandesAttenteComptabilite { get; set; }
         public int MouvementsDuMois { get; set; }
     }
+
+    // ============================================================
+    // REQUEST DTOs — BORDEREAU D'ENTRÉE / SORTIE
+    // ============================================================
+
+    /// <summary>
+    /// Bordereau d'entrée : plusieurs articles en une seule requête.
+    /// Une seule transaction — tout passe ou tout échoue.
+    /// </summary>
+    public class BordereauEntreeRequest
+    {
+        public int DepotId { get; set; }
+        /// <summary>N° de BL, de bon de commande, ou référence libre</summary>
+        public string? Reference { get; set; }
+        public int? FournisseurId { get; set; }
+        public string? Notes { get; set; }
+        public List<BordereauLigneEntreeRequest> Lignes { get; set; } = new();
+    }
+
+    public class BordereauLigneEntreeRequest
+    {
+        public int ArticleId { get; set; }
+        public decimal Quantite { get; set; }
+        public decimal? PrixUnitaire { get; set; }
+        /// <summary>Note spécifique à cette ligne (état, lot fournisseur…)</summary>
+        public string? Notes { get; set; }
+    }
+
+    /// <summary>
+    /// Bordereau de sortie : plusieurs articles en une seule requête.
+    /// Traitement ligne par ligne — permet le succès partiel.
+    /// Chaque ligne applique la logique FIFO existante.
+    /// </summary>
+    public class BordereauSortieRequest
+    {
+        public int DepotId { get; set; }
+        public string? Reference { get; set; }
+        public int? ProjetId { get; set; }
+        public int? EtapeProjetId { get; set; }
+        public string? MotifSortie { get; set; }
+        public string? Notes { get; set; }
+        public List<BordereauLigneSortieRequest> Lignes { get; set; } = new();
+    }
+
+    public class BordereauLigneSortieRequest
+    {
+        public int ArticleId { get; set; }
+        public decimal Quantite { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    // ── RESPONSE DTOs ─────────────────────────────────────────────
+
+    public class BordereauLigneResultDTO
+    {
+        public int ArticleId { get; set; }
+        public string ArticleNom { get; set; } = string.Empty;
+        public string ArticleReference { get; set; } = string.Empty;
+        public decimal Quantite { get; set; }
+        public decimal? PrixUnitaire { get; set; }
+        public int? MouvementId { get; set; }
+        public decimal? QuantiteAvant { get; set; }
+        public decimal? QuantiteApres { get; set; }
+        public bool Succes { get; set; }
+        public string? Erreur { get; set; }
+    }
+
+    public class BordereauEntreeResultDTO
+    {
+        public string? Reference { get; set; }
+        public int DepotId { get; set; }
+        public string DepotNom { get; set; } = string.Empty;
+        public int NbLignesTotal { get; set; }
+        public int NbLignesReussies { get; set; }
+        public decimal MontantTotalEntre { get; set; }
+        public List<BordereauLigneResultDTO> Lignes { get; set; } = new();
+        public string Message { get; set; } = string.Empty;
+    }
+
+    public class BordereauSortieResultDTO
+    {
+        public string? Reference { get; set; }
+        public int DepotId { get; set; }
+        public string DepotNom { get; set; } = string.Empty;
+        public int NbLignesTotal { get; set; }
+        public int NbLignesReussies { get; set; }
+        public int NbLignesEchec { get; set; }
+        public List<BordereauLigneResultDTO> Lignes { get; set; } = new();
+        public string Message { get; set; } = string.Empty;
+    }
 }

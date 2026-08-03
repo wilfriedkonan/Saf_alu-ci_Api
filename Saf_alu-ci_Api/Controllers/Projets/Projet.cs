@@ -28,10 +28,13 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public string? VilleChantier { get; set; }
         public int PourcentageAvancement { get; set; } = 0;
         public int? ChefProjetId { get; set; }
+        public List<ResponsableDTO>? ChefsProjet { get; set; }
         public DateTime DateCreation { get; set; } = DateTime.UtcNow;
         public DateTime DateModification { get; set; } = DateTime.UtcNow;
         public int UtilisateurCreation { get; set; }
         public bool Actif { get; set; } = true;
+        public int? CompteId { get; set; }
+        public int? DepotId { get; set; }
 
         // ========================================
         // NOUVELLES COLONNES - LIEN DQE
@@ -314,6 +317,8 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public string? Unite { get; set; }
         public decimal? QuantitePrevue { get; set; }
         public decimal? PrixUnitairePrevu { get; set; }
+        public int? CompteId { get; set; }
+        public int? DepotId { get; set; }
 
         // Responsable
         public int? ResponsableId { get; set; }
@@ -353,6 +358,8 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public DateTime? DateFinPrevue { get; set; }
         public DateTime? DateFinReelle { get; set; }
         public int? ResponsableId { get; set; }
+
+
         //public int? IdSousTraitant { get; set; }
         public bool? EstActif { get; set; }
         public string? TypeResponsable { get; set; }
@@ -389,6 +396,9 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public string? CodePostalChantier { get; set; }
         public string? VilleChantier { get; set; }
         public int? ChefProjetId { get; set; }
+        public List<int>? ChefProjetIds { get; set; }
+        public int? CompteId { get; set; }
+        public int? DepotId { get; set; }
         public List<CreateEtapeProjetRequest>? Etapes { get; set; }
 
         // ========================================
@@ -492,8 +502,10 @@ namespace Saf_alu_ci_Api.Controllers.Projets
         public string? CodePostalChantier { get; set; }
         public string? VilleChantier { get; set; }
         public int? ChefProjetId { get; set; }
+        public List<int>? ChefProjetIds { get; set; }
         public int? PourcentageAvancement { get; set; }
-
+        public int? CompteId { get; set; }
+        public int? DepotId { get; set; }
         // Étapes (optionnel pour mise à jour complète des étapes)
         public List<UpdateEtapeProjetRequest>? Etapes { get; set; }
     }

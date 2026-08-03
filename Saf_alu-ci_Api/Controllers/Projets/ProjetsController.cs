@@ -20,12 +20,18 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             _tresorerieService = tresorerieService;
         }
 
+      
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             try
             {
-                var projets = await _projetService.GetAllAsync();
+                // 🆕 Extraire userId et role depuis le JWT
+                var userId = GetCurrentUserId();
+                var userRole = GetCurrentUserRole();
+                var projets = await _projetService.GetAllAsync(userId, userRole);
+
                 var result = projets.Select(p => new
                 {
                     p.Id,
@@ -41,15 +47,18 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     Client = p.Client != null ? new
                     {
                         p.Client.Id,
-                        Nom = !string.IsNullOrEmpty(p.Client.Nom) ? p.Client.Nom :
-                              $"{p.Client.Nom}".Trim(),
+                        Nom = !string.IsNullOrEmpty(p.Client.Nom) ? p.Client.Nom : $"{p.Client.Nom}".Trim(),
                         telephone = p.Client.Telephone,
-
                     } : null,
                     TypeProjet = p.TypeProjet?.Nom,
+                    // 🆕 Chef principal (legacy — rétrocompatibilité frontend)
                     ChefProjet = p.ChefProjet != null ? $"{p.ChefProjet.Prenom} {p.ChefProjet.Nom}" : null,
+                    // 🆕 Liste complète des chefs
+                    ChefsProjet = p.ChefsProjet ?? new List<ResponsableDTO>(),
                     StatutAvancement = GetStatutAvancement(p),
-                    depenseGlobale = p.DepenseGlobale
+                    depenseGlobale = p.DepenseGlobale,
+                    p.DepotId,
+                    p.CompteId
                 });
 
                 return Ok(result);
@@ -209,7 +218,7 @@ namespace Saf_alu_ci_Api.Controllers.Projets
                     }).ToList();
                 }
 
-                var projetId = await _projetService.CreateAsync(projet);
+                var projetId = await _projetService.CreateAsync(projet, model.ChefProjetIds);
                 projet.Id = projetId;
 
                 return CreatedAtAction(nameof(Get), new { id = projetId }, new

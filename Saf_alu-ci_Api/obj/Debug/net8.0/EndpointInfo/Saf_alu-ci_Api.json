@@ -2817,6 +2817,18 @@
         }
       }
     },
+    "/api/Parametres/debug-claims": {
+      "get": {
+        "tags": [
+          "Parametres"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Parametres/roles": {
       "get": {
         "tags": [
@@ -5599,6 +5611,68 @@
         }
       }
     },
+    "/api/Stock/mouvements/bordereau-entree": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BordereauEntreeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BordereauEntreeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BordereauEntreeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Stock/mouvements/bordereau-sortie": {
+      "post": {
+        "tags": [
+          "Stock"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BordereauSortieRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BordereauSortieRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BordereauSortieRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Stock/rapports/demandes-par-projet": {
       "get": {
         "tags": [
@@ -7616,6 +7690,116 @@
         },
         "additionalProperties": false
       },
+      "BordereauEntreeRequest": {
+        "type": "object",
+        "properties": {
+          "depotId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "fournisseurId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "lignes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BordereauLigneEntreeRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BordereauLigneEntreeRequest": {
+        "type": "object",
+        "properties": {
+          "articleId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantite": {
+            "type": "number",
+            "format": "double"
+          },
+          "prixUnitaire": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BordereauLigneSortieRequest": {
+        "type": "object",
+        "properties": {
+          "articleId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantite": {
+            "type": "number",
+            "format": "double"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BordereauSortieRequest": {
+        "type": "object",
+        "properties": {
+          "depotId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "projetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "etapeProjetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "motifSortie": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "lignes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BordereauLigneSortieRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "Client": {
         "type": "object",
         "properties": {
@@ -8360,6 +8544,16 @@
             "format": "double",
             "nullable": true
           },
+          "compteId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "depotId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
           "responsableId": {
             "type": "integer",
             "format": "int32",
@@ -8893,6 +9087,24 @@
             "nullable": true
           },
           "chefProjetId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "chefProjetIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "compteId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "depotId": {
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -10813,7 +11025,25 @@
             "format": "int32",
             "nullable": true
           },
+          "chefProjetIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
           "pourcentageAvancement": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "compteId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "depotId": {
             "type": "integer",
             "format": "int32",
             "nullable": true

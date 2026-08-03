@@ -20,46 +20,61 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         // GESTION DES COMPTES
         // =============================================
 
-        public async Task<List<Compte>> GetAllComptesAsync()
+        public async Task<List<Compte>> GetAllComptesAsync(
+            int? userId = null, string? userRole = null)
         {
-            var comptes = new List<Compte>();
+            var rolesAdmin = new[] { "super_admin", "admin", "comptable" };
+            bool filtrer = userId.HasValue
+                          && !string.IsNullOrEmpty(userRole)
+                          && !rolesAdmin.Contains(userRole);
 
+            var comptes = new List<Compte>();
             using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand("SELECT * FROM Comptes WHERE Actif = 1 ORDER BY TypeCompte, Nom", conn);
+
+            // 🆕 Si filtrage actif : uniquement les comptes liés aux projets de l'utilisateur
+            var sql = filtrer
+                ? @"SELECT * FROM Comptes
+            WHERE Actif = 1
+              AND Id IN (
+                  SELECT DISTINCT p.CompteId
+                  FROM Projets p
+                  INNER JOIN ProjetsChefsProjet pcp ON pcp.ProjetId = p.Id
+                  WHERE p.Actif = 1
+                    AND p.CompteId IS NOT NULL
+                    AND pcp.UtilisateurId = @UserId
+              )
+            ORDER BY TypeCompte, Nom"
+                : "SELECT * FROM Comptes WHERE Actif = 1 ORDER BY TypeCompte, Nom";
+
+            using var cmd = new SqlCommand(sql, conn);
+            if (filtrer)
+                cmd.Parameters.AddWithValue("@UserId", userId!.Value);
 
             await conn.OpenAsync();
             using var reader = await cmd.ExecuteReaderAsync();
-
             while (await reader.ReadAsync())
-            {
                 comptes.Add(MapToCompte(reader));
-            }
+
+            // Calcul du solde actuel par compte (inchangé)
             foreach (var item in comptes)
             {
                 decimal soldeActuel = 0;
-
                 var lstMvt = GetMouvementsAsync(item.Id);
                 if (lstMvt != null)
                 {
-                    foreach (var items in lstMvt.Result)
+                    foreach (var mvt in lstMvt.Result)
                     {
-                        if (items.TypeMouvement == "Entree")
-                        {
-                            soldeActuel += items.Montant;
-                        }
-                        else if (items.TypeMouvement == "Sortie")
-                        {
-                            soldeActuel -= items.Montant;
-                        }
+                        if (mvt.TypeMouvement == "Entree")
+                            soldeActuel += mvt.Montant;
+                        else if (mvt.TypeMouvement == "Sortie")
+                            soldeActuel -= mvt.Montant;
                     }
                 }
-
                 item.SoldeActuel = soldeActuel;
             }
 
             return comptes;
         }
-
         public async Task<Compte?> GetCompteByIdAsync(int id)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -160,34 +175,61 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             DateTime? dateDebut = null,
             DateTime? dateFin = null,
             int page = 1,
-            int pageSize = 1000
-        )
+            int pageSize = 1000,
+            // 🆕 Paramètres de filtrage rôle
+            int? userId = null,
+            string? userRole = null)
         {
+            var rolesAdmin = new[] { "super_admin", "admin", "comptable" };
+            bool filtrer = userId.HasValue
+                          && !string.IsNullOrEmpty(userRole)
+                          && !rolesAdmin.Contains(userRole);
 
             var mouvements = new List<MouvementFinancier>();
-            pageSize = mouvements.Count > 0 ? mouvements.Count : pageSize;
+            pageSize = pageSize > 0 ? pageSize : 1000;
+
             using var conn = new SqlConnection(_connectionString);
-
-            var sql = @"
-            SELECT mf.*, c.Nom as CompteNom, cd.Nom as CompteDestinationNom
-            FROM MouvementsFinanciers mf
-            LEFT JOIN Comptes c ON mf.CompteId = c.Id
-            LEFT JOIN Comptes cd ON mf.CompteDestinationId = cd.Id
-            WHERE mf.Actif = 1";
-
             var parameters = new List<SqlParameter>();
 
-            // Filtrage par date
+            var sql = @"
+        SELECT mf.*, c.Nom as CompteNom, cd.Nom as CompteDestinationNom
+        FROM MouvementsFinanciers mf
+        LEFT JOIN Comptes c  ON mf.CompteId            = c.Id
+        LEFT JOIN Comptes cd ON mf.CompteDestinationId = cd.Id
+        WHERE mf.Actif = 1";
+
+            // 🆕 Filtre rôle : mouvements liés aux projets ou comptes accessibles
+            if (filtrer)
+            {
+                sql += @"
+          AND (
+              -- Mouvement lié directement à un projet accessible
+              (mf.ProjetId IS NOT NULL AND mf.ProjetId IN (
+                  SELECT DISTINCT pcp.ProjetId
+                  FROM ProjetsChefsProjet pcp
+                  INNER JOIN Projets p ON p.Id = pcp.ProjetId AND p.Actif = 1
+                  WHERE pcp.UtilisateurId = @UserId
+              ))
+              OR
+              -- Mouvement sur un compte lié à un projet accessible
+              mf.CompteId IN (
+                  SELECT DISTINCT p.CompteId
+                  FROM Projets p
+                  INNER JOIN ProjetsChefsProjet pcp ON pcp.ProjetId = p.Id
+                  WHERE p.Actif = 1
+                    AND p.CompteId IS NOT NULL
+                    AND pcp.UtilisateurId = @UserId
+              )
+          )";
+                parameters.Add(new SqlParameter("@UserId", userId!.Value));
+            }
+
+            // Filtres existants (inchangés)
             if (dateDebut.HasValue)
             {
                 sql += " AND mf.DateMouvement >= @DateDebut";
                 parameters.Add(new SqlParameter("@DateDebut", dateDebut.Value));
             }
-            //else
-            //{
-            //    sql += " AND mf.DateMouvement >= DATEADD(DAY, -@NbJours, GETDATE())";
-            //    parameters.Add(new SqlParameter("@NbJours", nbJours));
-            //}
 
             if (dateFin.HasValue)
             {
@@ -195,29 +237,25 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 parameters.Add(new SqlParameter("@DateFin", dateFin.Value));
             }
 
-            // Filtrage par compte
             if (compteId.HasValue)
             {
                 sql += " AND (mf.CompteId = @CompteId OR mf.CompteDestinationId = @CompteId)";
                 parameters.Add(new SqlParameter("@CompteId", compteId.Value));
             }
 
-            // Filtrage par type
             if (!string.IsNullOrEmpty(typeMouvement))
             {
                 sql += " AND mf.TypeMouvement = @TypeMouvement";
                 parameters.Add(new SqlParameter("@TypeMouvement", typeMouvement));
             }
 
-            // Filtrage catégorie
             if (!string.IsNullOrEmpty(categorie))
             {
                 sql += " AND mf.Categorie LIKE @Categorie";
                 parameters.Add(new SqlParameter("@Categorie", $"%{categorie}%"));
             }
 
-            // ORDER obligatoire pour OFFSET
-            sql += @" 
+            sql += @"
         ORDER BY mf.DateMouvement DESC, mf.DateSaisie DESC
         OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
@@ -226,18 +264,13 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddRange(parameters.ToArray());
-
             await conn.OpenAsync();
             using var reader = await cmd.ExecuteReaderAsync();
-
             while (await reader.ReadAsync())
-            {
                 mouvements.Add(MapToMouvementFinancier(reader));
-            }
 
             return mouvements;
         }
-
         public async Task<List<MouvementFinancier>> GetMouvementDepenseByProjetIdAsync(int id)
         {
             var mouvements = new List<MouvementFinancier>();

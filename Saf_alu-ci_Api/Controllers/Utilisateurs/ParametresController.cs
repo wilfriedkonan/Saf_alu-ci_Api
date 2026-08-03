@@ -31,6 +31,12 @@ namespace Saf_alu_ci_Api.Controllers.Utilisateurs
         // =============================================
         // ENDPOINTS: GESTION DES RÔLES
         // =============================================
+        [HttpGet("debug-claims")]
+        public IActionResult DebugClaims()
+        {
+            var claims = User.Claims.Select(c => new { c.Type, c.Value });
+            return Ok(claims);
+        }
 
         [HttpGet("roles")]
         public async Task<IActionResult> GetAllRoles()

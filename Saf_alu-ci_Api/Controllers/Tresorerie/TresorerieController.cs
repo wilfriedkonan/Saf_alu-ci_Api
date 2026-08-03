@@ -29,7 +29,9 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         {
             try
             {
-                var comptes = await _tresorerieService.GetAllComptesAsync();
+                var userId = GetCurrentUserId();
+                var userRole = GetCurrentUserRole();
+                var comptes = await _tresorerieService.GetAllComptesAsync(userId, userRole);
 
                 if (!string.IsNullOrEmpty(typeCompte))
                 {
@@ -210,23 +212,34 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         /// </summary>
         [HttpGet("mouvements")]
         public async Task<IActionResult> GetMouvements(
-            [FromQuery] int? compteId,
-            [FromQuery] string? typeMouvement,
-            [FromQuery] string? categorie,
-            [FromQuery] DateTime? dateDebut,
-            [FromQuery] DateTime? dateFin,
-            [FromQuery] int nbJours = 30,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 1000)
+       [FromQuery] int? compteId,
+       [FromQuery] string? typeMouvement,
+       [FromQuery] string? categorie,
+       [FromQuery] DateTime? dateDebut,
+       [FromQuery] DateTime? dateFin,
+       [FromQuery] int nbJours = 30,
+       [FromQuery] int page = 1,
+       [FromQuery] int pageSize = 1000)
         {
             try
             {
+                var userId = GetCurrentUserId();
+                var userRole = GetCurrentUserRole();
+
                 var debutAnnee = new DateTime(DateTime.Now.Year, 1, 1);
                 var finAnnee = new DateTime(DateTime.Now.Year, 12, 31);
-                var mouvements = await _tresorerieService.GetMouvementsAsync(compteId, nbJours, typeMouvement, categorie, dateDebut, dateFin, page, pageSize);
-                var mouvementAN = await _tresorerieService.GetMouvementsAsync(compteId, nbJours, typeMouvement, categorie, debutAnnee, finAnnee);
 
-                // Pagination
+                // 🆕 userId + userRole ajoutés aux deux appels
+                var mouvements = await _tresorerieService.GetMouvementsAsync(
+                    compteId, nbJours, typeMouvement, categorie,
+                    dateDebut, dateFin, page, pageSize,
+                    userId, userRole);
+
+                var mouvementAN = await _tresorerieService.GetMouvementsAsync(
+                    compteId, nbJours, typeMouvement, categorie,
+                    debutAnnee, finAnnee,
+                    userId: userId, userRole: userRole);
+
                 var totalMouvements = mouvements.Count;
                 var mouvementsPagines = mouvements.Select(m => new
                 {
@@ -240,8 +253,10 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                     m.DateSaisie,
                     m.ModePaiement,
                     m.Reference,
-                    Compte = new { m.CompteId, m.Compte?.Nom }, // TODO: Navigation property
-                    CompteDestination = m.CompteDestinationId.HasValue ? new { m.CompteDestinationId, Nom = "Nom compte dest" } : null,
+                    Compte = new { m.CompteId, m.Compte?.Nom },
+                    CompteDestination = m.CompteDestinationId.HasValue
+                        ? new { m.CompteDestinationId, Nom = "Nom compte dest" }
+                        : null,
                     Couleur = GetCouleurTypeMouvement(m.TypeMouvement),
                 });
 
@@ -261,11 +276,9 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                         totalSorties = mouvements.Where(m => m.TypeMouvement == "Sortie").Sum(m => m.Montant),
                         totalVirements = mouvements.Where(m => m.TypeMouvement == "Virement").Sum(m => m.Montant),
                         nombreMouvements = totalMouvements,
-
-                        //calcule a l'année 
-                        totalEntreesAnnee = mouvements.Where(m => m.TypeMouvement == "Entree").Sum(m => m.Montant),
-                        totalSortiesAnne = mouvements.Where(m => m.TypeMouvement == "Sortie").Sum(m => m.Montant),
-
+                        // 🔧 Calculs annuels depuis mouvementAN (correction du bug existant)
+                        totalEntreesAnnee = mouvementAN.Where(m => m.TypeMouvement == "Entree").Sum(m => m.Montant),
+                        totalSortiesAnnee = mouvementAN.Where(m => m.TypeMouvement == "Sortie").Sum(m => m.Montant),
                     }
                 });
             }

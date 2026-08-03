@@ -801,6 +801,74 @@ namespace Saf_alu_ci_Api.Controllers.Stock
             catch (Exception ex) { return StatusCode(500, $"Erreur serveur : {ex.Message}"); }
         }
 
+        /// <summary>
+        /// POST /api/stock/mouvements/bordereau-entree
+        /// Réceptionne plusieurs articles en une seule requête (bordereau de livraison fournisseur).
+        /// Transaction unique : tout passe ou tout échoue.
+        /// Chaque ligne crée un mouvement Entrée + un lot FIFO + maj inventaire + maj prix moyen.
+        /// </summary>
+        [HttpPost("mouvements/bordereau-entree")]
+        public async Task<IActionResult> EnregistrerBordereauEntree(
+            [FromBody] BordereauEntreeRequest model)
+        {
+            try
+            {
+                if (!model.Lignes.Any())
+                    return BadRequest("Le bordereau doit contenir au moins une ligne.");
+
+                var lignesInvalides = model.Lignes
+                    .Where(l => l.Quantite <= 0)
+                    .Select(l => l.ArticleId)
+                    .ToList();
+
+                if (lignesInvalides.Any())
+                    return BadRequest($"Quantité invalide (≤ 0) pour les articles : {string.Join(", ", lignesInvalides)}");
+
+                var operateurId = GetCurrentUserId();
+                var result = await _stockService.EnregistrerBordereauEntreeAsync(model, operateurId);
+
+                return Ok(result);
+            }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, $"Erreur serveur : {ex.Message}"); }
+        }
+
+        /// <summary>
+        /// POST /api/stock/mouvements/bordereau-sortie
+        /// Sors plusieurs articles en une seule requête (bordereau de sortie).
+        /// Traitement ligne par ligne avec logique FIFO — permet le succès partiel.
+        /// Les lignes en erreur (stock insuffisant…) sont signalées sans bloquer les autres.
+        /// </summary>
+        [HttpPost("mouvements/bordereau-sortie")]
+        public async Task<IActionResult> EnregistrerBordereauSortie(
+            [FromBody] BordereauSortieRequest model)
+        {
+            try
+            {
+                if (!model.Lignes.Any())
+                    return BadRequest("Le bordereau doit contenir au moins une ligne.");
+
+                var lignesInvalides = model.Lignes
+                    .Where(l => l.Quantite <= 0)
+                    .Select(l => l.ArticleId)
+                    .ToList();
+
+                if (lignesInvalides.Any())
+                    return BadRequest($"Quantité invalide (≤ 0) pour les articles : {string.Join(", ", lignesInvalides)}");
+
+                var operateurId = GetCurrentUserId();
+                var result = await _stockService.EnregistrerBordereauSortieAsync(model, operateurId);
+
+                // 207 Multi-Status si résultat partiel, 200 si tout est OK
+                return result.NbLignesEchec > 0
+                    ? StatusCode(207, result)
+                    : Ok(result);
+            }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, $"Erreur serveur : {ex.Message}"); }
+        }
         // ============================================================
         // RAPPORTS — depuis les vues SQL
         // ============================================================

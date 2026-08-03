@@ -1858,6 +1858,277 @@ namespace Saf_alu_ci_Api.Controllers.Stock
         }
 
         // ============================================================
+        // BORDEREAU D'ENTRÉE — plusieurs articles, une transaction
+        // ============================================================
+
+        /// <summary>
+        /// Enregistre un bordereau d'entrée (plusieurs articles) en une seule transaction.
+        /// Tout passe ou tout échoue : si une ligne est invalide, le bordereau entier est annulé.
+        /// Pour chaque ligne : création du mouvement + lot FIFO + maj inventaire + prix moyen.
+        /// </summary>
+        public async Task<BordereauEntreeResultDTO> EnregistrerBordereauEntreeAsync(
+            BordereauEntreeRequest req, int operateurId)
+        {
+            if (!req.Lignes.Any())
+                throw new ArgumentException("Le bordereau doit contenir au moins une ligne.");
+
+            if (req.Lignes.Any(l => l.Quantite <= 0))
+                throw new ArgumentException("Toutes les quantités doivent être supérieures à 0.");
+
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                // Récupérer le nom du dépôt pour la réponse
+                string depotNom;
+                using (var cmd = new SqlCommand(
+                    "SELECT Nom FROM Stock_Depots WHERE Id = @Id AND Actif = 1", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@Id", req.DepotId);
+                    var result = await cmd.ExecuteScalarAsync();
+                    if (result == null)
+                        throw new InvalidOperationException($"Dépôt {req.DepotId} introuvable ou inactif.");
+                    depotNom = result.ToString()!;
+                }
+
+                var lignesResult = new List<BordereauLigneResultDTO>();
+                decimal montantTotal = 0;
+
+                foreach (var ligne in req.Lignes)
+                {
+                    // Récupérer le nom et la référence de l'article
+                    string articleNom = "", articleRef = "";
+                    using (var cmd = new SqlCommand(
+                        "SELECT Nom, Reference FROM Stock_Articles WHERE Id = @Id AND Actif = 1",
+                        conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", ligne.ArticleId);
+                        using var r = await cmd.ExecuteReaderAsync();
+                        if (!await r.ReadAsync())
+                            throw new InvalidOperationException(
+                                $"Article {ligne.ArticleId} introuvable ou inactif. Bordereau annulé.");
+                        articleNom = r.GetString("Nom");
+                        articleRef = r.GetString("Reference");
+                    }
+
+                    var qAvant = await GetOuInitialiserInventaire(conn, transaction, ligne.ArticleId, req.DepotId);
+                    var qApres = qAvant + ligne.Quantite;
+
+                    // Référence : on préfixe avec le N° de bordereau si fourni
+                    var refMouvement = string.IsNullOrEmpty(req.Reference)
+                        ? null
+                        : req.Reference;
+
+                    // Insérer le mouvement
+                    int mouvementId;
+                    using (var cmd = new SqlCommand(@"
+                INSERT INTO Stock_Mouvements
+                    (ArticleId, DepotId, TypeMouvement, Quantite,
+                     QuantiteAvant, QuantiteApres, PrixUnitaire, MontantTotal,
+                     Reference, OperateurId, DateMouvement, Notes, DateCreation)
+                VALUES
+                    (@ArticleId, @DepotId, 'Entree', @Quantite,
+                     @QAvant, @QApres, @PrixUnitaire, @MontantTotal,
+                     @Reference, @OperateurId, GETUTCDATE(), @Notes, GETUTCDATE());
+                SELECT SCOPE_IDENTITY();", conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@ArticleId", ligne.ArticleId);
+                        cmd.Parameters.AddWithValue("@DepotId", req.DepotId);
+                        cmd.Parameters.AddWithValue("@Quantite", ligne.Quantite);
+                        cmd.Parameters.AddWithValue("@QAvant", qAvant);
+                        cmd.Parameters.AddWithValue("@QApres", qApres);
+                        cmd.Parameters.AddWithValue("@PrixUnitaire", ligne.PrixUnitaire ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@MontantTotal", ligne.PrixUnitaire.HasValue
+                            ? (object)(ligne.PrixUnitaire.Value * ligne.Quantite) : DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Reference", refMouvement ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@OperateurId", operateurId);
+                        cmd.Parameters.AddWithValue("@Notes",
+                            string.IsNullOrEmpty(ligne.Notes) ? req.Notes ?? (object)DBNull.Value
+                                                              : (object)ligne.Notes);
+                        mouvementId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                    }
+
+                    // Créer le lot FIFO
+                    using (var cmd = new SqlCommand(@"
+                INSERT INTO Stock_LotEntrees
+                    (ArticleId, DepotId, MouvementEntreeId,
+                     QuantiteEntree, QuantiteRestante, PrixUnitaire, Reference, Notes, DateCreation)
+                VALUES
+                    (@ArticleId, @DepotId, @MouvId,
+                     @Qte, @Qte, @Prix, @Ref, @Notes, GETUTCDATE())", conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@ArticleId", ligne.ArticleId);
+                        cmd.Parameters.AddWithValue("@DepotId", req.DepotId);
+                        cmd.Parameters.AddWithValue("@MouvId", mouvementId);
+                        cmd.Parameters.AddWithValue("@Qte", ligne.Quantite);
+                        cmd.Parameters.AddWithValue("@Prix", ligne.PrixUnitaire ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Ref", refMouvement ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Notes", ligne.Notes ?? (object)DBNull.Value);
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+
+                    // Mettre à jour l'inventaire
+                    await MajInventaire(conn, transaction, ligne.ArticleId, req.DepotId, qApres, null);
+
+                    // Mettre à jour le prix moyen
+                    if (ligne.PrixUnitaire.HasValue && ligne.PrixUnitaire > 0)
+                        await MajPrixUnitaireMoyen(conn, transaction, ligne.ArticleId,
+                            ligne.Quantite, ligne.PrixUnitaire.Value);
+
+                    if (ligne.PrixUnitaire.HasValue)
+                        montantTotal += ligne.PrixUnitaire.Value * ligne.Quantite;
+
+                    lignesResult.Add(new BordereauLigneResultDTO
+                    {
+                        ArticleId = ligne.ArticleId,
+                        ArticleNom = articleNom,
+                        ArticleReference = articleRef,
+                        Quantite = ligne.Quantite,
+                        PrixUnitaire = ligne.PrixUnitaire,
+                        MouvementId = mouvementId,
+                        QuantiteAvant = qAvant,
+                        QuantiteApres = qApres,
+                        Succes = true,
+                    });
+                }
+
+                transaction.Commit();
+
+                return new BordereauEntreeResultDTO
+                {
+                    Reference = req.Reference,
+                    DepotId = req.DepotId,
+                    DepotNom = depotNom,
+                    NbLignesTotal = req.Lignes.Count,
+                    NbLignesReussies = lignesResult.Count,
+                    MontantTotalEntre = montantTotal,
+                    Lignes = lignesResult,
+                    Message = $"Bordereau d'entrée enregistré : {lignesResult.Count} article(s) réceptionnés."
+                };
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        // ============================================================
+        // BORDEREAU DE SORTIE — plusieurs articles, traitement FIFO ligne par ligne
+        // ============================================================
+
+        /// <summary>
+        /// Enregistre un bordereau de sortie (plusieurs articles).
+        /// Traitement ligne par ligne avec la logique FIFO existante.
+        /// Permet le succès partiel : les lignes en erreur (stock insuffisant…)
+        /// sont signalées dans la réponse sans bloquer les autres.
+        /// </summary>
+        public async Task<BordereauSortieResultDTO> EnregistrerBordereauSortieAsync(
+            BordereauSortieRequest req, int operateurId)
+        {
+            if (!req.Lignes.Any())
+                throw new ArgumentException("Le bordereau doit contenir au moins une ligne.");
+
+            // Récupérer le nom du dépôt
+            string depotNom;
+            using (var conn0 = new SqlConnection(_connectionString))
+            {
+                await conn0.OpenAsync();
+                using var cmd = new SqlCommand(
+                    "SELECT Nom FROM Stock_Depots WHERE Id = @Id AND Actif = 1", conn0);
+                cmd.Parameters.AddWithValue("@Id", req.DepotId);
+                var r = await cmd.ExecuteScalarAsync();
+                if (r == null)
+                    throw new InvalidOperationException($"Dépôt {req.DepotId} introuvable ou inactif.");
+                depotNom = r.ToString()!;
+            }
+
+            var lignesResult = new List<BordereauLigneResultDTO>();
+
+            // Traiter chaque ligne indépendamment (transaction par ligne → succès partiel)
+            foreach (var ligne in req.Lignes)
+            {
+                // Récupérer les infos article pour la réponse
+                string articleNom = $"Article #{ligne.ArticleId}", articleRef = "";
+                try
+                {
+                    using var conn = new SqlConnection(_connectionString);
+                    await conn.OpenAsync();
+
+                    using (var cmd = new SqlCommand(
+                        "SELECT Nom, Reference FROM Stock_Articles WHERE Id = @Id AND Actif = 1", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", ligne.ArticleId);
+                        using var r = await cmd.ExecuteReaderAsync();
+                        if (await r.ReadAsync())
+                        {
+                            articleNom = r.GetString("Nom");
+                            articleRef = r.GetString("Reference");
+                        }
+                    }
+
+                    // Déléguer à la logique FIFO existante
+                    var sortieReq = new EnregistrerSortieRequest
+                    {
+                        ArticleId = ligne.ArticleId,
+                        DepotId = req.DepotId,
+                        Quantite = ligne.Quantite,
+                        Reference = req.Reference,
+                        ProjetId = req.ProjetId,
+                        EtapeProjetId = req.EtapeProjetId,
+                        MotifSortie = req.MotifSortie,
+                        OperateurId = operateurId,
+                        Notes = string.IsNullOrEmpty(ligne.Notes) ? req.Notes : ligne.Notes,
+                    };
+
+                    var result = await EnregistrerSortieAsync(sortieReq);
+
+                    lignesResult.Add(new BordereauLigneResultDTO
+                    {
+                        ArticleId = ligne.ArticleId,
+                        ArticleNom = articleNom,
+                        ArticleReference = articleRef,
+                        Quantite = ligne.Quantite,
+                        MouvementId = result.MouvementId,
+                        QuantiteAvant = result.QuantiteAvant,
+                        QuantiteApres = result.QuantiteApres,
+                        Succes = true,
+                    });
+                }
+                catch (Exception ex)
+                {
+                    lignesResult.Add(new BordereauLigneResultDTO
+                    {
+                        ArticleId = ligne.ArticleId,
+                        ArticleNom = articleNom,
+                        ArticleReference = articleRef,
+                        Quantite = ligne.Quantite,
+                        Succes = false,
+                        Erreur = ex.Message,
+                    });
+                }
+            }
+
+            var nbReussies = lignesResult.Count(l => l.Succes);
+            var nbEchec = lignesResult.Count(l => !l.Succes);
+
+            return new BordereauSortieResultDTO
+            {
+                Reference = req.Reference,
+                DepotId = req.DepotId,
+                DepotNom = depotNom,
+                NbLignesTotal = req.Lignes.Count,
+                NbLignesReussies = nbReussies,
+                NbLignesEchec = nbEchec,
+                Lignes = lignesResult,
+                Message = nbEchec == 0
+                    ? $"Bordereau de sortie enregistré : {nbReussies} article(s) sortis avec succès."
+                    : $"{nbReussies} sortie(s) réussie(s), {nbEchec} échec(s). Vérifiez les détails."
+            };
+        }
+        // ============================================================
         // RAPPORTS — Historique paginé avec recherche
         // ============================================================
 
