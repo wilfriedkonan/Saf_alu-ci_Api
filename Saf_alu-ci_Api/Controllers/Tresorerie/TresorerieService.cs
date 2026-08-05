@@ -56,22 +56,22 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 comptes.Add(MapToCompte(reader));
 
             // Calcul du solde actuel par compte (inchangé)
-            foreach (var item in comptes)
-            {
-                decimal soldeActuel = 0;
-                var lstMvt = GetMouvementsAsync(item.Id);
-                if (lstMvt != null)
-                {
-                    foreach (var mvt in lstMvt.Result)
-                    {
-                        if (mvt.TypeMouvement == "Entree")
-                            soldeActuel += mvt.Montant;
-                        else if (mvt.TypeMouvement == "Sortie")
-                            soldeActuel -= mvt.Montant;
-                    }
-                }
-                item.SoldeActuel = soldeActuel;
-            }
+            //foreach (var item in comptes)
+            //{
+            //    decimal soldeActuel = 0;
+            //    var lstMvt = GetMouvementsAsync(item.Id);
+            //    if (lstMvt != null)
+            //    {
+            //        foreach (var mvt in lstMvt.Result)
+            //        {
+            //            if (mvt.TypeMouvement == "Entree")
+            //                soldeActuel += mvt.Montant;
+            //            else if (mvt.TypeMouvement == "Sortie")
+            //                soldeActuel -= mvt.Montant;
+            //        }
+            //    }
+            //    item.SoldeActuel = soldeActuel;
+            //}
 
             return comptes;
         }
@@ -363,33 +363,89 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
         }
 
 
+        //public async Task<int> CreateMouvementAsync(MouvementFinancier mouvement)
+        //{
+        //    using var conn = new SqlConnection(_connectionString);
+
+        //    // Vérification du solde pour les sorties et virements
+        //    if ((mouvement.TypeMouvement == "Sortie" || mouvement.TypeMouvement == "Virement") && mouvement.Montant > 0)
+        //    {
+        //        var soldeSuffisant = await VerifierSoldeSuffisantAsync(mouvement.CompteId, mouvement.Montant);
+        //        if (!soldeSuffisant)
+        //        {
+        //            throw new InvalidOperationException("Solde insuffisant pour effectuer cette opération");
+        //        }
+        //    }
+
+        //    using var cmd = new SqlCommand(@"
+        //        INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, FactureId, ProjetId, SousTraitantId, EtapeProjetId,
+        //                                       Libelle, Description, Montant, DateMouvement, DateSaisie, ModePaiement,
+        //                                       Reference, CompteDestinationId, UtilisateurCreation,Actif)
+        //        VALUES (@CompteId, @TypeMouvement, @Categorie, @FactureId, @ProjetId, @SousTraitantId, @EtapeProjetId,
+        //               @Libelle, @Description, @Montant, @DateMouvement, @DateSaisie, @ModePaiement,
+        //               @Reference, @CompteDestinationId, @UtilisateurCreation,@Actif);
+        //        SELECT CAST(SCOPE_IDENTITY() as int)", conn);
+
+        //    AddMouvementParameters(cmd, mouvement);
+
+        //    await conn.OpenAsync();
+        //    return (int)await cmd.ExecuteScalarAsync();
+        //}
+
         public async Task<int> CreateMouvementAsync(MouvementFinancier mouvement)
         {
             using var conn = new SqlConnection(_connectionString);
-
-            // Vérification du solde pour les sorties et virements
-            if ((mouvement.TypeMouvement == "Sortie" || mouvement.TypeMouvement == "Virement") && mouvement.Montant > 0)
-            {
-                var soldeSuffisant = await VerifierSoldeSuffisantAsync(mouvement.CompteId, mouvement.Montant);
-                if (!soldeSuffisant)
-                {
-                    throw new InvalidOperationException("Solde insuffisant pour effectuer cette opération");
-                }
-            }
-
-            using var cmd = new SqlCommand(@"
-                INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, FactureId, ProjetId, SousTraitantId, EtapeProjetId,
-                                               Libelle, Description, Montant, DateMouvement, DateSaisie, ModePaiement,
-                                               Reference, CompteDestinationId, UtilisateurCreation,Actif)
-                VALUES (@CompteId, @TypeMouvement, @Categorie, @FactureId, @ProjetId, @SousTraitantId, @EtapeProjetId,
-                       @Libelle, @Description, @Montant, @DateMouvement, @DateSaisie, @ModePaiement,
-                       @Reference, @CompteDestinationId, @UtilisateurCreation,@Actif);
-                SELECT CAST(SCOPE_IDENTITY() as int)", conn);
-
-            AddMouvementParameters(cmd, mouvement);
-
             await conn.OpenAsync();
-            return (int)await cmd.ExecuteScalarAsync();
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                // Vérification du solde pour les Sorties
+                if (mouvement.TypeMouvement == "Sortie" && mouvement.Montant > 0)
+                {
+                    using var chk = new SqlCommand(
+                        "SELECT SoldeActuel FROM Comptes WHERE Id = @Id AND Actif = 1",
+                        conn, transaction);
+                    chk.Parameters.AddWithValue("@Id", mouvement.CompteId);
+                    var solde = await chk.ExecuteScalarAsync();
+                    if (solde == null || (decimal)solde < mouvement.Montant)
+                        throw new InvalidOperationException("Solde insuffisant pour effectuer cette opération");
+                }
+
+                // Insérer le mouvement
+                using var cmd = new SqlCommand(@"
+            INSERT INTO MouvementsFinanciers
+                (CompteId, TypeMouvement, Categorie, FactureId, ProjetId, SousTraitantId, EtapeProjetId,
+                 Libelle, Description, Montant, DateMouvement, DateSaisie, ModePaiement,
+                 Reference, CompteDestinationId, UtilisateurCreation, Actif)
+            VALUES
+                (@CompteId, @TypeMouvement, @Categorie, @FactureId, @ProjetId, @SousTraitantId, @EtapeProjetId,
+                 @Libelle, @Description, @Montant, @DateMouvement, @DateSaisie, @ModePaiement,
+                 @Reference, @CompteDestinationId, @UtilisateurCreation, @Actif);
+            SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
+
+                AddMouvementParameters(cmd, mouvement);
+                var id = (int)await cmd.ExecuteScalarAsync();
+
+                // 🆕 Mettre à jour SoldeActuel en base
+                var delta = mouvement.TypeMouvement == "Entree" ? mouvement.Montant : -mouvement.Montant;
+                using (var upd = new SqlCommand(
+                    "UPDATE Comptes SET SoldeActuel = SoldeActuel + @Delta WHERE Id = @Id",
+                    conn, transaction))
+                {
+                    upd.Parameters.AddWithValue("@Delta", delta);
+                    upd.Parameters.AddWithValue("@Id", mouvement.CompteId);
+                    await upd.ExecuteNonQueryAsync();
+                }
+
+                await transaction.CommitAsync();
+                return id;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         // ── MODIFICATION D'UN MOUVEMENT ────────────────────────────────────
@@ -471,6 +527,80 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
         // ──────────────────────────────────────────────────────────────────
 
+        //public async Task<bool> CreateVirementAsync(VirementRequest virement, int utilisateurId)
+        //{
+        //    using var conn = new SqlConnection(_connectionString);
+        //    await conn.OpenAsync();
+        //    using var transaction = conn.BeginTransaction();
+
+        //    try
+        //    {
+        //        // Vérifier que les comptes existent et sont différents
+        //        if (virement.CompteSourceId == virement.CompteDestinationId)
+        //        {
+        //            throw new InvalidOperationException("Les comptes source et destination doivent être différents");
+        //        }
+
+        //        // Vérifier que le compte source a suffisamment de fonds
+        //        using var checkCmd = new SqlCommand("SELECT SoldeActuel FROM Comptes WHERE Id = @CompteId AND Actif = 1", conn, transaction);
+        //        checkCmd.Parameters.AddWithValue("@CompteId", virement.CompteSourceId);
+        //        var soldeResult = await checkCmd.ExecuteScalarAsync();
+
+        //        if (soldeResult == null)
+        //        {
+        //            throw new InvalidOperationException("Compte source introuvable");
+        //        }
+
+        //        var soldeActuel = (decimal)soldeResult;
+        //        if (soldeActuel < virement.Montant)
+        //        {
+        //            return false; // Solde insuffisant
+        //        }
+
+        //        // Vérifier que le compte destination existe
+        //        using var checkDestCmd = new SqlCommand("SELECT COUNT(*) FROM Comptes WHERE Id = @CompteId AND Actif = 1", conn, transaction);
+        //        checkDestCmd.Parameters.AddWithValue("@CompteId", virement.CompteDestinationId);
+        //        var compteDestExiste = (int)await checkDestCmd.ExecuteScalarAsync() > 0;
+
+        //        if (!compteDestExiste)
+        //        {
+        //            throw new InvalidOperationException("Compte destination introuvable");
+        //        }
+
+        //        // Créer le mouvement de virement
+        //        var mouvement = new MouvementFinancier
+        //        {
+        //            CompteId = virement.CompteSourceId,
+        //            TypeMouvement = "Virement",
+        //            Categorie = "Virement interne",
+        //            Libelle = virement.Libelle,
+        //            Description = virement.Description,
+        //            Montant = virement.Montant,
+        //            DateMouvement = virement.DateMouvement,
+        //            DateSaisie = DateTime.UtcNow,
+        //            Reference = virement.Reference,
+        //            CompteDestinationId = virement.CompteDestinationId,
+        //            UtilisateurCreation = utilisateurId
+        //        };
+
+        //        using var cmd = new SqlCommand(@"
+        //            INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, Libelle, Description, Montant,
+        //                                           DateMouvement, DateSaisie, Reference, CompteDestinationId, UtilisateurCreation)
+        //            VALUES (@CompteId, @TypeMouvement, @Categorie, @Libelle, @Description, @Montant,
+        //                   @DateMouvement, @DateSaisie, @Reference, @CompteDestinationId, @UtilisateurCreation)", conn, transaction);
+
+        //        AddMouvementParameters(cmd, mouvement);
+        //        await cmd.ExecuteNonQueryAsync();
+
+        //        await transaction.CommitAsync();
+        //        return true;
+        //    }
+        //    catch
+        //    {
+        //        await transaction.RollbackAsync();
+        //        throw;
+        //    }
+        //}
         public async Task<bool> CreateVirementAsync(VirementRequest virement, int utilisateurId)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -479,64 +609,106 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             try
             {
-                // Vérifier que les comptes existent et sont différents
+                // ── 1. Validation de base ──────────────────────────────────────
                 if (virement.CompteSourceId == virement.CompteDestinationId)
-                {
                     throw new InvalidOperationException("Les comptes source et destination doivent être différents");
+
+                // ── 2. Vérifier le compte source et son solde ─────────────────
+                // On calcule le solde réel depuis les mouvements (pas SoldeActuel en base)
+                // pour éviter l'incohérence avec les virements précédents non répercutés
+                decimal soldeSource;
+                string? nomSource, nomDestination;
+
+                using (var cmd = new SqlCommand(@"
+                    SELECT c.Nom,
+                           c.SoldeInitial
+                           + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                     WHERE m.Actif = 1 AND m.TypeMouvement = 'Entree'
+                                       AND m.CompteId = c.Id), 0)
+                           - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                     WHERE m.Actif = 1 AND m.TypeMouvement = 'Sortie'
+                                       AND m.CompteId = c.Id), 0)
+                           - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                     WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                       AND m.CompteId = c.Id), 0)
+                           + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                     WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                       AND m.CompteDestinationId = c.Id), 0)
+                           AS SoldeReel
+                    FROM Comptes c
+                    WHERE c.Id = @CompteId AND c.Actif = 1", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@CompteId", virement.CompteSourceId);
+                    using var r = await cmd.ExecuteReaderAsync();
+                    if (!await r.ReadAsync())
+                        throw new InvalidOperationException("Compte source introuvable");
+                    nomSource = r.GetString("Nom");
+                    soldeSource = r.GetDecimal("SoldeReel");
                 }
 
-                // Vérifier que le compte source a suffisamment de fonds
-                using var checkCmd = new SqlCommand("SELECT SoldeActuel FROM Comptes WHERE Id = @CompteId AND Actif = 1", conn, transaction);
-                checkCmd.Parameters.AddWithValue("@CompteId", virement.CompteSourceId);
-                var soldeResult = await checkCmd.ExecuteScalarAsync();
-
-                if (soldeResult == null)
-                {
-                    throw new InvalidOperationException("Compte source introuvable");
-                }
-
-                var soldeActuel = (decimal)soldeResult;
-                if (soldeActuel < virement.Montant)
-                {
+                if (soldeSource < virement.Montant)
                     return false; // Solde insuffisant
+
+                // ── 3. Vérifier que le compte destination existe ───────────────
+                using (var cmd = new SqlCommand(
+                    "SELECT Nom FROM Comptes WHERE Id = @CompteId AND Actif = 1", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@CompteId", virement.CompteDestinationId);
+                    using var r = await cmd.ExecuteReaderAsync();
+                    if (!await r.ReadAsync())
+                        throw new InvalidOperationException("Compte destination introuvable");
+                    nomDestination = r.GetString("Nom");
                 }
 
-                // Vérifier que le compte destination existe
-                using var checkDestCmd = new SqlCommand("SELECT COUNT(*) FROM Comptes WHERE Id = @CompteId AND Actif = 1", conn, transaction);
-                checkDestCmd.Parameters.AddWithValue("@CompteId", virement.CompteDestinationId);
-                var compteDestExiste = (int)await checkDestCmd.ExecuteScalarAsync() > 0;
-
-                if (!compteDestExiste)
+                // ── 4. Créer UN SEUL mouvement "Virement" sur le compte source ─
+                // CompteDestinationId trace vers qui l'argent est allé.
+                // Ce type est exclu des stats (Entrée/Sortie) → pas de double comptage.
+                int mouvementId;
+                using (var cmd = new SqlCommand(@"
+            INSERT INTO MouvementsFinanciers
+                (CompteId, TypeMouvement, Categorie, Libelle, Description,
+                 Montant, DateMouvement, DateSaisie, Reference,
+                 CompteDestinationId, UtilisateurCreation, Actif)
+            VALUES
+                (@CompteId, 'Virement', 'Virement interne', @Libelle, @Description,
+                 @Montant, @DateMouvement, GETDATE(), @Reference,
+                 @CompteDestinationId, @UtilisateurCreation, 1);
+            SELECT CAST(SCOPE_IDENTITY() AS INT)", conn, transaction))
                 {
-                    throw new InvalidOperationException("Compte destination introuvable");
+                    cmd.Parameters.AddWithValue("@CompteId", virement.CompteSourceId);
+                    cmd.Parameters.AddWithValue("@Libelle", virement.Libelle);
+                    cmd.Parameters.AddWithValue("@Description", virement.Description ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Montant", virement.Montant);
+                    cmd.Parameters.AddWithValue("@DateMouvement", virement.DateMouvement);
+                    cmd.Parameters.AddWithValue("@Reference", virement.Reference ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@CompteDestinationId", virement.CompteDestinationId);
+                    cmd.Parameters.AddWithValue("@UtilisateurCreation", utilisateurId);
+                    mouvementId = (int)await cmd.ExecuteScalarAsync();
                 }
 
-                // Créer le mouvement de virement
-                var mouvement = new MouvementFinancier
+                // ── 5. Mettre à jour SoldeActuel des deux comptes en base ──────
+                // Source : on débite
+                using (var cmd = new SqlCommand(@"
+            UPDATE Comptes SET SoldeActuel = SoldeActuel - @Montant
+            WHERE Id = @Id", conn, transaction))
                 {
-                    CompteId = virement.CompteSourceId,
-                    TypeMouvement = "Virement",
-                    Categorie = "Virement interne",
-                    Libelle = virement.Libelle,
-                    Description = virement.Description,
-                    Montant = virement.Montant,
-                    DateMouvement = virement.DateMouvement,
-                    DateSaisie = DateTime.UtcNow,
-                    Reference = virement.Reference,
-                    CompteDestinationId = virement.CompteDestinationId,
-                    UtilisateurCreation = utilisateurId
-                };
+                    cmd.Parameters.AddWithValue("@Montant", virement.Montant);
+                    cmd.Parameters.AddWithValue("@Id", virement.CompteSourceId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
 
-                using var cmd = new SqlCommand(@"
-                    INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, Libelle, Description, Montant,
-                                                   DateMouvement, DateSaisie, Reference, CompteDestinationId, UtilisateurCreation)
-                    VALUES (@CompteId, @TypeMouvement, @Categorie, @Libelle, @Description, @Montant,
-                           @DateMouvement, @DateSaisie, @Reference, @CompteDestinationId, @UtilisateurCreation)", conn, transaction);
-
-                AddMouvementParameters(cmd, mouvement);
-                await cmd.ExecuteNonQueryAsync();
+                // Destination : on crédite
+                using (var cmd = new SqlCommand(@"
+            UPDATE Comptes SET SoldeActuel = SoldeActuel + @Montant
+            WHERE Id = @Id", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@Montant", virement.Montant);
+                    cmd.Parameters.AddWithValue("@Id", virement.CompteDestinationId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
 
                 await transaction.CommitAsync();
+
                 return true;
             }
             catch
@@ -545,7 +717,6 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 throw;
             }
         }
-
         public async Task CorrigerSoldeAsync(int compteId, CorrectionSoldeRequest correction, int utilisateurId)
         {
             using var conn = new SqlConnection(_connectionString);
