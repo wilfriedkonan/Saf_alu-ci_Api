@@ -56,22 +56,22 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 comptes.Add(MapToCompte(reader));
 
             // Calcul du solde actuel par compte (inchangé)
-            //foreach (var item in comptes)
-            //{
-            //    decimal soldeActuel = 0;
-            //    var lstMvt = GetMouvementsAsync(item.Id);
-            //    if (lstMvt != null)
-            //    {
-            //        foreach (var mvt in lstMvt.Result)
-            //        {
-            //            if (mvt.TypeMouvement == "Entree")
-            //                soldeActuel += mvt.Montant;
-            //            else if (mvt.TypeMouvement == "Sortie")
-            //                soldeActuel -= mvt.Montant;
-            //        }
-            //    }
-            //    item.SoldeActuel = soldeActuel;
-            //}
+            foreach (var item in comptes)
+            {
+                decimal soldeActuel = 0;
+                var lstMvt = GetMouvementsAsync(item.Id);
+                if (lstMvt != null)
+                {
+                    foreach (var mvt in lstMvt.Result)
+                    {
+                        if (mvt.TypeMouvement == "Entree")
+                            soldeActuel += mvt.Montant;
+                        else if (mvt.TypeMouvement == "Sortie")
+                            soldeActuel -= mvt.Montant;
+                    }
+                }
+                item.SoldeActuel = soldeActuel;
+            }
 
             return comptes;
         }
