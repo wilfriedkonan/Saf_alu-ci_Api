@@ -11,7 +11,6 @@ namespace Saf_alu_ci_Api.Controllers.Projets
     public class ProjetService
     {
         private readonly string _connectionString;
-
         public ProjetService(string connectionString)
         {
             _connectionString = connectionString;
@@ -1217,7 +1216,8 @@ namespace Saf_alu_ci_Api.Controllers.Projets
             cmd.Parameters.AddWithValue("@DateModification", DateTime.UtcNow);
             cmd.Parameters.AddWithValue("@UtilisateurCreation", projet.UtilisateurCreation);
             cmd.Parameters.AddWithValue("@Actif", projet.Actif);
-
+            cmd.Parameters.AddWithValue("@CompteId", projet.CompteId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@DepotId", projet.DepotId ?? (object)DBNull.Value); 
             // NOUVEAUX PARAMÈTRES DQE
             cmd.Parameters.AddWithValue("@LinkedDqeId", projet.LinkedDqeId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@LinkedDqeReference", projet.LinkedDqeReference ?? (object)DBNull.Value);
