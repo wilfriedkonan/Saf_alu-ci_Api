@@ -7710,6 +7710,10 @@
             "type": "string",
             "nullable": true
           },
+          "dateMouvement": {
+            "type": "string",
+            "format": "date-time"
+          },
           "lignes": {
             "type": "array",
             "items": {
@@ -7789,6 +7793,10 @@
           "notes": {
             "type": "string",
             "nullable": true
+          },
+          "dateMouvement": {
+            "type": "string",
+            "format": "date-time"
           },
           "lignes": {
             "type": "array",
@@ -9713,6 +9721,10 @@
           "notes": {
             "type": "string",
             "nullable": true
+          },
+          "dateMouvement": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false

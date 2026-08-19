@@ -59,7 +59,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             foreach (var item in comptes)
             {
                 decimal soldeActuel = 0;
-                var lstMvt = GetMouvementsAsync(item.Id);
+                var lstMvt = GetMouvementsAsync(item.Id, pageSize: int.MaxValue);
                 if (lstMvt != null)
                 {
                     foreach (var mvt in lstMvt.Result)
@@ -186,7 +186,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                           && !rolesAdmin.Contains(userRole);
 
             var mouvements = new List<MouvementFinancier>();
-            pageSize = pageSize > 0 ? pageSize : 1000;
+            pageSize = (pageSize > 0 && pageSize < int.MaxValue) ? pageSize : 100_000;
 
             using var conn = new SqlConnection(_connectionString);
             var parameters = new List<SqlParameter>();

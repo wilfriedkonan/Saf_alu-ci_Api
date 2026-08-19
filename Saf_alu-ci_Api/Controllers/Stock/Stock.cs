@@ -560,6 +560,7 @@ namespace Saf_alu_ci_Api.Controllers.Stock
         public string? MotifSortie { get; set; }
         public int OperateurId { get; set; }
         public string? Notes { get; set; }
+        public DateTime dateMouvement { get; set; }
     }
 
     public class EnregistrerTransfertRequest
@@ -1042,6 +1043,7 @@ namespace Saf_alu_ci_Api.Controllers.Stock
         public string? Reference { get; set; }
         public int? FournisseurId { get; set; }
         public string? Notes { get; set; }
+        public DateTime dateMouvement { get; set; }
         public List<BordereauLigneEntreeRequest> Lignes { get; set; } = new();
     }
 
@@ -1067,6 +1069,7 @@ namespace Saf_alu_ci_Api.Controllers.Stock
         public int? EtapeProjetId { get; set; }
         public string? MotifSortie { get; set; }
         public string? Notes { get; set; }
+        public DateTime dateMouvement { get; set; }
         public List<BordereauLigneSortieRequest> Lignes { get; set; } = new();
     }
 

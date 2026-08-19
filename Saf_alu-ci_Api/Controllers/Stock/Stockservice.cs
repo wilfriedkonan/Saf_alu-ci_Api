@@ -1740,7 +1740,7 @@ namespace Saf_alu_ci_Api.Controllers.Stock
                         ProjetId, EtapeProjetId, MotifSortie, OperateurId, DateMouvement, Notes, DateCreation)
                     VALUES (@ArticleId, @DepotId, 'Sortie', @Quantite,
                         @QAvant, @QApres, @Reference, @DemandeId,
-                        @ProjetId, @EtapeProjetId, @MotifSortie, @OperateurId, GETUTCDATE(), @Notes, GETUTCDATE());
+                        @ProjetId, @EtapeProjetId, @MotifSortie, @OperateurId, @DateMouvement, @Notes, GETUTCDATE());
                     SELECT SCOPE_IDENTITY();", conn, transaction))
                 {
                     cmd.Parameters.AddWithValue("@ArticleId", req.ArticleId);
@@ -1755,6 +1755,7 @@ namespace Saf_alu_ci_Api.Controllers.Stock
                     cmd.Parameters.AddWithValue("@MotifSortie", req.MotifSortie ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@OperateurId", req.OperateurId);
                     cmd.Parameters.AddWithValue("@Notes", req.Notes ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateMouvement", req.dateMouvement);
                     mouvementId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 }
 
@@ -1931,7 +1932,7 @@ namespace Saf_alu_ci_Api.Controllers.Stock
                 VALUES
                     (@ArticleId, @DepotId, 'Entree', @Quantite,
                      @QAvant, @QApres, @PrixUnitaire, @MontantTotal,
-                     @Reference, @OperateurId, GETUTCDATE(), @Notes, GETUTCDATE());
+                     @Reference, @OperateurId, @DateMouvement, @Notes, GETUTCDATE());
                 SELECT SCOPE_IDENTITY();", conn, transaction))
                     {
                         cmd.Parameters.AddWithValue("@ArticleId", ligne.ArticleId);
@@ -1947,7 +1948,9 @@ namespace Saf_alu_ci_Api.Controllers.Stock
                         cmd.Parameters.AddWithValue("@Notes",
                             string.IsNullOrEmpty(ligne.Notes) ? req.Notes ?? (object)DBNull.Value
                                                               : (object)ligne.Notes);
+                        cmd.Parameters.AddWithValue("@DateMouvement", req.dateMouvement);
                         mouvementId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+
                     }
 
                     // Créer le lot FIFO
@@ -2080,6 +2083,7 @@ namespace Saf_alu_ci_Api.Controllers.Stock
                         EtapeProjetId = req.EtapeProjetId,
                         MotifSortie = req.MotifSortie,
                         OperateurId = operateurId,
+                        dateMouvement = req.dateMouvement,
                         Notes = string.IsNullOrEmpty(ligne.Notes) ? req.Notes : ligne.Notes,
                     };
 

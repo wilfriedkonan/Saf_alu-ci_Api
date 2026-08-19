@@ -65,8 +65,8 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateDevisRequest model)
         {
-            try
-            {
+            //try
+            //{
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(new
@@ -84,11 +84,11 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     message = "Devis créé avec succès",
                     data = new { id = devisId }
                 });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    return StatusCode(500, new { message = $"Erreur serveur : {ex.Message}" });
+            //}
         }
 
         /// <summary>
