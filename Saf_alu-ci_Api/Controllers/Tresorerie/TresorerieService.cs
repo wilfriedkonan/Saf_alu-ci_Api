@@ -145,7 +145,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             //var solde = await cmd.ExecuteScalarAsync();
 
             decimal soldeActuel = 0;
-            var lstMvt = GetMouvementsAsync(compteId);
+            var lstMvt = GetMouvementsAsync(compteId, pageSize: int.MaxValue);
             if (lstMvt != null)
             {
                 foreach (var items in lstMvt.Result)
