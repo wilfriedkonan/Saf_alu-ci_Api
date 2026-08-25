@@ -54,24 +54,50 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
                 comptes.Add(MapToCompte(reader));
-
-            // Calcul du solde actuel par compte(inchangé)
             foreach (var item in comptes)
             {
-                decimal soldeActuel = 0;
-                var lstMvt = GetMouvementsAsync(item.Id, pageSize: int.MaxValue);
+                // 🔧 Partir du SoldeInitial (était à 0)
+                decimal soldeActuel = item.SoldeInitial;
+
+                var lstMvt = await GetMouvementsAsync(item.Id, pageSize: int.MaxValue);
                 if (lstMvt != null)
                 {
-                    foreach (var mvt in lstMvt.Result)
+                    foreach (var mvt in lstMvt)
                     {
                         if (mvt.TypeMouvement == "Entree")
                             soldeActuel += mvt.Montant;
                         else if (mvt.TypeMouvement == "Sortie")
                             soldeActuel -= mvt.Montant;
+                        // 🆕 Virement : inclus dans le solde mais PAS dans les stats
+                        else if (mvt.TypeMouvement == "Virement")
+                        {
+                            if (mvt.CompteId == item.Id)               // virement sorti de ce compte
+                                soldeActuel -= mvt.Montant;
+                            else if (mvt.CompteDestinationId == item.Id) // virement reçu sur ce compte
+                                soldeActuel += mvt.Montant;
+                        }
                     }
                 }
                 item.SoldeActuel = soldeActuel;
             }
+
+            // Calcul du solde actuel par compte(inchangé)
+            //foreach (var item in comptes)
+            //{
+            //    decimal soldeActuel = 0;
+            //    var lstMvt = GetMouvementsAsync(item.Id, pageSize: int.MaxValue);
+            //    if (lstMvt != null)
+            //    {
+            //        foreach (var mvt in lstMvt.Result)
+            //        {
+            //            if (mvt.TypeMouvement == "Entree")
+            //                soldeActuel += mvt.Montant;
+            //            else if (mvt.TypeMouvement == "Sortie")
+            //                soldeActuel -= mvt.Montant;
+            //        }
+            //    }
+            //    item.SoldeActuel = soldeActuel;
+            //}
 
             return comptes;
         }
@@ -137,32 +163,40 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
         public async Task<bool> VerifierSoldeSuffisantAsync(int compteId, decimal montant)
         {
-            //using var conn = new SqlConnection(_connectionString);
-            //using var cmd = new SqlCommand("SELECT SoldeActuel FROM Comptes WHERE Id = @Id AND Actif = 1", conn);
-            //cmd.Parameters.AddWithValue("@Id", compteId);
+            // 🔧 Récupérer le SoldeInitial (était ignoré → solde partait de 0)
+            decimal soldeInitial = 0;
+            using (var conn0 = new SqlConnection(_connectionString))
+            {
+                using var cmd0 = new SqlCommand(
+                    "SELECT SoldeInitial FROM Comptes WHERE Id = @Id AND Actif = 1", conn0);
+                cmd0.Parameters.AddWithValue("@Id", compteId);
+                await conn0.OpenAsync();
+                var res = await cmd0.ExecuteScalarAsync();
+                if (res != null) soldeInitial = (decimal)res;
+            }
 
-            //await conn.OpenAsync();
-            //var solde = await cmd.ExecuteScalarAsync();
-
-            decimal soldeActuel = 0;
-            var lstMvt = GetMouvementsAsync(compteId, pageSize: int.MaxValue);
+            decimal soldeActuel = soldeInitial;
+            var lstMvt = await GetMouvementsAsync(compteId, pageSize: int.MaxValue);
             if (lstMvt != null)
             {
-                foreach (var items in lstMvt.Result)
+                foreach (var mvt in lstMvt)
                 {
-                    if (items.TypeMouvement == "Entree")
+                    if (mvt.TypeMouvement == "Entree")
+                        soldeActuel += mvt.Montant;
+                    else if (mvt.TypeMouvement == "Sortie")
+                        soldeActuel -= mvt.Montant;
+                    // 🆕 Inclure les virements dans la vérification du solde disponible
+                    else if (mvt.TypeMouvement == "Virement")
                     {
-                        soldeActuel += items.Montant;
-                    }
-                    else if (items.TypeMouvement == "Sortie")
-                    {
-                        soldeActuel -= items.Montant;
+                        if (mvt.CompteId == compteId)
+                            soldeActuel -= mvt.Montant;
+                        else if (mvt.CompteDestinationId == compteId)
+                            soldeActuel += mvt.Montant;
                     }
                 }
             }
-            return soldeActuel != null && (decimal)soldeActuel >= montant;
+            return soldeActuel >= montant;
         }
-
         // =============================================
         // GESTION DES MOUVEMENTS
         // =============================================
@@ -535,62 +569,84 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             try
             {
-                // Vérifier que les comptes existent et sont différents
                 if (virement.CompteSourceId == virement.CompteDestinationId)
-                {
                     throw new InvalidOperationException("Les comptes source et destination doivent être différents");
+
+                // ── 1. Récupérer SoldeInitial + Nom du compte source ────────────
+                decimal soldeInitialSource = 0;
+                using (var cmd = new SqlCommand(
+                    "SELECT Nom, SoldeInitial FROM Comptes WHERE Id = @Id AND Actif = 1",
+                    conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@Id", virement.CompteSourceId);
+                    using var r = await cmd.ExecuteReaderAsync();
+                    if (!await r.ReadAsync())
+                        throw new InvalidOperationException("Compte source introuvable");
+                    soldeInitialSource = r.GetDecimal("SoldeInitial");
                 }
 
-                // Vérifier que le compte source a suffisamment de fonds
-                using var checkCmd = new SqlCommand("SELECT SoldeActuel FROM Comptes WHERE Id = @CompteId AND Actif = 1", conn, transaction);
-                checkCmd.Parameters.AddWithValue("@CompteId", virement.CompteSourceId);
-                var soldeResult = await checkCmd.ExecuteScalarAsync();
-
-                if (soldeResult == null)
+                // ── 2. Calculer le solde réel (même logique que GetAllComptesAsync)
+                // 4 sous-requêtes scalaires séparées → évite l'erreur SQL Server
+                // "Multiple columns in aggregated expression with outer reference"
+                decimal soldeSource;
+                using (var cmd = new SqlCommand(@"
+            SELECT
+                @SoldeInitial
+                + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                          WHERE m.Actif = 1 AND m.TypeMouvement = 'Entree'
+                            AND m.CompteId = @CompteId), 0)
+                - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                          WHERE m.Actif = 1 AND m.TypeMouvement = 'Sortie'
+                            AND m.CompteId = @CompteId), 0)
+                - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                          WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                            AND m.CompteId = @CompteId), 0)
+                + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                          WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                            AND m.CompteDestinationId = @CompteId), 0)
+            AS SoldeReel", conn, transaction))
                 {
-                    throw new InvalidOperationException("Compte source introuvable");
+                    cmd.Parameters.AddWithValue("@SoldeInitial", soldeInitialSource);
+                    cmd.Parameters.AddWithValue("@CompteId", virement.CompteSourceId);
+                    soldeSource = (decimal)(await cmd.ExecuteScalarAsync())!;
                 }
 
-                var soldeActuel = (decimal)soldeResult;
-                if (soldeActuel < virement.Montant)
-                {
+                if (soldeSource < virement.Montant)
                     return false; // Solde insuffisant
+
+                // ── 3. Vérifier que le compte destination existe ─────────────────
+                using (var cmd = new SqlCommand(
+                    "SELECT COUNT(*) FROM Comptes WHERE Id = @Id AND Actif = 1",
+                    conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@Id", virement.CompteDestinationId);
+                    if ((int)await cmd.ExecuteScalarAsync() == 0)
+                        throw new InvalidOperationException("Compte destination introuvable");
                 }
 
-                // Vérifier que le compte destination existe
-                using var checkDestCmd = new SqlCommand("SELECT COUNT(*) FROM Comptes WHERE Id = @CompteId AND Actif = 1", conn, transaction);
-                checkDestCmd.Parameters.AddWithValue("@CompteId", virement.CompteDestinationId);
-                var compteDestExiste = (int)await checkDestCmd.ExecuteScalarAsync() > 0;
-
-                if (!compteDestExiste)
+                // ── 4. UN SEUL mouvement "Virement" (pas de faux Entrée/Sortie) ──
+                // CompteDestinationId trace vers qui l'argent est allé.
+                // TypeMouvement = 'Virement' est exclu de GetStatsAsync → stats propres.
+                using (var cmd = new SqlCommand(@"
+            INSERT INTO MouvementsFinanciers
+                (CompteId, TypeMouvement, Categorie, Libelle, Description,
+                 Montant, DateMouvement, DateSaisie, Reference,
+                 CompteDestinationId, UtilisateurCreation, Actif)
+            VALUES
+                (@CompteId, 'Virement', 'Virement interne', @Libelle, @Description,
+                 @Montant, @DateMouvement, GETDATE(), @Reference,
+                 @CompteDestinationId, @UtilisateurCreation, 1)", conn, transaction))
                 {
-                    throw new InvalidOperationException("Compte destination introuvable");
+                    cmd.Parameters.AddWithValue("@CompteId", virement.CompteSourceId);
+                    cmd.Parameters.AddWithValue("@Libelle", virement.Libelle);
+                    cmd.Parameters.AddWithValue("@Description", virement.Description ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Montant", virement.Montant);
+                    cmd.Parameters.AddWithValue("@DateMouvement", virement.DateMouvement);
+                    cmd.Parameters.AddWithValue("@Reference", virement.Reference ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@CompteDestinationId", virement.CompteDestinationId);
+                    cmd.Parameters.AddWithValue("@UtilisateurCreation", utilisateurId);
+                    await cmd.ExecuteNonQueryAsync();
                 }
-
-                // Créer le mouvement de virement
-                var mouvement = new MouvementFinancier
-                {
-                    CompteId = virement.CompteSourceId,
-                    TypeMouvement = "Virement",
-                    Categorie = "Virement interne",
-                    Libelle = virement.Libelle,
-                    Description = virement.Description,
-                    Montant = virement.Montant,
-                    DateMouvement = virement.DateMouvement,
-                    DateSaisie = DateTime.UtcNow,
-                    Reference = virement.Reference,
-                    CompteDestinationId = virement.CompteDestinationId,
-                    UtilisateurCreation = utilisateurId
-                };
-
-                using var cmd = new SqlCommand(@"
-                    INSERT INTO MouvementsFinanciers (CompteId, TypeMouvement, Categorie, Libelle, Description, Montant,
-                                                   DateMouvement, DateSaisie, Reference, CompteDestinationId, UtilisateurCreation)
-                    VALUES (@CompteId, @TypeMouvement, @Categorie, @Libelle, @Description, @Montant,
-                           @DateMouvement, @DateSaisie, @Reference, @CompteDestinationId, @UtilisateurCreation)", conn, transaction);
-
-                AddMouvementParameters(cmd, mouvement);
-                await cmd.ExecuteNonQueryAsync();
 
                 await transaction.CommitAsync();
                 return true;
@@ -600,8 +656,7 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
                 await transaction.RollbackAsync();
                 throw;
             }
-        }
-        //public async Task<bool> CreateVirementAsync(VirementRequest virement, int utilisateurId)
+        }        //public async Task<bool> CreateVirementAsync(VirementRequest virement, int utilisateurId)
         //{
         //    using var conn = new SqlConnection(_connectionString);
         //    await conn.OpenAsync();
@@ -726,9 +781,26 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             try
             {
                 // Récupérer le solde actuel
-                using var getSoldeCmd = new SqlCommand("SELECT SoldeActuel FROM Comptes WHERE Id = @Id", conn, transaction);
+                using var getSoldeCmd = new SqlCommand(@"
+                SELECT
+                    c.SoldeInitial
+                    + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                              WHERE m.Actif = 1 AND m.TypeMouvement = 'Entree'
+                                AND m.CompteId = c.Id), 0)
+                    - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                              WHERE m.Actif = 1 AND m.TypeMouvement = 'Sortie'
+                                AND m.CompteId = c.Id), 0)
+                    - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                              WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                AND m.CompteId = c.Id), 0)
+                    + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                              WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                AND m.CompteDestinationId = c.Id), 0)
+                    AS SoldeReel
+                FROM Comptes c
+                WHERE c.Id = @Id AND c.Actif = 1", conn, transaction);
                 getSoldeCmd.Parameters.AddWithValue("@Id", compteId);
-                var soldeActuel = (decimal)await getSoldeCmd.ExecuteScalarAsync();
+                var soldeActuel = (decimal)(await getSoldeCmd.ExecuteScalarAsync())!;
 
                 var ecart = correction.NouveauSolde - soldeActuel;
 
@@ -780,7 +852,25 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             await conn.OpenAsync();
 
             // Solde total
-            using var soldeCmd = new SqlCommand("SELECT ISNULL(SUM(SoldeActuel), 0) FROM Comptes WHERE Actif = 1", conn);
+            using var soldeCmd = new SqlCommand(@"
+                    WITH SoldesReels AS (
+                        SELECT c.SoldeInitial
+                            + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                      WHERE m.Actif = 1 AND m.TypeMouvement = 'Entree'
+                                        AND m.CompteId = c.Id), 0)
+                            - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                      WHERE m.Actif = 1 AND m.TypeMouvement = 'Sortie'
+                                        AND m.CompteId = c.Id), 0)
+                            - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                      WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                        AND m.CompteId = c.Id), 0)
+                            + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                      WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                        AND m.CompteDestinationId = c.Id), 0)
+                            AS SoldeReel
+                        FROM Comptes c WHERE c.Actif = 1
+                    )
+                    SELECT ISNULL(SUM(SoldeReel), 0) FROM SoldesReels", conn);
             stats.SoldeTotal = (decimal)await soldeCmd.ExecuteScalarAsync();
 
             // Entrées/Sorties du mois
@@ -842,13 +932,31 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             // Résumé des comptes
             using var comptesCmd = new SqlCommand(@"
-                SELECT 
-                    COUNT(*) as NbComptes,
-                    SUM(SoldeActuel) as SoldeTotal,
-                    AVG(SoldeActuel) as SoldeMoyen,
-                    MIN(SoldeActuel) as SoldeMin,
-                    MAX(SoldeActuel) as SoldeMax
-                FROM Comptes WHERE Actif = 1", conn);
+                WITH SoldesReels AS (
+                    SELECT
+                        c.SoldeInitial
+                        + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                  WHERE m.Actif = 1 AND m.TypeMouvement = 'Entree'
+                                    AND m.CompteId = c.Id), 0)
+                        - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                  WHERE m.Actif = 1 AND m.TypeMouvement = 'Sortie'
+                                    AND m.CompteId = c.Id), 0)
+                        - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                  WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                    AND m.CompteId = c.Id), 0)
+                        + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                                  WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                    AND m.CompteDestinationId = c.Id), 0)
+                        AS SoldeReel
+                    FROM Comptes c WHERE c.Actif = 1
+                )
+                SELECT
+                    (SELECT COUNT(*) FROM Comptes WHERE Actif = 1) AS NbComptes,
+                    ISNULL(SUM(SoldeReel), 0)  AS SoldeTotal,
+                    ISNULL(AVG(SoldeReel), 0)  AS SoldeMoyen,
+                    ISNULL(MIN(SoldeReel), 0)  AS SoldeMin,
+                    ISNULL(MAX(SoldeReel), 0)  AS SoldeMax
+                FROM SoldesReels", conn);
 
             using var comptesReader = await comptesCmd.ExecuteReaderAsync();
             if (await comptesReader.ReadAsync())
@@ -943,10 +1051,28 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
 
             using var conn = new SqlConnection(_connectionString);
             using var cmd = new SqlCommand(@"
-                SELECT TypeCompte, SUM(SoldeActuel) as SoldeTotal
-                FROM Comptes 
-                WHERE Actif = 1 
-                GROUP BY TypeCompte", conn);
+            WITH SoldesReels AS (
+                SELECT
+                    c.TypeCompte,
+                    c.SoldeInitial
+                    + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                              WHERE m.Actif = 1 AND m.TypeMouvement = 'Entree'
+                                AND m.CompteId = c.Id), 0)
+                    - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                              WHERE m.Actif = 1 AND m.TypeMouvement = 'Sortie'
+                                AND m.CompteId = c.Id), 0)
+                    - ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                              WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                AND m.CompteId = c.Id), 0)
+                    + ISNULL((SELECT SUM(m.Montant) FROM MouvementsFinanciers m
+                              WHERE m.Actif = 1 AND m.TypeMouvement = 'Virement'
+                                AND m.CompteDestinationId = c.Id), 0)
+                    AS SoldeReel
+                FROM Comptes c WHERE c.Actif = 1
+            )
+            SELECT TypeCompte, ISNULL(SUM(SoldeReel), 0) AS SoldeTotal
+            FROM SoldesReels
+            GROUP BY TypeCompte", conn);
 
             await conn.OpenAsync();
             using var reader = await cmd.ExecuteReaderAsync();
@@ -1139,21 +1265,58 @@ namespace Saf_alu_ci_Api.Controllers.Tresorerie
             var data = new List<ChartData>();
 
             using var cmd = new SqlCommand(@"
-                WITH EvolutionSoldes AS (
-                    SELECT 
-                        CAST(DateMouvement AS DATE) as DateMvt,
-                        SUM(SUM(CASE WHEN TypeMouvement = 'Entree' THEN Montant 
-                                    WHEN TypeMouvement = 'Sortie' THEN -Montant 
-                                    ELSE 0 END)) OVER (ORDER BY CAST(DateMouvement AS DATE)) as SoldeCumule
-                    FROM MouvementsFinanciers 
-                    WHERE Actif = 1 AND  DateMouvement >= DATEADD(DAY, -30, GETDATE())
-                    GROUP BY CAST(DateMouvement AS DATE)
-                )
-                SELECT 
-                    FORMAT(DateMvt, 'yyyy-MM-dd') as Date, 
-                    SoldeCumule 
-                FROM EvolutionSoldes
-                ORDER BY DateMvt", conn);
+        WITH
+        -- ── 1. Solde réel total de tous les comptes AU DÉBUT de la fenêtre ──────
+        -- = SoldeInitial de tous les comptes
+        --   + toutes les Entrées AVANT les 30 derniers jours
+        --   - toutes les Sorties AVANT les 30 derniers jours
+        -- (Virements ignorés : neutres au niveau global)
+        SoldeDeBase AS (
+            SELECT
+                ISNULL(SUM(c.SoldeInitial), 0)
+                + ISNULL((
+                    SELECT SUM(m.Montant)
+                    FROM MouvementsFinanciers m
+                    WHERE m.Actif = 1
+                      AND m.TypeMouvement = 'Entree'
+                      AND CAST(m.DateMouvement AS DATE) < CAST(DATEADD(DAY, -30, GETDATE()) AS DATE)
+                ), 0)
+                - ISNULL((
+                    SELECT SUM(m.Montant)
+                    FROM MouvementsFinanciers m
+                    WHERE m.Actif = 1
+                      AND m.TypeMouvement = 'Sortie'
+                      AND CAST(m.DateMouvement AS DATE) < CAST(DATEADD(DAY, -30, GETDATE()) AS DATE)
+                ), 0)
+                AS Solde
+            FROM Comptes c
+            WHERE c.Actif = 1
+        ),
+
+        -- ── 2. Flux net par jour DANS la fenêtre des 30 derniers jours ──────────
+        -- Virement = neutre globalement → ELSE 0
+        FluxJournaliers AS (
+            SELECT
+                CAST(DateMouvement AS DATE) AS DateMvt,
+                SUM(CASE
+                    WHEN TypeMouvement = 'Entree' THEN  Montant
+                    WHEN TypeMouvement = 'Sortie' THEN -Montant
+                    ELSE 0
+                END) AS FluxJour
+            FROM MouvementsFinanciers
+            WHERE Actif = 1
+              AND DateMouvement >= DATEADD(DAY, -30, GETDATE())
+            GROUP BY CAST(DateMouvement AS DATE)
+        )
+
+        -- ── 3. Solde cumulé = SoldeDeBase + somme cumulée des flux journaliers ──
+        SELECT
+            FORMAT(fj.DateMvt, 'yyyy-MM-dd') AS Date,
+            (SELECT Solde FROM SoldeDeBase)
+            + SUM(fj.FluxJour) OVER (ORDER BY fj.DateMvt ROWS UNBOUNDED PRECEDING)
+            AS SoldeCumule
+        FROM FluxJournaliers fj
+        ORDER BY fj.DateMvt", conn);
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())

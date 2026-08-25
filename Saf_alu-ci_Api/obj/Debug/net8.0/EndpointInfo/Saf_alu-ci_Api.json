@@ -5640,6 +5640,35 @@
             "description": "OK"
           }
         }
+      },
+      "put": {
+        "tags": [
+          "Stock"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBordereauEntreeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBordereauEntreeRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBordereauEntreeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/Stock/mouvements/bordereau-sortie": {
@@ -5662,6 +5691,35 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/BordereauSortieRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Stock"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBordereauSortieRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBordereauSortieRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBordereauSortieRequest"
               }
             }
           }
@@ -8401,6 +8459,9 @@
           "typeDevis": {
             "type": "string",
             "nullable": true
+          },
+          "afficherTVA": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -10388,6 +10449,64 @@
         },
         "additionalProperties": false
       },
+      "UpdateBordereauEntreeRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "depotId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nouvelleReference": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "dateMouvement": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBordereauSortieRequest": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "depotId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nouvelleReference": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "dateMouvement": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "motifSortie": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateCompteRequest": {
         "required": [
           "nom"
@@ -10617,6 +10736,9 @@
           "typeDevis": {
             "type": "string",
             "nullable": true
+          },
+          "afficherTVA": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

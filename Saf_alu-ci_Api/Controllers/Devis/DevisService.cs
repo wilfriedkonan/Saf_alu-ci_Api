@@ -162,6 +162,14 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             while (await reader.ReadAsync()) { /* consommé */ }
             await reader.CloseAsync();
 
+            using (var afCmd = new SqlCommand(
+              "SELECT AfficherTVA FROM Devis WHERE Id = @Id", conn))
+            {
+                afCmd.Parameters.AddWithValue("@Id", id);
+                var af = await afCmd.ExecuteScalarAsync();
+                if (af != null && af != DBNull.Value)
+                    devisResponse.AfficherTVA = (bool)af;
+            }
             // 🆕 Charger les sous-sections (s'il y en a — requête légère)
             var sousSectionsDict = new Dictionary<int, DevisSousSectionResponse>();
             using (var ssCmd = new SqlCommand(@"
@@ -303,7 +311,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                         RemiseValeur, RemisePourcentage,
                         DateCreation, DateValidite, DateModification,
                         Conditions, Notes, UtilisateurCreation,
-                        Chantier, Contact, QualiteMateriel, TypeVitrage,TypeDevis
+                        Chantier, Contact, QualiteMateriel, TypeVitrage, TypeDevis, AfficherTVA
                     )
                     VALUES (
                         @Numero, @ClientId, @Titre, @Description, @Statut,
@@ -311,7 +319,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                         @RemiseValeur, @RemisePourcentage,
                         @DateCreation, @DateValidite, @DateModification,
                         @Conditions, @Notes, @UtilisateurCreation,
-                        @Chantier, @Contact, @QualiteMateriel, @TypeVitrage, @TypeDevis
+                       @Chantier, @Contact, @QualiteMateriel, @TypeVitrage, @TypeDevis, @AfficherTVA
                     );
                     SELECT CAST(SCOPE_IDENTITY() as int)", conn, transaction);
 
@@ -336,6 +344,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 devisCmd.Parameters.AddWithValue("@QualiteMateriel", request.QualiteMateriel ?? (object)DBNull.Value);
                 devisCmd.Parameters.AddWithValue("@TypeVitrage", request.TypeVitrage ?? (object)DBNull.Value);
                 devisCmd.Parameters.AddWithValue("@TypeDevis", request.TypeDevis ?? (object)DBNull.Value);
+                devisCmd.Parameters.AddWithValue("@AfficherTVA", request.AfficherTVA);
 
                 var devisId = (int)await devisCmd.ExecuteScalarAsync();
 
@@ -426,14 +435,15 @@ namespace Saf_alu_ci_Api.Controllers.Devis
             try
             {
                 using var updateCmd = new SqlCommand(@"
-                    UPDATE Devis SET
-                        ClientId = @ClientId, Titre = @Titre, Description = @Description,
-                        DateValidite = @DateValidite, DateModification = @DateModification,
-                        Conditions = @Conditions, Notes = @Notes,
-                        Chantier = @Chantier, Contact = @Contact,
-                        QualiteMateriel = @QualiteMateriel, TypeVitrage = @TypeVitrage,
-                        RemiseValeur = @RemiseValeur, RemisePourcentage = @RemisePourcentage
-                    WHERE Id = @Id", conn, transaction);
+                UPDATE Devis SET
+                    ClientId = @ClientId, Titre = @Titre, Description = @Description,
+                    DateValidite = @DateValidite, DateModification = @DateModification,
+                    Conditions = @Conditions, Notes = @Notes,
+                    Chantier = @Chantier, Contact = @Contact,
+                    QualiteMateriel = @QualiteMateriel, TypeVitrage = @TypeVitrage,
+                    RemiseValeur = @RemiseValeur, RemisePourcentage = @RemisePourcentage,
+                    AfficherTVA = @AfficherTVA
+                WHERE Id = @Id", conn, transaction);
 
                 updateCmd.Parameters.AddWithValue("@Id", devisId);
                 updateCmd.Parameters.AddWithValue("@ClientId", request.ClientId);
@@ -449,6 +459,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                 updateCmd.Parameters.AddWithValue("@TypeVitrage", request.TypeVitrage ?? (object)DBNull.Value);
                 updateCmd.Parameters.AddWithValue("@RemiseValeur", request.RemiseValeur);
                 updateCmd.Parameters.AddWithValue("@RemisePourcentage", request.RemisePourcentage);
+                updateCmd.Parameters.AddWithValue("@AfficherTVA", request.AfficherTVA);
                 await updateCmd.ExecuteNonQueryAsync();
 
                 // Supprimer lignes → sous-sections → sections (respect des FK)

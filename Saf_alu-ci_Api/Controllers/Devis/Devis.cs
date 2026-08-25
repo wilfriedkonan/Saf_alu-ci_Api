@@ -29,7 +29,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? TypeVitrage { get; set; }
         public Boolean Actif { get; set; } = true;
         public string? TypeDevis { get; set; }
-
+        public bool AfficherTVA { get; set; } = true;
         public virtual Client? Client { get; set; }
         public virtual List<LigneDevis>? Lignes { get; set; }
 
@@ -116,6 +116,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public string? TypeVitrage { get; set; }
         public List<CreateDevisSectionRequest>? Sections { get; set; }
         public string? TypeDevis { get; set; }
+        public bool AfficherTVA { get; set; } = true;
     }
 
     public class CreateDevisSectionRequest
@@ -229,6 +230,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
         public ClientInfo? Client { get; set; }
         public List<DevisSectionResponse>? Sections { get; set; }
         public string? TypeDevis { get; set; }
+        public bool AfficherTVA { get; set; } = true;
     }
 
     public class DevisSectionResponse

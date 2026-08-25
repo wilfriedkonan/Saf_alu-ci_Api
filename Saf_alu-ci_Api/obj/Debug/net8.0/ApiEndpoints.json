@@ -3555,6 +3555,22 @@
   },
   {
     "ContainingType": "Saf_alu_ci_Api.Controllers.Stock.StockController",
+    "Method": "UpdateBordereauEntree",
+    "RelativePath": "api/Stock/mouvements/bordereau-entree",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.Stock.UpdateBordereauEntreeRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Stock.StockController",
     "Method": "EnregistrerBordereauSortie",
     "RelativePath": "api/Stock/mouvements/bordereau-sortie",
     "HttpMethod": "POST",
@@ -3564,6 +3580,22 @@
       {
         "Name": "model",
         "Type": "Saf_alu_ci_Api.Controllers.Stock.BordereauSortieRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Saf_alu_ci_Api.Controllers.Stock.StockController",
+    "Method": "UpdateBordereauSortie",
+    "RelativePath": "api/Stock/mouvements/bordereau-sortie",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Saf_alu_ci_Api.Controllers.Stock.UpdateBordereauSortieRequest",
         "IsRequired": true
       }
     ],

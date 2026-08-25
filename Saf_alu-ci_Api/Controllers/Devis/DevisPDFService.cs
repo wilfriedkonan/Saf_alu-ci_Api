@@ -347,7 +347,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                     }
                 });
 
-                // ── Totaux avec remises (inchangé) ────────────────────
+                // ── Totaux avec remises ───────────────────────────────────
                 column.Item().PaddingTop(15).AlignRight().Column(totalCol =>
                 {
                     if (hasRemise)
@@ -395,6 +395,7 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                             });
                     }
 
+                    // Montant HT net
                     totalCol.Item().BorderTop(2).BorderColor(Colors.Black)
                         .PaddingTop(8).PaddingBottom(8).Row(row =>
                         {
@@ -405,6 +406,28 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                                 .Text(FormatMontant(devis.MontantHT)).FontSize(11).Bold();
                         });
 
+                    // 🆕 TVA — affichée uniquement si AfficherTVA = true
+                    if (devis.AfficherTVA)
+                    {
+                        decimal montantTVA = devis.MontantHT * (devis.TauxTVA / 100);
+
+                        totalCol.Item().PaddingTop(5).PaddingBottom(5).Row(row =>
+                        {
+                            row.ConstantItem(150).Text($"TVA ({devis.TauxTVA:0.##}%)").FontSize(10);
+                            row.ConstantItem(100).AlignRight()
+                                .Text(FormatMontant(montantTVA)).FontSize(10);
+                        });
+
+                        totalCol.Item().BorderTop(2).BorderColor(Colors.Black)
+                            .PaddingTop(8).PaddingBottom(8).Row(row =>
+                            {
+                                row.ConstantItem(150).Text("MONTANT TTC").FontSize(11).Bold();
+                                row.ConstantItem(100).AlignRight()
+                                    .Text(FormatMontant(devis.MontantTTC)).FontSize(11).Bold();
+                            });
+                    }
+
+                    // Économie (si remise)
                     if (hasRemise)
                     {
                         decimal pourcentageEconomie = montantHTBrut > 0
@@ -420,7 +443,6 @@ namespace Saf_alu_ci_Api.Controllers.Devis
                         });
                     }
                 });
-
                 // ── Conditions commerciales (inchangé) ───────────────
                 if (!string.IsNullOrEmpty(devis.Conditions))
                 {

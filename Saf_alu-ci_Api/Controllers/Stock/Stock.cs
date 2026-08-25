@@ -1119,4 +1119,51 @@ namespace Saf_alu_ci_Api.Controllers.Stock
         public List<BordereauLigneResultDTO> Lignes { get; set; } = new();
         public string Message { get; set; } = string.Empty;
     }
+
+
+    // ============================================================
+    // REQUEST DTOs — UPDATE BORDEREAU
+    // ============================================================
+
+    /// <summary>
+    /// Mise à jour des informations générales d'un bordereau d'entrée.
+    /// Identifié par Reference + DepotId.
+    /// Seuls les champs non-null sont mis à jour.
+    /// </summary>
+    public class UpdateBordereauEntreeRequest
+    {
+        /// <summary>Référence actuelle du bordereau — sert d'identifiant</summary>
+        public string Reference { get; set; } = string.Empty;
+        public int DepotId { get; set; }
+
+        // Champs modifiables
+        public string? NouvelleReference { get; set; }
+        public string? Notes { get; set; }
+        public DateTime? DateMouvement { get; set; }
+    }
+
+    /// <summary>
+    /// Mise à jour des informations générales d'un bordereau de sortie.
+    /// Identifié par Reference + DepotId.
+    /// </summary>
+    public class UpdateBordereauSortieRequest
+    {
+        /// <summary>Référence actuelle du bordereau — sert d'identifiant</summary>
+        public string Reference { get; set; } = string.Empty;
+        public int DepotId { get; set; }
+
+        // Champs modifiables
+        public string? NouvelleReference { get; set; }
+        public string? Notes { get; set; }
+        public DateTime? DateMouvement { get; set; }
+        public string? MotifSortie { get; set; }
+    }
+
+    // RÉPONSE commune
+    public class UpdateBordereauResultDTO
+    {
+        public string Reference { get; set; } = string.Empty;
+        public int NbMouvementsModifies { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
 }

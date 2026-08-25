@@ -869,6 +869,52 @@ namespace Saf_alu_ci_Api.Controllers.Stock
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
             catch (Exception ex) { return StatusCode(500, $"Erreur serveur : {ex.Message}"); }
         }
+
+
+
+        /// <summary>
+        /// PUT /api/stock/mouvements/bordereau-entree
+        /// Met à jour les informations générales d'un bordereau d'entrée
+        /// (Reference, Notes, DateMouvement) sans modifier les quantités ni le FIFO.
+        /// </summary>
+        [HttpPut("mouvements/bordereau-entree")]
+        public async Task<IActionResult> UpdateBordereauEntree(
+            [FromBody] UpdateBordereauEntreeRequest model)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(model.Reference))
+                    return BadRequest("La référence du bordereau est obligatoire.");
+
+                var result = await _stockService.UpdateBordereauEntreeAsync(model);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, $"Erreur serveur : {ex.Message}"); }
+        }
+
+        /// <summary>
+        /// PUT /api/stock/mouvements/bordereau-sortie
+        /// Met à jour les informations générales d'un bordereau de sortie
+        /// (Reference, Notes, DateMouvement, MotifSortie) sans modifier les quantités ni le FIFO.
+        /// </summary>
+        [HttpPut("mouvements/bordereau-sortie")]
+        public async Task<IActionResult> UpdateBordereauSortie(
+            [FromBody] UpdateBordereauSortieRequest model)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(model.Reference))
+                    return BadRequest("La référence du bordereau est obligatoire.");
+
+                var result = await _stockService.UpdateBordereauSortieAsync(model);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex) { return NotFound(ex.Message); }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, $"Erreur serveur : {ex.Message}"); }
+        }
         // ============================================================
         // RAPPORTS — depuis les vues SQL
         // ============================================================

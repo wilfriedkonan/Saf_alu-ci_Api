@@ -2732,6 +2732,202 @@ namespace Saf_alu_ci_Api.Controllers.Stock
         }
 
         // ============================================================
+        // UPDATE BORDEREAU ENTRÉE
+        // ============================================================
+
+        /// <summary>
+        /// Met à jour les informations générales (Reference, Notes, DateMouvement)
+        /// de tous les mouvements d'un bordereau d'entrée.
+        /// Identifié par Reference + DepotId. Ne touche pas aux quantités ni aux lots FIFO.
+        /// </summary>
+        public async Task<UpdateBordereauResultDTO> UpdateBordereauEntreeAsync(
+            UpdateBordereauEntreeRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.Reference))
+                throw new ArgumentException("La référence du bordereau est obligatoire.");
+
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            // Vérifier que le bordereau existe
+            int nbExistants;
+            using (var chk = new SqlCommand(@"
+        SELECT COUNT(*) FROM Stock_Mouvements
+        WHERE Reference = @Reference
+          AND DepotId   = @DepotId
+          AND TypeMouvement = 'Entree'", conn))
+            {
+                chk.Parameters.AddWithValue("@Reference", req.Reference);
+                chk.Parameters.AddWithValue("@DepotId", req.DepotId);
+                nbExistants = (int)(await chk.ExecuteScalarAsync())!;
+            }
+
+            if (nbExistants == 0)
+                throw new KeyNotFoundException(
+                    $"Aucun bordereau d'entrée trouvé avec la référence '{req.Reference}' sur le dépôt {req.DepotId}.");
+
+            // Construire le SET dynamiquement (uniquement les champs fournis)
+            var setClauses = new List<string>();
+            var parameters = new List<SqlParameter>
+    {
+        new("@Reference", req.Reference),
+        new("@DepotId",   req.DepotId),
+    };
+
+            if (!string.IsNullOrWhiteSpace(req.NouvelleReference))
+            {
+                setClauses.Add("Reference = @NouvelleReference");
+                parameters.Add(new("@NouvelleReference", req.NouvelleReference));
+            }
+
+            if (req.Notes != null)
+            {
+                setClauses.Add("Notes = @Notes");
+                parameters.Add(new("@Notes", req.Notes));
+            }
+
+            if (req.DateMouvement.HasValue)
+            {
+                setClauses.Add("DateMouvement = @DateMouvement");
+                parameters.Add(new("@DateMouvement", req.DateMouvement.Value));
+            }
+
+            if (!setClauses.Any())
+                return new UpdateBordereauResultDTO
+                {
+                    Reference = req.Reference,
+                    NbMouvementsModifies = 0,
+                    Message = "Aucun champ à modifier."
+                };
+
+            int nbModifies;
+            using (var cmd = new SqlCommand($@"
+        UPDATE Stock_Mouvements SET
+            {string.Join(", ", setClauses)}
+        WHERE Reference    = @Reference
+          AND DepotId      = @DepotId
+          AND TypeMouvement = 'Entree'", conn))
+            {
+                cmd.Parameters.AddRange(parameters.ToArray());
+                nbModifies = await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Si la référence a changé, mettre à jour aussi Stock_LotEntrees
+            if (!string.IsNullOrWhiteSpace(req.NouvelleReference))
+            {
+                using var lotCmd = new SqlCommand(@"
+            UPDATE Stock_LotEntrees SET Reference = @NouvelleReference
+            WHERE Reference = @Reference AND DepotId = @DepotId", conn);
+                lotCmd.Parameters.AddWithValue("@NouvelleReference", req.NouvelleReference);
+                lotCmd.Parameters.AddWithValue("@Reference", req.Reference);
+                lotCmd.Parameters.AddWithValue("@DepotId", req.DepotId);
+                await lotCmd.ExecuteNonQueryAsync();
+            }
+
+            return new UpdateBordereauResultDTO
+            {
+                Reference = req.NouvelleReference ?? req.Reference,
+                NbMouvementsModifies = nbModifies,
+                Message = $"{nbModifies} mouvement(s) mis à jour avec succès."
+            };
+        }
+
+        // ============================================================
+        // UPDATE BORDEREAU SORTIE
+        // ============================================================
+
+        /// <summary>
+        /// Met à jour les informations générales (Reference, Notes, DateMouvement, MotifSortie)
+        /// de tous les mouvements d'un bordereau de sortie.
+        /// Identifié par Reference + DepotId. Ne touche pas aux quantités ni aux lots FIFO.
+        /// </summary>
+        public async Task<UpdateBordereauResultDTO> UpdateBordereauSortieAsync(
+            UpdateBordereauSortieRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.Reference))
+                throw new ArgumentException("La référence du bordereau est obligatoire.");
+
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            // Vérifier que le bordereau existe
+            int nbExistants;
+            using (var chk = new SqlCommand(@"
+        SELECT COUNT(*) FROM Stock_Mouvements
+        WHERE Reference    = @Reference
+          AND DepotId      = @DepotId
+          AND TypeMouvement = 'Sortie'", conn))
+            {
+                chk.Parameters.AddWithValue("@Reference", req.Reference);
+                chk.Parameters.AddWithValue("@DepotId", req.DepotId);
+                nbExistants = (int)(await chk.ExecuteScalarAsync())!;
+            }
+
+            if (nbExistants == 0)
+                throw new KeyNotFoundException(
+                    $"Aucun bordereau de sortie trouvé avec la référence '{req.Reference}' sur le dépôt {req.DepotId}.");
+
+            // Construire le SET dynamiquement
+            var setClauses = new List<string>();
+            var parameters = new List<SqlParameter>
+    {
+        new("@Reference", req.Reference),
+        new("@DepotId",   req.DepotId),
+    };
+
+            if (!string.IsNullOrWhiteSpace(req.NouvelleReference))
+            {
+                setClauses.Add("Reference = @NouvelleReference");
+                parameters.Add(new("@NouvelleReference", req.NouvelleReference));
+            }
+
+            if (req.Notes != null)
+            {
+                setClauses.Add("Notes = @Notes");
+                parameters.Add(new("@Notes", req.Notes));
+            }
+
+            if (req.DateMouvement.HasValue)
+            {
+                setClauses.Add("DateMouvement = @DateMouvement");
+                parameters.Add(new("@DateMouvement", req.DateMouvement.Value));
+            }
+
+            if (req.MotifSortie != null)
+            {
+                setClauses.Add("MotifSortie = @MotifSortie");
+                parameters.Add(new("@MotifSortie", req.MotifSortie));
+            }
+
+            if (!setClauses.Any())
+                return new UpdateBordereauResultDTO
+                {
+                    Reference = req.Reference,
+                    NbMouvementsModifies = 0,
+                    Message = "Aucun champ à modifier."
+                };
+
+            int nbModifies;
+            using (var cmd = new SqlCommand($@"
+        UPDATE Stock_Mouvements SET
+            {string.Join(", ", setClauses)}
+        WHERE Reference    = @Reference
+          AND DepotId      = @DepotId
+          AND TypeMouvement = 'Sortie'", conn))
+            {
+                cmd.Parameters.AddRange(parameters.ToArray());
+                nbModifies = await cmd.ExecuteNonQueryAsync();
+            }
+
+            return new UpdateBordereauResultDTO
+            {
+                Reference = req.NouvelleReference ?? req.Reference,
+                NbMouvementsModifies = nbModifies,
+                Message = $"{nbModifies} mouvement(s) mis à jour avec succès."
+            };
+        }
+
+        // ============================================================
         // MAPPERS (inchangés)
         // ============================================================
 
